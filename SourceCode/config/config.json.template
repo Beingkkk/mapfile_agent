@@ -1,0 +1,15 @@
+{
+  "llm": {
+    "base_url": "https://api.kimi.com/coding/",
+    "auth_key": "",
+    "model_name": "K2.6"
+  },
+  "workspace": {
+    "default_path": ".",
+    "allow_parent_access": false
+  },
+  "api": {
+    "host": "0.0.0.0",
+    "port": 8000
+  }
+}

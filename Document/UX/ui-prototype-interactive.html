@@ -1,0 +1,1721 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MapGuide — 可交互高保真原型</title>
+  <style>
+    /* ============================================================
+       DESIGN TOKENS — Professional, Restrained
+       ============================================================ */
+    :root {
+      --brand-50:  #f0f4f8;
+      --brand-100: #d9e2ec;
+      --brand-200: #bcccdc;
+      --brand-300: #9fb3c8;
+      --brand-400: #829ab1;
+      --brand-500: #627d98;
+      --brand-600: #486581;
+      --brand-700: #334e68;
+      --brand-800: #243b53;
+      --brand-900: #102a43;
+
+      --gray-0:   #ffffff;
+      --gray-50:  #f7f8fa;
+      --gray-100: #f0f2f5;
+      --gray-150: #e4e7eb;
+      --gray-200: #d1d5db;
+      --gray-250: #c4cdd5;
+      --gray-300: #9aa5b1;
+      --gray-400: #7b8794;
+      --gray-500: #616e7c;
+      --gray-600: #52606d;
+      --gray-700: #3e4c59;
+      --gray-800: #323f4b;
+      --gray-900: #1f2933;
+
+      --success-50:  #f0f9f4;
+      --success-500: #36b37e;
+      --success-700: #006644;
+      --warn-50:  #fff8e6;
+      --warn-500: #ffab00;
+      --warn-700: #946800;
+      --error-50:  #fff0f0;
+      --error-500: #de350b;
+      --error-700: #bf2600;
+
+      --phase-ds: #486581;
+      --phase-ds-bg: #e1e8ed;
+      --phase-st: #7b8794;
+      --phase-st-bg: #e4e7eb;
+      --phase-sv: #52606d;
+      --phase-sv-bg: #d9e2ec;
+      --phase-ca: #616e7c;
+      --phase-ca-bg: #e4e7eb;
+
+      --msg-bot-bg: #ffffff;
+      --msg-bot-border: #e4e7eb;
+      --msg-user-bg: #1f2933;
+      --msg-user-text: #ffffff;
+
+      --shadow-xs:  0 1px 2px 0 rgb(31 41 51 / 0.04);
+      --shadow-sm:  0 1px 3px 0 rgb(31 41 51 / 0.06), 0 1px 2px -1px rgb(31 41 51 / 0.04);
+      --shadow-md:  0 4px 6px -1px rgb(31 41 51 / 0.05), 0 2px 4px -2px rgb(31 41 51 / 0.04);
+      --shadow-lg:  0 10px 15px -3px rgb(31 41 51 / 0.05), 0 4px 6px -4px rgb(31 41 51 / 0.04);
+
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 10px;
+      --radius-xl: 14px;
+      --radius-full: 9999px;
+
+      --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+      --font-mono: "JetBrains Mono", "SF Mono", "Cascadia Code", "Fira Code", Consolas, "Liberation Mono", monospace;
+
+      --nav-width: 240px;
+      --sidebar-width: 520px;
+      --header-height: 56px;
+      --input-height: 56px;
+    }
+
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: var(--font-sans);
+      background: var(--gray-100);
+      color: var(--gray-800);
+      font-size: 15px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+    }
+
+    /* ============================================================
+       APP SHELL — Three Columns
+       ============================================================ */
+    .app {
+      display: grid;
+      grid-template-columns: var(--nav-width) 1fr var(--sidebar-width);
+      height: 100vh;
+      width: 100vw;
+    }
+
+    /* ============================================================
+       LEFT NAV — Flow Steps (Card + Arrow)
+       ============================================================ */
+    .left-nav {
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      padding: 28px 20px 20px;
+    }
+    .nav-brand {
+      margin-bottom: 28px;
+      padding: 0 8px;
+    }
+    .nav-brand-text {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--gray-900);
+      letter-spacing: -0.3px;
+    }
+    .nav-brand-sub {
+      font-size: 12px;
+      color: var(--gray-400);
+      margin-top: 4px;
+      font-weight: 400;
+    }
+
+    .flow-list {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      gap: 0;
+      padding: 0 8px;
+    }
+    .flow-item {
+      position: relative;
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      text-align: left;
+      width: 100%;
+      padding: 0;
+      flex: 1;
+    }
+
+    /* Card */
+    .flow-card {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 20px;
+      border-radius: var(--radius-md);
+      border: 1.5px solid transparent;
+      background: var(--gray-50);
+      transition: all 0.2s ease;
+      position: relative;
+      z-index: 2;
+    }
+    .flow-item:hover .flow-card {
+      background: var(--gray-100);
+    }
+    .flow-item.active .flow-card {
+      background: var(--brand-50);
+      border-color: var(--brand-400);
+    }
+    .flow-item.done .flow-card {
+      background: var(--success-50);
+      border-color: var(--success-200);
+    }
+
+    .flow-num {
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-sm);
+      background: var(--gray-200);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--gray-500);
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+    .flow-item.active .flow-num {
+      background: var(--brand-600);
+      color: #fff;
+    }
+    .flow-item.done .flow-num {
+      background: var(--success-500);
+      color: #fff;
+    }
+
+    .flow-label {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--gray-600);
+      transition: color 0.2s;
+    }
+    .flow-item.active .flow-label {
+      color: var(--brand-700);
+    }
+    .flow-item.done .flow-label {
+      color: var(--success-700);
+    }
+
+    /* Arrow connecting cards */
+    .flow-arrow {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex: 1;
+      min-height: 24px;
+      max-height: 48px;
+      z-index: 1;
+    }
+    .flow-arrow::after {
+      content: "";
+      width: 1.5px;
+      height: 100%;
+      background: var(--gray-200);
+      display: block;
+    }
+    .flow-item.done + .flow-arrow::after {
+      background: var(--success-500);
+    }
+
+    .nav-footer {
+      margin-top: auto;
+      padding: 16px 8px 0;
+      font-size: 11px;
+      color: var(--gray-400);
+      line-height: 1.5;
+    }
+
+    /* ============================================================
+       MAIN CHAT AREA
+       ============================================================ */
+    .main {
+      display: flex;
+      flex-direction: column;
+      background: var(--gray-50);
+      position: relative;
+      min-width: 0;
+    }
+    .main-header {
+      height: var(--header-height);
+      background: rgba(247,248,250,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--gray-150);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      z-index: 10;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .header-phase {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--gray-500);
+      background: var(--gray-100);
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+    .header-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--gray-900);
+    }
+    .header-actions {
+      display: flex;
+      gap: 6px;
+    }
+    .btn-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--gray-200);
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--gray-500);
+      transition: all 0.15s;
+      font-size: 14px;
+    }
+    .btn-icon:hover {
+      background: var(--gray-50);
+      color: var(--gray-800);
+      border-color: var(--gray-300);
+    }
+
+    .chat-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: calc(var(--header-height) + 20px) 40px 20px;
+      scroll-behavior: smooth;
+    }
+    .chat-list {
+      max-width: 680px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+      padding-bottom: 100px;
+    }
+
+    /* ============================================================
+       MESSAGES
+       ============================================================ */
+    .msg {
+      display: flex;
+      gap: 16px;
+      animation: msgAppear 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+    .msg.user { flex-direction: row-reverse; }
+    .msg-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-md);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 600;
+      background: #fff;
+      border: 1px solid var(--gray-150);
+      color: var(--gray-500);
+    }
+    .msg.bot .msg-avatar {
+      background: var(--gray-900);
+      color: #fff;
+      border-color: var(--gray-900);
+    }
+    .msg.user .msg-avatar {
+      background: var(--gray-200);
+      color: var(--gray-700);
+    }
+    .msg-body {
+      max-width: 84%;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .msg-bubble {
+      padding: 16px 22px;
+      border-radius: var(--radius-lg);
+      font-size: 15px;
+      line-height: 1.7;
+      box-shadow: var(--shadow-sm);
+    }
+    .msg.bot .msg-bubble {
+      background: var(--msg-bot-bg);
+      color: var(--gray-800);
+      border: 1px solid var(--msg-bot-border);
+      border-top-left-radius: 4px;
+    }
+    .msg.user .msg-bubble {
+      background: var(--msg-user-bg);
+      color: var(--msg-user-text);
+      border-top-right-radius: 4px;
+    }
+    .msg.system .msg-bubble {
+      background: var(--warn-50);
+      color: var(--warn-700);
+      border: 1px solid var(--warn-50);
+    }
+    .msg.error .msg-bubble {
+      background: var(--error-50);
+      color: var(--error-700);
+      border: 1px solid var(--error-50);
+    }
+
+    .msg-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .msg-time {
+      font-size: 12px;
+      color: var(--gray-400);
+      margin-top: 2px;
+    }
+    .msg.user .msg-time { text-align: right; }
+
+    /* Chips */
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: var(--radius-full);
+      font-size: 14px;
+      font-weight: 500;
+      border: 1px solid var(--gray-200);
+      background: #fff;
+      color: var(--gray-700);
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+    .chip:hover {
+      border-color: var(--gray-400);
+      color: var(--gray-900);
+      background: var(--gray-50);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-sm);
+    }
+    .chip:active { transform: translateY(0); }
+    .chip.primary {
+      background: var(--gray-900);
+      color: #fff;
+      border-color: var(--gray-900);
+    }
+    .chip.primary:hover {
+      background: var(--gray-800);
+      border-color: var(--gray-800);
+    }
+
+    /* Typing */
+    .typing {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 16px 20px;
+      background: #fff;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--gray-150);
+      box-shadow: var(--shadow-sm);
+      width: fit-content;
+    }
+    .typing-dot {
+      width: 7px;
+      height: 7px;
+      background: var(--gray-400);
+      border-radius: 50%;
+      animation: typingBounce 1.4s infinite ease-in-out both;
+    }
+    .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+    .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+    /* ============================================================
+       INPUT AREA
+       ============================================================ */
+    .input-area {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 12px 24px 18px;
+      background: linear-gradient(to top, var(--gray-50) 60%, transparent);
+    }
+    .input-box {
+      max-width: 640px;
+      margin: 0 auto;
+      background: #fff;
+      border: 1.5px solid var(--gray-200);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-md);
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      padding: 6px 6px 6px 18px;
+      min-height: var(--input-height);
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .input-box:focus-within {
+      border-color: var(--gray-400);
+      box-shadow: 0 0 0 3px var(--gray-150), var(--shadow-md);
+    }
+    .input-field {
+      flex: 1;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-size: 15px;
+      line-height: 1.6;
+      padding: 10px 0;
+      color: var(--gray-900);
+      resize: none;
+      max-height: 120px;
+      font-family: var(--font-sans);
+    }
+    .input-field::placeholder { color: var(--gray-400); }
+    .btn-send {
+      width: 42px;
+      height: 42px;
+      border-radius: var(--radius-full);
+      border: none;
+      background: var(--gray-900);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s;
+      flex-shrink: 0;
+      font-size: 14px;
+    }
+    .btn-send:hover { background: var(--gray-800); }
+    .btn-send:disabled { background: var(--gray-300); cursor: not-allowed; }
+    .input-hint {
+      text-align: center;
+      font-size: 12px;
+      color: var(--gray-400);
+      margin-top: 10px;
+    }
+
+    /* ============================================================
+       RIGHT SIDEBAR — Config Tree (Left-aligned, editable)
+       ============================================================ */
+    .sidebar {
+      background: #fff;
+      border-left: 1px solid var(--gray-150);
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .sidebar-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--gray-150);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .sidebar-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--gray-900);
+      letter-spacing: 0.3px;
+    }
+    .sidebar-sub {
+      font-size: 12px;
+      color: var(--gray-400);
+      margin-top: 3px;
+    }
+    .sidebar-badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: var(--radius-full);
+      background: var(--gray-100);
+      color: var(--gray-500);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .tree-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 14px 24px;
+    }
+    .tree {
+      font-size: 14px;
+    }
+    .tree-node { position: relative; }
+    .tree-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 9px 12px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.1s;
+      min-height: 40px;
+    }
+    .tree-row:hover { background: var(--gray-50); }
+    .tree-row:hover .tree-edit-btn {
+      opacity: 1;
+    }
+
+    /* Object node rows — colored left border for hierarchy */
+    .tree-row.obj {
+      border-left: 3px solid transparent;
+      margin-left: -3px;
+      padding-left: 12px;
+    }
+    .tree-row.obj.map   { border-left-color: #243b53; background: rgba(36, 59, 83, 0.04); }
+    .tree-row.obj.layer { border-left-color: #486581; background: rgba(72, 101, 129, 0.04); }
+    .tree-row.obj.class { border-left-color: #7b8794; background: rgba(123, 135, 148, 0.04); }
+    .tree-row.obj.style { border-left-color: #9aa5b1; background: rgba(154, 165, 177, 0.04); }
+    .tree-row.obj.web   { border-left-color: #334e68; background: rgba(51, 78, 104, 0.04); }
+    .tree-row.obj.metadata { border-left-color: #829ab1; background: rgba(130, 154, 177, 0.04); }
+
+    .tree-row.obj:hover {
+      background: var(--gray-100);
+    }
+
+    /* Object node key — stronger weight */
+    .tree-key.map { color: var(--gray-900); font-weight: 700; font-size: 15px; }
+    .tree-key.layer { color: #334e68; font-weight: 700; font-size: 14.5px; }
+    .tree-key.class { color: #486581; font-weight: 600; font-size: 14px; }
+    .tree-key.style { color: #627d98; font-weight: 600; font-size: 13.5px; }
+    .tree-key.web { color: #334e68; font-weight: 700; font-size: 14.5px; }
+    .tree-key.metadata { color: #486581; font-weight: 600; font-size: 14px; }
+    .tree-toggle {
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--gray-400);
+      font-size: 10px;
+      transition: transform 0.15s;
+      flex-shrink: 0;
+      margin-top: 3px;
+    }
+    .tree-toggle.expanded { transform: rotate(90deg); }
+    .tree-icon {
+      width: 18px;
+      text-align: center;
+      color: var(--gray-400);
+      font-size: 13px;
+      flex-shrink: 0;
+      margin-top: 3px;
+    }
+
+    /* Phase badge — now LEFT of key */
+    .phase-badge {
+      font-size: 9px;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: var(--radius-sm);
+      letter-spacing: 0.3px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .badge-ds { background: var(--phase-ds-bg); color: var(--phase-ds); }
+    .badge-st { background: var(--phase-st-bg); color: var(--phase-st); }
+    .badge-sv { background: var(--phase-sv-bg); color: var(--phase-sv); }
+    .badge-ca { background: var(--phase-ca-bg); color: var(--phase-ca); }
+
+    .tree-content {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .tree-key {
+      color: var(--gray-500);
+      font-weight: 400;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Leaf node — key and value in one row */
+    .tree-leaf-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      min-width: 0;
+    }
+    .tree-key-name {
+      color: var(--gray-600);
+      font-size: 14px;
+      font-family: var(--font-mono);
+      font-weight: 500;
+      flex-shrink: 0;
+      min-width: 80px;
+    }
+    .tree-key-name::after {
+      content: ":";
+      color: var(--gray-400);
+    }
+    .tree-value {
+      font-family: var(--font-mono);
+      font-size: 14px;
+      font-weight: 400;
+      color: var(--gray-500);
+      background: var(--gray-50);
+      padding: 3px 10px;
+      border-radius: var(--radius-sm);
+      transition: all 0.3s;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      letter-spacing: -0.2px;
+      flex: 1;
+      min-width: 0;
+    }
+    .tree-value.flash {
+      background: var(--brand-200);
+      color: var(--brand-900);
+      animation: valFlash 0.8s ease-out;
+    }
+    .tree-value.editing {
+      background: #fff;
+      border: 1.5px solid var(--brand-400);
+      box-shadow: 0 0 0 3px var(--brand-100);
+      outline: none;
+      color: var(--gray-900);
+      min-width: 120px;
+      white-space: normal;
+    }
+
+    /* Edit button — appears on hover */
+    .tree-edit-btn {
+      opacity: 0;
+      font-size: 11px;
+      color: var(--gray-400);
+      cursor: pointer;
+      padding: 2px 4px;
+      border-radius: var(--radius-sm);
+      transition: all 0.15s;
+      flex-shrink: 0;
+      border: none;
+      background: transparent;
+    }
+    .tree-edit-btn:hover {
+      color: var(--brand-600);
+      background: var(--brand-50);
+    }
+
+    .tree-children {
+      padding-left: 28px;
+      position: relative;
+    }
+    .tree-children::before {
+      content: "";
+      position: absolute;
+      left: 11px;
+      top: 0;
+      bottom: 0;
+      width: 1.5px;
+      background: var(--gray-200);
+      border-radius: 1px;
+    }
+
+    /* Empty state */
+    .empty-state {
+      padding: 48px 20px;
+      text-align: center;
+      color: var(--gray-400);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .empty-state {
+      padding: 48px 20px;
+      text-align: center;
+      color: var(--gray-400);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    /* ============================================================
+       DOWNLOAD CARDS
+       ============================================================ */
+    .download-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 4px;
+    }
+    .file-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      background: #fff;
+      border: 1px solid var(--gray-150);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-xs);
+      transition: all 0.15s;
+    }
+    .file-card:hover {
+      border-color: var(--gray-300);
+      box-shadow: var(--shadow-sm);
+      transform: translateY(-1px);
+    }
+    .file-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-md);
+      background: var(--gray-100);
+      color: var(--gray-600);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .file-info { flex: 1; min-width: 0; }
+    .file-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--gray-900);
+    }
+    .file-meta {
+      font-size: 12px;
+      color: var(--gray-400);
+      margin-top: 2px;
+    }
+    .file-actions {
+      display: flex;
+      gap: 6px;
+    }
+    .file-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--gray-200);
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--gray-500);
+      cursor: pointer;
+      transition: all 0.12s;
+      font-size: 13px;
+    }
+    .file-btn:hover {
+      background: var(--gray-50);
+      color: var(--gray-800);
+      border-color: var(--gray-300);
+    }
+
+    /* ============================================================
+       ANIMATIONS
+       ============================================================ */
+    @keyframes msgAppear {
+      from { opacity: 0; transform: translateY(12px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes valFlash {
+      0% { background: var(--brand-200); color: var(--brand-900); }
+      100% { background: var(--gray-50); color: var(--gray-500); }
+    }
+    @keyframes typingBounce {
+      0%, 80%, 100% { transform: scale(0.6); opacity: 0.5; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--gray-200); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--gray-300); }
+
+    .hidden { display: none !important; }
+
+    /* Start overlay */
+    .start-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(31,41,51,0.45);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(3px);
+    }
+    .start-card {
+      background: #fff;
+      border-radius: var(--radius-xl);
+      padding: 36px;
+      max-width: 420px;
+      width: 90%;
+      box-shadow: var(--shadow-lg);
+      text-align: center;
+    }
+    .start-card h2 {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--gray-900);
+      letter-spacing: -0.3px;
+    }
+    .start-card p {
+      color: var(--gray-500);
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+    .start-options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .start-btn {
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      border: 1.5px solid var(--gray-150);
+      background: #fff;
+      color: var(--gray-800);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .start-btn:hover {
+      border-color: var(--gray-400);
+      background: var(--gray-50);
+    }
+    .start-btn .arrow {
+      margin-left: auto;
+      color: var(--gray-400);
+    }
+
+    /* Responsive */
+    @media (max-width: 1100px) {
+      .app { grid-template-columns: var(--nav-width) 1fr; }
+      .sidebar { display: none; }
+    }
+    @media (max-width: 700px) {
+      .app { grid-template-columns: 1fr; }
+      .left-nav { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app">
+  <!-- ======================== LEFT NAV (Flow Steps) ======================== -->
+  <nav class="left-nav">
+    <div class="nav-brand">
+      <div class="nav-brand-text">MapGuide</div>
+      <div class="nav-brand-sub">配置助手 v0.1</div>
+    </div>
+
+    <div class="flow-list" id="flowList">
+      <!-- Flow items injected by JS -->
+    </div>
+
+    <div class="nav-footer">
+      选择步骤预览对应阶段<br>按 Enter 发送消息
+    </div>
+  </nav>
+
+  <!-- ======================== MAIN CHAT ======================== -->
+  <section class="main">
+    <header class="main-header">
+      <div class="header-left">
+        <span class="header-phase" id="headerPhase">GREETING</span>
+        <span class="header-title" id="headerTitle">开始新配置</span>
+      </div>
+      <div class="header-actions">
+        <button class="btn-icon" title="重新开始" onclick="app.restart()">↺</button>
+      </div>
+    </header>
+
+    <div class="chat-scroll" id="chatScroll">
+      <div class="chat-list" id="chatList"></div>
+    </div>
+
+    <div class="input-area">
+      <div class="input-box">
+        <textarea class="input-field" id="inputField" rows="1" placeholder="描述你的需求，例如：我想把 PostGIS 的 roads 表发布成 WMS..."></textarea>
+        <button class="btn-send" id="sendBtn" onclick="app.sendUserMessage()">➤</button>
+      </div>
+      <div class="input-hint">按 Enter 发送，Shift + Enter 换行</div>
+    </div>
+  </section>
+
+  <!-- ======================== RIGHT SIDEBAR ======================== -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div>
+        <div class="sidebar-title">配置结构</div>
+        <div class="sidebar-sub">点击值可直接编辑</div>
+      </div>
+      <span class="sidebar-badge" id="sidebarBadge">MAPFILE</span>
+    </div>
+
+    <div class="tree-scroll">
+      <div class="tree" id="configTree">
+        <div class="empty-state">暂无配置参数<br>开始对话后将在这里显示</div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<!-- ======================== START OVERLAY ======================== -->
+<div class="start-overlay" id="startOverlay">
+  <div class="start-card">
+    <h2>MapGuide</h2>
+    <p>选择左侧流程中的步骤，体验不同阶段的交互原型</p>
+    <div class="start-options">
+      <button class="start-btn" onclick="app.dismissOverlay('greeting')">
+        <span>🚀</span> 从零开始 — Greeting 阶段
+        <span class="arrow">→</span>
+      </button>
+      <button class="start-btn" onclick="app.dismissOverlay('datasource')">
+        <span>📁</span> Shapefile → WMS 完整流程
+        <span class="arrow">→</span>
+      </button>
+      <button class="start-btn" onclick="app.dismissOverlay('review')">
+        <span>✅</span> 直接查看 Review / Done 状态
+        <span class="arrow">→</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   SCENARIOS DATA
+   ============================================================ */
+const SCENARIOS = {
+  greeting: {
+    phase: 'greeting',
+    phaseLabel: 'GREETING',
+    headerTitle: '开始新配置',
+    messages: [
+      { role: 'bot', text: '你好，我是 MapGuide。\n\n我可以帮助你生成 Mapfile 和 MapCache XML 配置文件。请告诉我你想创建什么类型的服务？', actions: [
+        { label: 'WMS 地图服务', value: 'wms' },
+        { label: 'WFS 要素服务', value: 'wfs' },
+        { label: '瓦片缓存服务', value: 'tile' }
+      ]}
+    ],
+    params: {}
+  },
+
+  datasource: {
+    phase: 'datasource',
+    phaseLabel: 'DATASOURCE',
+    headerTitle: '配置数据源',
+    messages: [
+      { role: 'bot', text: '你好，我是 MapGuide。我可以帮助你生成 Mapfile 和 MapCache XML 配置文件。请告诉我你想创建什么类型的服务？', actions: [
+        { label: 'WMS 地图服务', value: 'wms' },
+        { label: 'WFS 要素服务', value: 'wfs' },
+        { label: '瓦片缓存服务', value: 'tile' }
+      ]},
+      { role: 'user', text: '我想把本地的 roads.shp 发布成 WMS' },
+      { role: 'bot', text: '收到，Shapefile 数据源。请提供文件完整路径。' },
+      { role: 'user', text: '/data/roads.shp' },
+      { role: 'bot', text: '已记录。图层名称用什么？（建议英文）' },
+      { role: 'user', text: 'roads' },
+      { role: 'bot', text: '数据源配置完成。\n\n接下来配置样式。roads 是什么几何类型？', actions: [
+        { label: '点', value: 'point' },
+        { label: '线', value: 'line' },
+        { label: '面', value: 'polygon' }
+      ]}
+    ],
+    params: {
+      map: { name: 'untitled_map' },
+      layers: [{
+        name: 'roads', type: 'line', connectiontype: 'shapefile',
+        data: '/data/roads.shp', projection: 'init=epsg:3857'
+      }]
+    }
+  },
+
+  style: {
+    phase: 'style',
+    phaseLabel: 'STYLE',
+    headerTitle: '配置样式',
+    messages: [
+      { role: 'bot', text: '数据源配置完成。接下来配置样式。roads 是什么几何类型？', actions: [
+        { label: '点', value: 'point' },
+        { label: '线', value: 'line' },
+        { label: '面', value: 'polygon' }
+      ]},
+      { role: 'user', text: '线' },
+      { role: 'bot', text: '好的，线要素。请选择线条颜色：', actions: [
+        { label: '红色', value: 'red' },
+        { label: '蓝色', value: 'blue' },
+        { label: '黑色', value: 'black' },
+        { label: '使用默认样式', value: 'default' }
+      ]},
+      { role: 'user', text: '红色，宽度 2' },
+      { role: 'bot', text: '样式配置完成。\n\n接下来配置服务参数。服务名称用什么？' }
+    ],
+    params: {
+      map: { name: 'untitled_map' },
+      layers: [{
+        name: 'roads', type: 'line', connectiontype: 'shapefile',
+        data: '/data/roads.shp', projection: 'init=epsg:3857',
+        classes: [{
+          name: 'default',
+          styles: [{ color: [255, 0, 0], width: 2 }]
+        }]
+      }]
+    }
+  },
+
+  service: {
+    phase: 'service',
+    phaseLabel: 'SERVICE',
+    headerTitle: '配置服务',
+    messages: [
+      { role: 'bot', text: '样式配置完成。接下来配置服务参数。服务名称用什么？' },
+      { role: 'user', text: 'city_map' },
+      { role: 'bot', text: '服务名称已记录。输出格式选择：', actions: [
+        { label: 'PNG', value: 'png' },
+        { label: 'JPEG', value: 'jpeg' },
+        { label: 'GeoTIFF', value: 'geotiff' }
+      ]},
+      { role: 'user', text: 'PNG 就行' },
+      { role: 'bot', text: '服务参数配置完成。\n\n是否需要生成 MapCache 瓦片缓存？', actions: [
+        { label: '添加磁盘缓存', value: 'disk' },
+        { label: '跳过缓存', value: 'skip' }
+      ]}
+    ],
+    params: {
+      map: {
+        name: 'city_map', imagetype: 'png',
+        web: {
+          metadata: {
+            'wms_title': 'City Map WMS',
+            'wms_onlineresource': 'http://localhost/cgi-bin/mapserv?map=/data/city_map.map',
+            'wms_enable_request': '*'
+          }
+        }
+      },
+      layers: [{
+        name: 'roads', type: 'line', connectiontype: 'shapefile',
+        data: '/data/roads.shp', projection: 'init=epsg:3857',
+        classes: [{
+          name: 'default',
+          styles: [{ color: [255, 0, 0], width: 2 }]
+        }]
+      }]
+    }
+  },
+
+  review: {
+    phase: 'review',
+    phaseLabel: 'REVIEW',
+    headerTitle: '确认配置',
+    messages: [
+      { role: 'bot', text: '配置摘要：\n\n数据源：Shapefile /data/roads.shp\n样式：线，红色，宽度 2\n服务：WMS，名称 city_map，输出 PNG\n\n确认生成吗？', actions: [
+        { label: '确认生成', value: 'generate', primary: true },
+        { label: '修改数据源', value: 'edit_ds' },
+        { label: '修改样式', value: 'edit_st' },
+        { label: '修改服务', value: 'edit_sv' }
+      ]}
+    ],
+    params: {
+      map: {
+        name: 'city_map', imagetype: 'png',
+        web: {
+          metadata: {
+            'wms_title': 'City Map WMS',
+            'wms_onlineresource': 'http://localhost/cgi-bin/mapserv?map=/data/city_map.map',
+            'wms_enable_request': '*'
+          }
+        }
+      },
+      layers: [{
+        name: 'roads', type: 'line', connectiontype: 'shapefile',
+        data: '/data/roads.shp', projection: 'init=epsg:3857',
+        classes: [{
+          name: 'default',
+          styles: [{ color: [255, 0, 0], width: 2 }]
+        }]
+      }],
+      cache: { type: 'disk', base: '/data/cache' }
+    }
+  },
+
+  done: {
+    phase: 'done',
+    phaseLabel: 'DONE',
+    headerTitle: '配置完成',
+    messages: [
+      { role: 'bot', text: '配置已生成。点击下方卡片可预览或下载文件。' },
+      { role: 'bot', type: 'files' },
+      { role: 'bot', text: '要重新开始新任务吗？', actions: [
+        { label: '新任务', value: 'restart', primary: true }
+      ]}
+    ],
+    params: {
+      map: {
+        name: 'city_map', imagetype: 'png',
+        web: {
+          metadata: {
+            'wms_title': 'City Map WMS',
+            'wms_onlineresource': 'http://localhost/cgi-bin/mapserv?map=/data/city_map.map',
+            'wms_enable_request': '*'
+          }
+        }
+      },
+      layers: [{
+        name: 'roads', type: 'line', connectiontype: 'shapefile',
+        data: '/data/roads.shp', projection: 'init=epsg:3857',
+        classes: [{
+          name: 'default',
+          styles: [{ color: [255, 0, 0], width: 2 }]
+        }]
+      }],
+      cache: { type: 'disk', base: '/data/cache' }
+    }
+  },
+
+  error: {
+    phase: 'datasource',
+    phaseLabel: 'DATASOURCE',
+    headerTitle: '配置数据源',
+    messages: [
+      { role: 'bot', text: '请提供 PostGIS 连接信息，格式示例：\nhost=localhost dbname=gis user=postgres' },
+      { role: 'user', text: 'host=localhost dbname=gis' },
+      { role: 'system', text: '参数验证错误：connectiontype=postgis 时必须同时提供 connection 和 data。' },
+      { role: 'bot', text: '还需要 DATA 参数（例如：geom from roads）。请补充。' }
+    ],
+    params: {
+      map: { name: 'untitled_map' },
+      layers: [{
+        name: 'roads', type: 'line', connectiontype: 'postgis',
+        connection: 'host=localhost dbname=gis',
+        projection: 'init=epsg:3857'
+      }]
+    },
+    errors: ['缺少 data 参数']
+  }
+};
+
+const FLOW_STEPS = [
+  { key: 'greeting', label: '问候', num: 1 },
+  { key: 'datasource', label: '数据源', num: 2 },
+  { key: 'style', label: '样式', num: 3 },
+  { key: 'service', label: '服务', num: 4 },
+  { key: 'review', label: '确认', num: 5 },
+  { key: 'done', label: '完成', num: 6 },
+];
+
+/* ============================================================
+   APP LOGIC
+   ============================================================ */
+const app = {
+  currentPhase: 'greeting',
+  currentScenario: 'greeting',
+
+  init() {
+    this.renderFlowNav();
+    this.bindInput();
+  },
+
+  bindInput() {
+    const field = document.getElementById('inputField');
+    field.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        this.sendUserMessage();
+      }
+    });
+    field.addEventListener('input', () => {
+      field.style.height = 'auto';
+      field.style.height = Math.min(field.scrollHeight, 120) + 'px';
+    });
+  },
+
+  renderFlowNav() {
+    const list = document.getElementById('flowList');
+    list.innerHTML = '';
+    FLOW_STEPS.forEach((step, idx) => {
+      const item = document.createElement('div');
+      item.className = 'flow-item';
+      item.dataset.scenario = step.key;
+      item.onclick = () => this.loadScenario(step.key);
+      item.innerHTML = `
+        <div class="flow-card">
+          <span class="flow-num">${step.num}</span>
+          <span class="flow-label">${step.label}</span>
+        </div>
+      `;
+      list.appendChild(item);
+
+      // Arrow between items (not after last)
+      if (idx < FLOW_STEPS.length - 1) {
+        const arrow = document.createElement('div');
+        arrow.className = 'flow-arrow';
+        list.appendChild(arrow);
+      }
+    });
+  },
+
+  dismissOverlay(scenario) {
+    document.getElementById('startOverlay').style.display = 'none';
+    this.loadScenario(scenario);
+  },
+
+  restart() {
+    this.loadScenario('greeting');
+  },
+
+  loadScenario(name) {
+    const data = SCENARIOS[name];
+    if (!data) return;
+
+    this.currentPhase = data.phase;
+    this.currentScenario = name;
+
+    // Update flow nav
+    const order = FLOW_STEPS.findIndex(s => s.key === name);
+    document.querySelectorAll('.flow-item').forEach((item, idx) => {
+      item.classList.remove('active', 'done');
+      if (idx === order) item.classList.add('active');
+      else if (idx < order) item.classList.add('done');
+    });
+    // Update arrows
+    document.querySelectorAll('.flow-arrow').forEach((arrow, idx) => {
+      arrow.style.display = '';
+      if (idx < order) {
+        arrow.querySelector(':after')?.style?.setProperty?.('background', 'var(--success-500)');
+      }
+    });
+
+    // Update header
+    document.getElementById('headerPhase').textContent = data.phaseLabel;
+    document.getElementById('headerTitle').textContent = data.headerTitle;
+
+    // Render chat
+    this.renderChat(data.messages);
+
+    // Render config tree
+    this.renderTree(data.params, data.errors || []);
+  },
+
+  renderChat(messages) {
+    const list = document.getElementById('chatList');
+    list.innerHTML = '';
+
+    messages.forEach((msg, idx) => {
+      if (msg.type === 'files') {
+        list.appendChild(this.createFileCardMessage());
+        return;
+      }
+      const isLastBot = idx === messages.length - 1 && msg.role === 'bot';
+      const el = this.createMessageElement(msg, isLastBot);
+      list.appendChild(el);
+    });
+
+    this.scrollToBottom();
+  },
+
+  createMessageElement(msg, animateText = false) {
+    const wrap = document.createElement('div');
+    wrap.className = `msg ${msg.role}`;
+
+    const avatarText = msg.role === 'user' ? 'U' : msg.role === 'system' ? '!' : 'M';
+
+    let bubbleContent = '';
+    if (animateText) {
+      bubbleContent = '<span class="typing-text"></span>';
+    } else {
+      bubbleContent = msg.text.replace(/\n/g, '<br>');
+    }
+
+    wrap.innerHTML = `
+      <div class="msg-avatar">${avatarText}</div>
+      <div class="msg-body">
+        <div class="msg-bubble">${bubbleContent}</div>
+        <div class="msg-actions"></div>
+        <div class="msg-time">${new Date().toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit'})}</div>
+      </div>
+    `;
+
+    const actionsEl = wrap.querySelector('.msg-actions');
+    if (msg.actions) {
+      msg.actions.forEach(action => {
+        const chip = document.createElement('button');
+        chip.className = `chip ${action.primary ? 'primary' : ''}`;
+        chip.textContent = action.label;
+        chip.onclick = () => this.handleAction(action);
+        actionsEl.appendChild(chip);
+      });
+    }
+
+    if (animateText && msg.text) {
+      const span = wrap.querySelector('.typing-text');
+      this.typeText(span, msg.text, 12);
+    }
+
+    return wrap;
+  },
+
+  createFileCardMessage() {
+    const wrap = document.createElement('div');
+    wrap.className = 'msg bot';
+    wrap.innerHTML = `
+      <div class="msg-avatar">M</div>
+      <div class="msg-body">
+        <div class="msg-bubble" style="background:transparent; border:none; padding:0; box-shadow:none;">
+          <div class="download-cards">
+            <div class="file-card">
+              <div class="file-icon">M</div>
+              <div class="file-info">
+                <div class="file-name">city_roads.map</div>
+                <div class="file-meta">Mapfile · 2.4 KB</div>
+              </div>
+              <div class="file-actions">
+                <button class="file-btn" title="复制">📋</button>
+                <button class="file-btn" title="下载">⬇</button>
+              </div>
+            </div>
+            <div class="file-card">
+              <div class="file-icon">C</div>
+              <div class="file-info">
+                <div class="file-name">city_roads_cache.xml</div>
+                <div class="file-meta">MapCache XML · 1.1 KB</div>
+              </div>
+              <div class="file-actions">
+                <button class="file-btn" title="复制">📋</button>
+                <button class="file-btn" title="下载">⬇</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="msg-time">${new Date().toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit'})}</div>
+      </div>
+    `;
+    return wrap;
+  },
+
+  typeText(el, text, speed) {
+    let i = 0;
+    el.textContent = '';
+    const timer = setInterval(() => {
+      if (i < text.length) {
+        el.textContent += text.charAt(i);
+        i++;
+        this.scrollToBottom();
+      } else {
+        el.innerHTML = text.replace(/\n/g, '<br>');
+        clearInterval(timer);
+      }
+    }, speed);
+  },
+
+  handleAction(action) {
+    const map = {
+      'wms': 'datasource', 'wfs': 'datasource', 'tile': 'datasource',
+      'point': 'style', 'line': 'style', 'polygon': 'style',
+      'red': 'service', 'blue': 'service', 'black': 'service', 'default': 'service',
+      'png': 'service', 'jpeg': 'service', 'geotiff': 'service',
+      'disk': 'review', 'skip': 'review',
+      'generate': 'done', 'restart': 'greeting'
+    };
+    const next = map[action.value];
+    if (next) this.showTyping(next);
+  },
+
+  showTyping(nextScenario) {
+    const list = document.getElementById('chatList');
+    const typing = document.createElement('div');
+    typing.className = 'msg bot';
+    typing.innerHTML = `
+      <div class="msg-avatar">M</div>
+      <div class="msg-body">
+        <div class="typing"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>
+      </div>
+    `;
+    list.appendChild(typing);
+    this.scrollToBottom();
+
+    setTimeout(() => {
+      this.loadScenario(nextScenario);
+    }, 600);
+  },
+
+  sendUserMessage() {
+    const field = document.getElementById('inputField');
+    const text = field.value.trim();
+    if (!text) return;
+
+    const list = document.getElementById('chatList');
+    list.appendChild(this.createMessageElement({ role: 'user', text }));
+    field.value = '';
+    field.style.height = 'auto';
+    this.scrollToBottom();
+
+    const responses = {
+      greeting: { text: '了解了。请告诉我数据源类型：Shapefile、PostGIS 还是 GeoTIFF？', actions: [
+        { label: 'Shapefile' }, { label: 'PostGIS' }, { label: 'GeoTIFF' }
+      ]},
+      datasource: { text: '信息已记录。还需要补充什么吗？' },
+      style: { text: '收到。是否还有其他样式要求？' },
+      service: { text: '服务参数已更新。' },
+      review: { text: '请在左侧流程中选择具体阶段进行修改，或确认生成。' }
+    };
+    const resp = responses[this.currentPhase] || { text: '收到。' };
+
+    setTimeout(() => this.showTypingForResponse(resp), 400);
+  },
+
+  showTypingForResponse(resp) {
+    const list = document.getElementById('chatList');
+    const typing = document.createElement('div');
+    typing.className = 'msg bot';
+    typing.innerHTML = `
+      <div class="msg-avatar">M</div>
+      <div class="msg-body">
+        <div class="typing"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>
+      </div>
+    `;
+    list.appendChild(typing);
+    this.scrollToBottom();
+
+    setTimeout(() => {
+      typing.remove();
+      list.appendChild(this.createMessageElement({ role: 'bot', text: resp.text, actions: resp.actions }));
+      this.scrollToBottom();
+    }, 700);
+  },
+
+  scrollToBottom() {
+    document.getElementById('chatScroll').scrollTop = document.getElementById('chatScroll').scrollHeight;
+  },
+
+  renderTree(params, errors) {
+    const tree = document.getElementById('configTree');
+    if (!params || Object.keys(params).length === 0) {
+      tree.innerHTML = '<div class="empty-state">暂无配置参数<br>开始对话后将在这里显示</div>';
+      return;
+    }
+
+    const errorFields = new Set();
+    if (errors.length > 0 && errors.some(e => e.includes('data'))) {
+      errorFields.add('layers.0.data');
+    }
+
+    let html = '';
+
+    if (params.map) {
+      html += this.treeNode('MAP', '', 'map', true, '', [
+        params.map.name && this.treeLeaf('name', params.map.name),
+        params.map.imagetype && this.treeLeaf('imagetype', params.map.imagetype),
+        params.map.web && this.treeNode('WEB', '', 'web', true, 'service', [
+          params.map.web.metadata && this.treeNode('METADATA', '', 'metadata', true, 'service',
+            Object.entries(params.map.web.metadata).map(([k, v]) => this.treeLeaf(k, v)))
+        ])
+      ].filter(Boolean));
+    }
+
+    if (params.layers) {
+      params.layers.forEach((layer, i) => {
+        const layerChildren = [
+          this.treeLeaf('name', layer.name, errorFields.has(`layers.${i}.name`) ? '⚠ 缺失' : null),
+          this.treeLeaf('type', layer.type, errorFields.has(`layers.${i}.type`) ? '⚠ 缺失' : null),
+          layer.connectiontype && this.treeLeaf('connectiontype', layer.connectiontype),
+          layer.connection && this.treeLeaf('connection', layer.connection),
+          layer.data !== undefined && this.treeLeaf('data', layer.data, errorFields.has(`layers.${i}.data`) ? '⚠ 缺失' : null),
+          layer.projection && this.treeLeaf('projection', layer.projection),
+        ].filter(Boolean);
+
+        if (layer.classes) {
+          layer.classes.forEach((cls) => {
+            const classChildren = [];
+            if (cls.name) classChildren.push(this.treeLeaf('name', cls.name));
+            if (cls.styles) {
+              cls.styles.forEach((style) => {
+                const styleChildren = [
+                  style.color && this.treeLeaf('color', Array.isArray(style.color) ? style.color.join(', ') : style.color),
+                  style.width !== undefined && this.treeLeaf('width', String(style.width)),
+                  style.symbol && this.treeLeaf('symbol', style.symbol),
+                  style.size !== undefined && this.treeLeaf('size', String(style.size)),
+                  style.outlinecolor && this.treeLeaf('outlinecolor', Array.isArray(style.outlinecolor) ? style.outlinecolor.join(', ') : style.outlinecolor),
+                ].filter(Boolean);
+                classChildren.push(this.treeNode('STYLE', '', 'style', true, 'style', styleChildren));
+              });
+            }
+            layerChildren.push(this.treeNode('CLASS', '', 'class', true, 'style', classChildren));
+          });
+        }
+
+        html += this.treeNode('LAYER', '', 'layer', true, 'datasource', layerChildren);
+      });
+    }
+
+    if (params.cache) {
+      html += this.treeNode('MapCache', '', '', true, 'cache', [
+        this.treeLeaf('type', params.cache.type),
+        this.treeLeaf('base', params.cache.base)
+      ]);
+    }
+
+    tree.innerHTML = html;
+
+    requestAnimationFrame(() => {
+      document.querySelectorAll('.tree-value').forEach(el => {
+        el.classList.add('flash');
+        setTimeout(() => el.classList.remove('flash'), 800);
+      });
+    });
+
+    // Bind toggles
+    tree.querySelectorAll('.tree-toggle').forEach(t => {
+      t.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const row = t.closest('.tree-row');
+        const children = row.nextElementSibling;
+        if (children && children.classList.contains('tree-children')) {
+          const hidden = children.classList.toggle('hidden');
+          t.classList.toggle('expanded', !hidden);
+          t.textContent = hidden ? '▶' : '▼';
+        }
+      });
+    });
+
+    // Bind edit buttons
+    tree.querySelectorAll('.tree-edit-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const valueEl = btn.previousElementSibling;
+        if (valueEl && valueEl.classList.contains('tree-value')) {
+          this.makeEditable(valueEl);
+        }
+      });
+    });
+  },
+
+  treeNode(key, value, keyClass, expanded, phase, children) {
+    const badge = phase ? `<span class="phase-badge badge-${phase.substring(0,2)}">${this.phaseLabel(phase)}</span>` : '';
+    const toggle = children && children.length
+      ? '<span class="tree-toggle expanded">▼</span>'
+      : '<span class="tree-toggle" style="visibility:hidden">▼</span>';
+    const childHtml = children && children.length ? `<div class="tree-children">${children.join('')}</div>` : '';
+    const objClass = keyClass ? `obj ${keyClass}` : '';
+    return `
+      <div class="tree-node">
+        <div class="tree-row ${objClass}">
+          ${toggle}
+          <span class="tree-icon">${this.iconFor(keyClass)}</span>
+          <div class="tree-content">
+            <div class="tree-key ${keyClass}">${badge}${key}</div>
+          </div>
+        </div>
+        ${childHtml}
+      </div>
+    `;
+  },
+
+  treeLeaf(key, value, error) {
+    const display = error || value;
+    const errorStyle = error ? 'background:var(--error-50);color:var(--error-700)' : '';
+    return `
+      <div class="tree-row" style="padding-left:28px">
+        <span class="tree-toggle" style="visibility:hidden">▼</span>
+        <span class="tree-icon" style="visibility:hidden">·</span>
+        <div class="tree-content">
+          <div class="tree-leaf-row">
+            <span class="tree-key-name">${key}</span>
+            <span class="tree-value" style="${errorStyle}" data-original="${this.escape(String(display))}">${this.escape(String(display))}</span>
+            <button class="tree-edit-btn" title="编辑">✎</button>
+          </div>
+        </div>
+      </div>
+    `;
+  },
+
+  makeEditable(el) {
+    if (el.isContentEditable) return;
+    el.contentEditable = true;
+    el.classList.add('editing');
+    el.focus();
+
+    const save = () => {
+      el.contentEditable = false;
+      el.classList.remove('editing');
+      el.dataset.original = el.textContent;
+      el.classList.add('flash');
+      setTimeout(() => el.classList.remove('flash'), 800);
+    };
+
+    const cancel = () => {
+      el.contentEditable = false;
+      el.classList.remove('editing');
+      el.textContent = el.dataset.original;
+    };
+
+    el.addEventListener('blur', save, { once: true });
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        el.blur();
+      }
+      if (e.key === 'Escape') {
+        cancel();
+      }
+    }, { once: true });
+  },
+
+  phaseLabel(phase) {
+    const labels = { datasource: '数据源', style: '样式', service: '服务', cache: '缓存' };
+    return labels[phase] || phase;
+  },
+
+  iconFor(cls) {
+    const map = { map: '◆', layer: '▪', class: '○', style: '●', web: '◈', metadata: '□' };
+    return map[cls] || '·';
+  },
+
+  escape(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+};
+
+app.init();
+</script>
+</body>
+</html>

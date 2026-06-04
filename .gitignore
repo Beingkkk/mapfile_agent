@@ -1,0 +1,11 @@
+# 资源文档目录（调研材料、需求文档等，不纳入版本控制）
+Document/Resources/
+
+# 本地 Claude 配置（含环境路径等机器相关配置）
+CLAUDE.local.md
+
+# CodeGraph 索引目录（自动生成，无需提交）
+.codegraph/
+
+# 本地配置文件（含敏感信息或环境相关配置）
+config.json
