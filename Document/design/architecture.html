@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MapGuide 模块架构图</title>
+<style>
+  :root {
+    --bg: #f5f7fa;
+    --card-bg: #fff;
+    --border: #e0e6ed;
+    --text: #2c3e50;
+    --text-sec: #7b8794;
+    --electron: #3b82f6;
+    --electron-bg: #eff6ff;
+    --frontend: #10b981;
+    --frontend-bg: #ecfdf5;
+    --backend: #f59e0b;
+    --backend-bg: #fffbeb;
+    --data: #64748b;
+    --data-bg: #f1f5f9;
+    --llm: #8b5cf6;
+    --llm-bg: #f5f3ff;
+    --cache: #ec4899;
+    --cache-bg: #fdf2f8;
+    --arrow: #94a3b8;
+    --shadow: 0 2px 8px rgba(0,0,0,0.06);
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    padding: 40px 20px;
+  }
+  h1 {
+    text-align: center;
+    font-size: 28px;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+  .subtitle {
+    text-align: center;
+    color: var(--text-sec);
+    margin-bottom: 40px;
+    font-size: 14px;
+  }
+  .section {
+    max-width: 1200px;
+    margin: 0 auto 48px;
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 28px 32px;
+  }
+  .section-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-title .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  /* ── Runtime Architecture ── */
+  .runtime-wrap {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .runtime-layer {
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    position: relative;
+  }
+  .runtime-layer .layer-label {
+    position: absolute;
+    top: -12px;
+    left: 20px;
+    background: var(--card-bg);
+    padding: 0 10px;
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text-sec);
+  }
+  .runtime-layer.electron { border-color: var(--electron); background: var(--electron-bg); }
+  .runtime-layer.electron .layer-label { color: var(--electron); }
+  .runtime-layer.renderer { border-color: var(--frontend); background: var(--frontend-bg); }
+  .runtime-layer.renderer .layer-label { color: var(--frontend); }
+  .runtime-layer.backend { border-color: var(--backend); background: var(--backend-bg); }
+  .runtime-layer.backend .layer-label { color: var(--backend); }
+
+  .layer-content {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    align-items: stretch;
+  }
+  .layer-box {
+    flex: 1;
+    min-width: 240px;
+    background: var(--card-bg);
+    border-radius: 8px;
+    padding: 16px;
+    border: 1px solid var(--border);
+  }
+  .layer-box h4 {
+    font-size: 14px;
+    margin-bottom: 10px;
+    color: var(--text);
+  }
+  .layer-box ul {
+    list-style: none;
+    font-size: 13px;
+    color: var(--text-sec);
+  }
+  .layer-box li {
+    padding: 3px 0;
+    padding-left: 16px;
+    position: relative;
+  }
+  .layer-box li::before {
+    content: "›";
+    position: absolute;
+    left: 4px;
+    color: var(--arrow);
+  }
+
+  .arrow-down {
+    text-align: center;
+    font-size: 24px;
+    color: var(--arrow);
+    margin: -6px 0;
+  }
+  .arrow-bidirect {
+    text-align: center;
+    font-size: 20px;
+    color: var(--arrow);
+    margin: -6px 0;
+  }
+
+  /* ── Class Diagram ── */
+  .class-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+  }
+  .class-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    border-left: 4px solid var(--data);
+  }
+  .class-card.core { border-left-color: var(--backend); }
+  .class-card.llm { border-left-color: var(--llm); }
+  .class-card.data { border-left-color: var(--data); }
+  .class-card.cache { border-left-color: var(--cache); }
+  .class-card h4 {
+    font-size: 14px;
+    margin-bottom: 8px;
+    font-family: "SF Mono", Monaco, monospace;
+  }
+  .class-card.core h4 { color: var(--backend); }
+  .class-card.llm h4 { color: var(--llm); }
+  .class-card.data h4 { color: var(--data); }
+  .class-card.cache h4 { color: var(--cache); }
+  .class-card ul {
+    list-style: none;
+    font-size: 12.5px;
+    color: var(--text-sec);
+  }
+  .class-card li {
+    padding: 2px 0;
+    padding-left: 14px;
+    position: relative;
+  }
+  .class-card li::before {
+    content: "·";
+    position: absolute;
+    left: 2px;
+    color: var(--arrow);
+  }
+  .relation-line {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 12px 0;
+    font-size: 12px;
+    color: var(--text-sec);
+  }
+  .relation-line .line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+    max-width: 100px;
+  }
+
+  /* ── Frontend Component Tree ── */
+  .comp-tree {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .comp-col {
+    flex: 1;
+    min-width: 300px;
+  }
+  .comp-box {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin-bottom: 12px;
+  }
+  .comp-box .comp-name {
+    font-family: "SF Mono", Monaco, monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--frontend);
+    margin-bottom: 6px;
+  }
+  .comp-box .comp-desc {
+    font-size: 12px;
+    color: var(--text-sec);
+  }
+  .comp-children {
+    padding-left: 24px;
+    border-left: 2px dashed var(--border);
+    margin-left: 8px;
+  }
+  .editor-badge {
+    display: inline-block;
+    background: var(--frontend-bg);
+    border: 1px solid #a7f3d0;
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 11px;
+    color: var(--frontend);
+    margin: 2px 4px 2px 0;
+  }
+
+  /* ── Data Flow ── */
+  .flow-wrap {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+    gap: 16px;
+  }
+  .flow-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .flow-card h4 {
+    font-size: 13px;
+    margin-bottom: 10px;
+    color: var(--text);
+  }
+  .flow-steps {
+    font-size: 12px;
+    color: var(--text-sec);
+  }
+  .flow-steps .step {
+    padding: 4px 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .flow-steps .step-num {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-sec);
+    flex-shrink: 0;
+  }
+  .flow-steps .step.ws {
+    color: var(--llm);
+    font-weight: 500;
+  }
+  .flow-steps .step.ws .step-num {
+    background: var(--llm-bg);
+    color: var(--llm);
+  }
+  .flow-steps .step.backend {
+    color: var(--backend);
+  }
+  .flow-steps .step.backend .step-num {
+    background: var(--backend-bg);
+    color: var(--backend);
+  }
+  .flow-steps .step.frontend {
+    color: var(--frontend);
+  }
+  .flow-steps .step.frontend .step-num {
+    background: var(--frontend-bg);
+    color: var(--frontend);
+  }
+
+  /* ── Module Dependencies ── */
+  .dep-wrap {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .dep-col {
+    flex: 1;
+    min-width: 220px;
+  }
+  .dep-box {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 10px;
+  }
+  .dep-box h4 {
+    font-size: 13px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .dep-box ul {
+    list-style: none;
+    font-size: 12px;
+    color: var(--text-sec);
+  }
+  .dep-box li {
+    padding: 2px 0;
+    padding-left: 12px;
+    position: relative;
+  }
+  .dep-box li::before {
+    content: "→";
+    position: absolute;
+    left: 0;
+    color: var(--arrow);
+    font-size: 10px;
+  }
+  .dep-arrow {
+    text-align: center;
+    font-size: 20px;
+    color: var(--arrow);
+    margin: 4px 0;
+  }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    justify-content: center;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-sec);
+  }
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+  }
+
+  @media (max-width: 768px) {
+    body { padding: 20px 12px; }
+    .section { padding: 18px 16px; }
+    .layer-content { flex-direction: column; }
+    .comp-tree { flex-direction: column; }
+    .dep-wrap { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<h1>MapGuide 模块架构图</h1>
+<p class="subtitle">版本 v2 | 设计日期：2026-06-05 | 对应文档：需求输入.md + 技术细节.md</p>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- 1. 运行时架构 -->
+<!-- ═══════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">
+    <span class="dot" style="background:var(--electron)"></span>
+    1. 运行时架构（三层）
+  </div>
+
+  <!-- Electron Main -->
+  <div class="runtime-layer electron">
+    <div class="layer-label">Electron Main (Node.js)</div>
+    <div class="layer-content">
+      <div class="layer-box">
+        <h4>🪟 窗口管理</h4>
+        <ul>
+          <li>创建 BrowserWindow</li>
+          <li>加载 Vue 渲染进程</li>
+          <li>管理窗口生命周期</li>
+        </ul>
+      </div>
+      <div class="layer-box">
+        <h4>⚙️ 后端子进程</h4>
+        <ul>
+          <li>spawn Python 子进程</li>
+          <li>dev: 直接启动 python</li>
+          <li>prod: PyInstaller exe</li>
+          <li>监听子进程 stdout/stderr</li>
+          <li>崩溃检测与提示</li>
+        </ul>
+      </div>
+      <div class="layer-box">
+        <h4>📂 文件操作</h4>
+        <ul>
+          <li>dialog.showOpenDialog (*.map)</li>
+          <li>读取文件内容 → IPC → 渲染进程</li>
+          <li>dialog.showSaveDialog（导出）</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow-bidirect">⇅ WebSocket (ws://localhost:8765/ws)</div>
+
+  <!-- Vue Renderer -->
+  <div class="runtime-layer renderer">
+    <div class="layer-label">Vue 3 Renderer (Chromium)</div>
+    <div class="layer-content">
+      <div class="layer-box" style="flex:1.2;">
+        <h4>🌲 ConfigTreePanel（左栏 55%）</h4>
+        <ul>
+          <li>ObjectCard: MAP/LAYER/CLASS 卡片</li>
+          <li>FieldEditor: 8 种原子编辑器</li>
+          <li>StatusIcon: 校验状态</li>
+          <li>底部：导入 / 校验 / 导出 / 重置</li>
+        </ul>
+      </div>
+      <div class="layer-box" style="flex:1;">
+        <h4>💬 QAPanel（右栏 45%）</h4>
+        <ul>
+          <li>对话历史列表</li>
+          <li>消息输入框</li>
+          <li>关注点指示器</li>
+          <li>代码块渲染 + 复制</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow-bidirect">⇅ WebSocket（前后端唯一通道）</div>
+
+  <!-- Python Backend -->
+  <div class="runtime-layer backend">
+    <div class="layer-label">Python Backend (FastAPI + uvicorn)</div>
+    <div class="layer-content">
+      <div class="layer-box" style="flex:0.8;">
+        <h4>📡 API 层</h4>
+        <ul>
+          <li>WebSocket 路由 /ws</li>
+          <li>消息路由分发</li>
+          <li>Session 单例管理</li>
+        </ul>
+      </div>
+      <div class="layer-box" style="flex:1.4;">
+        <h4>🔧 应用服务层</h4>
+        <ul>
+          <li>ConfigSession / ConfigTree</li>
+          <li>ValidationPipeline（4层校验）</li>
+          <li>QAService（Prompt→LLM→解析→应用）</li>
+          <li>ImportService（.map → ConfigSession）</li>
+          <li>ExportService（.map / .xml）</li>
+        </ul>
+      </div>
+      <div class="layer-box" style="flex:1;">
+        <h4>📦 基础设施层</h4>
+        <ul>
+          <li>TemplateMapper（规则读取）</li>
+          <li>PromptBuilder（Jinja2）</li>
+          <li>LLMClient（Anthropic SDK）</li>
+          <li>mappyfile（创建/解析/校验/序列化）</li>
+          <li>MapCacheGenerator（Jinja2 XML）</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow-down">↓</div>
+
+  <div class="runtime-layer" style="border-color:var(--data);background:var(--data-bg);">
+    <div class="layer-label" style="color:var(--data)">📂 运行时资源</div>
+    <div class="layer-content">
+      <div class="layer-box" style="flex:1;">
+        <h4>data/</h4>
+        <ul>
+          <li>mapguide_rules.json（运行时规则）</li>
+          <li>templates/（模板源资源）</li>
+        </ul>
+      </div>
+      <div class="layer-box" style="flex:1;">
+        <h4>config/</h4>
+        <ul>
+          <li>config.json（API Key，gitignored）</li>
+          <li>config.json.template</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- 2. 后端核心类关系 -->
+<!-- ═══════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">
+    <span class="dot" style="background:var(--backend)"></span>
+    2. 后端核心类关系
+  </div>
+
+  <!-- ConfigSession 中心 -->
+  <div style="background:var(--backend-bg);border:2px solid var(--backend);border-radius:8px;padding:16px 20px;margin-bottom:16px;text-align:center;">
+    <div style="font-family:monospace;font-size:16px;font-weight:600;color:var(--backend);">ConfigSession</div>
+    <div style="font-size:12px;color:var(--text-sec);margin-top:4px;">会话根容器 | 单实例 | 内存驻留 | 无持久化</div>
+  </div>
+
+  <div class="relation-line"><span class="line"></span> 持有 / 引用 <span class="line"></span></div>
+
+  <div class="class-grid">
+    <div class="class-card core">
+      <h4>ConfigTree</h4>
+      <ul>
+        <li>_build_tree() — mappyfile dict → TreeNode/TreeLeaf</li>
+        <li>rebuild_line_map() — preview_mapfile() 预生成行号</li>
+        <li>update_value() — 失焦更新 + 写回 params</li>
+        <li>add_object() / remove_object()</li>
+        <li>add_custom_property()</li>
+        <li>to_mappyfile_dict()</li>
+      </ul>
+    </div>
+    <div class="class-card core">
+      <h4>TreeNode / TreeLeaf</h4>
+      <ul>
+        <li>TreeNode: id, path, object_type, children[], line_start/end</li>
+        <li>TreeLeaf: id, path, key, descriptor, value, user_modified, errors[], line</li>
+        <li>叶子对应 mappyfile 的一个 key-value</li>
+        <li>对象层级: MAP → LAYER → CLASS → (STYLE | LABEL)</li>
+      </ul>
+    </div>
+    <div class="class-card core">
+      <h4>DialogueHistory</h4>
+      <ul>
+        <li>intent_message — 永久保留</li>
+        <li>messages — 当前关注点上下文（最多6轮）</li>
+        <li>set_focus() — 切换关注点时清空 messages</li>
+        <li>to_prompt_context()</li>
+      </ul>
+    </div>
+    <div class="class-card data">
+      <h4>TemplateMapper</h4>
+      <ul>
+        <li>只读加载 mapguide_rules.json（运行时唯一规则源）</li>
+        <li>合并来源：mapfile-schema-8-4.json + 8 个业务覆盖文件</li>
+        <li>get_field_descriptor() → FieldDescriptor</li>
+        <li>resolve_alias() — 别名转换</li>
+        <li>allows_custom_properties()</li>
+        <li>get_llm_context_summary()</li>
+      </ul>
+    </div>
+    <div class="class-card data">
+      <h4>FieldDescriptor</h4>
+      <ul>
+        <li>key, value_type, default, enum, min, max</li>
+        <li>phase (datasource/style/service/cache)</li>
+        <li>required, derived, custom, custom_desc</li>
+      </ul>
+    </div>
+    <div class="class-card core">
+      <h4>ValidationPipeline</h4>
+      <ul>
+        <li>Layer1: AliasResolver</li>
+        <li>Layer2: TypeChecker (Pydantic)</li>
+        <li>Layer3: SemanticValidator (dependencies.json)</li>
+        <li>Layer4: mappyfile.validate(version=8.4)</li>
+        <li>validate_field() — 失焦（1-3层）</li>
+        <li>validate_tree() — 完整（1-4层）</li>
+      </ul>
+    </div>
+    <div class="class-card core">
+      <h4>QAService</h4>
+      <ul>
+        <li>answer(session, question) → QAResult</li>
+        <li>组装 L0-L5 Prompt → LLMClient.chat()</li>
+        <li>LLMOutput.parse() → UpdateResolver</li>
+        <li>apply updates → validate_tree()</li>
+        <li>rebuild_line_map() → 返回 qa_result</li>
+      </ul>
+    </div>
+    <div class="class-card core">
+      <h4>ExportService</h4>
+      <ul>
+        <li>export(session) → {filename: bytes}</li>
+        <li>mappyfile.dumps() → .map</li>
+        <li>MapCacheGenerator.render() → .xml（可选）</li>
+        <li>前置校验：validation_state == "pass"</li>
+      </ul>
+    </div>
+    <div class="class-card core">
+      <h4>ImportService</h4>
+      <ul>
+        <li>import_mapfile(session_id, content, old_session) → (session, result)</li>
+        <li>mappyfile.loads() → dict</li>
+        <li>ConfigSession.from_mapfile_content() → 新建 session</li>
+        <li>validate_tree() → 四层完整校验</li>
+        <li>解析失败 → 抛 MapfileParseError</li>
+      </ul>
+    </div>
+    <div class="class-card llm">
+      <h4>PromptBuilder</h4>
+      <ul>
+        <li>_framework.j2 单模板</li>
+        <li>render(L0系统 + L1意图 + L2摘要 + L3行号 + L4错误 + L5历史)</li>
+        <li>~1500 tokens 总量控制</li>
+      </ul>
+    </div>
+    <div class="class-card llm">
+      <h4>LLMClient</h4>
+      <ul>
+        <li>Anthropic SDK 封装</li>
+        <li>temperature=0.1</li>
+        <li>指数退避 3× 重试</li>
+        <li>总超时 ≤30s</li>
+        <li>支持自定义 base_url</li>
+      </ul>
+    </div>
+    <div class="class-card llm">
+      <h4>LLMOutput / UpdateResolver</h4>
+      <ul>
+        <li>parse(raw_json) → structured</li>
+        <li>容错：非 JSON → 降级纯文本</li>
+        <li>resolve(line) → path（±2 tolerance）</li>
+        <li>无法解析 → 静默忽略</li>
+      </ul>
+    </div>
+    <div class="class-card cache">
+      <h4>MapCacheGenerator / Validator</h4>
+      <ul>
+        <li>Jinja2 模板渲染 mapcache.xml</li>
+        <li>MapCache 1.16.0 规则校验</li>
+        <li>无需 MapCache 安装</li>
+        <li>与 mappyfile 同层对等</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- 3. 前端组件关系 -->
+<!-- ═══════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">
+    <span class="dot" style="background:var(--frontend)"></span>
+    3. 前端组件关系（分层渲染）
+  </div>
+
+  <div class="comp-tree">
+    <!-- 左栏 -->
+    <div class="comp-col">
+      <div class="comp-box" style="border-color:var(--frontend);background:var(--frontend-bg);">
+        <div class="comp-name">ConfigTreePanel.vue</div>
+        <div class="comp-desc">左栏容器 | 接收 tree_state | 管理展开/折叠状态</div>
+      </div>
+      <div class="comp-children">
+        <div class="comp-box">
+          <div class="comp-name">ObjectCard.vue</div>
+          <div class="comp-desc">对象卡片（MAP / LAYER / CLASS）<br>展开/折叠 · 状态图标 · 增删按钮<br>STYLE / LABEL 为最底层内联渲染</div>
+        </div>
+        <div class="comp-children">
+          <div class="comp-box">
+            <div class="comp-name">FieldEditor.vue</div>
+            <div class="comp-desc">统一字段编辑器 | 按 value_type 自动分发</div>
+          </div>
+          <div class="comp-children">
+            <span class="editor-badge">StringEditor</span>
+            <span class="editor-badge">EnumEditor</span>
+            <span class="editor-badge">NumberEditor</span>
+            <span class="editor-badge">BooleanEditor</span>
+            <span class="editor-badge">ColorEditor</span>
+            <span class="editor-badge">ArrayEditor</span>
+            <span class="editor-badge">ExpressionEditor</span>
+            <span class="editor-badge">ObjectViewer</span>
+          </div>
+          <div class="comp-box">
+            <div class="comp-name">StatusIcon.vue</div>
+            <div class="comp-desc">✓ pass / ⚠️ fail / ○ idle</div>
+          </div>
+        </div>
+        <div class="comp-box">
+          <div class="comp-name">CustomPropModal.vue</div>
+          <div class="comp-desc">添加自定义属性弹窗</div>
+        </div>
+      </div>
+      <div class="comp-box" style="margin-top:12px;border-style:dashed;">
+        <div class="comp-name" style="color:var(--text-sec)">底部操作栏</div>
+        <div class="comp-desc">📂 导入 Mapfile | ✓ 校验全部 | 📤 导出 | 🔄 重置</div>
+      </div>
+    </div>
+
+    <!-- 右栏 -->
+    <div class="comp-col">
+      <div class="comp-box" style="border-color:var(--llm);background:var(--llm-bg);">
+        <div class="comp-name" style="color:var(--llm)">QAPanel.vue</div>
+        <div class="comp-desc">右栏容器 | 接收 qa_result</div>
+      </div>
+      <div class="comp-children">
+        <div class="comp-box">
+          <div class="comp-name">MessageList.vue</div>
+          <div class="comp-desc">对话消息渲染 | user / bot / system</div>
+        </div>
+        <div class="comp-box">
+          <div class="comp-name">InputBar.vue</div>
+          <div class="comp-desc">问题输入 + 发送按钮</div>
+        </div>
+        <div class="comp-box">
+          <div class="comp-name">FocusIndicator.vue</div>
+          <div class="comp-desc">当前关注点提示（扁平路径）</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 服务层 -->
+    <div class="comp-col" style="min-width:200px;">
+      <div class="comp-box" style="border-color:var(--data);background:var(--data-bg);">
+        <div class="comp-name" style="color:var(--data)">Pinia Stores</div>
+        <div class="comp-desc">sessionStore — 会话状态<br>uiStore — 展开/折叠/焦点</div>
+      </div>
+      <div class="comp-box" style="border-color:var(--data);background:var(--data-bg);">
+        <div class="comp-name" style="color:var(--data)">services/ws.ts</div>
+        <div class="comp-desc">WebSocket 客户端封装<br>消息收发 · 自动重连</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:16px;padding:12px;background:var(--bg);border-radius:8px;font-size:12px;color:var(--text-sec);">
+    <strong>渲染策略：</strong>不使用 Naive UI 的 <code>n-tree</code>。对象层级用自研 <code>ObjectCard</code>（递归组件），属性编辑用 <code>FieldEditor</code> 统一分发到 8 种原子编辑器（基于 Naive UI 表单控件）+ <code>ObjectViewer</code>（object/array 类型只读/可折叠 JSON）。STYLE 为最底层，直接在父 CLASS 内联渲染。
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- 4. WebSocket 数据流 -->
+<!-- ═══════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">
+    <span class="dot" style="background:var(--llm)"></span>
+    4. WebSocket 数据流（七大交互场景）
+  </div>
+
+  <div class="flow-wrap">
+    <div class="flow-card">
+      <h4>☑️ 交互零：设置服务类型</h4>
+      <div class="flow-steps">
+        <div class="step frontend"><span class="step-num">1</span>勾选 WMS/WFS/WCS / MapCache</div>
+        <div class="step ws"><span class="step-num">2</span>WS: set_service_types {services, mapcache_enabled}</div>
+        <div class="step backend"><span class="step-num">3</span>更新 session.service_types / mapcache_enabled</div>
+        <div class="step backend"><span class="step-num">4</span>ConfigTree._build_tree(service_types) 重建</div>
+        <div class="step ws"><span class="step-num">5</span>WS: tree_state {params, errors, line_map, service_types}</div>
+        <div class="step frontend"><span class="step-num">6</span>树按新服务类型重新渲染</div>
+      </div>
+    </div>
+
+    <div class="flow-card">
+      <h4>🔧 交互一：用户编辑参数（失焦）</h4>
+      <div class="flow-steps">
+        <div class="step frontend"><span class="step-num">1</span>用户编辑 → 失焦</div>
+        <div class="step ws"><span class="step-num">2</span>WS: tree_update {updates: [{path, value}]}</div>
+        <div class="step backend"><span class="step-num">3</span>ConfigTree.update_value() 遍历应用</div>
+        <div class="step backend"><span class="step-num">4</span>ValidationPipeline.validate_field(service_types) (L1-L3)</div>
+        <div class="step backend"><span class="step-num">5</span>ConfigTree.rebuild_line_map()</div>
+        <div class="step ws"><span class="step-num">6</span>WS: tree_state {params, errors, line_map}</div>
+        <div class="step frontend"><span class="step-num">7</span>更新树 + 错误标记 + 导出按钮状态</div>
+      </div>
+    </div>
+
+    <div class="flow-card">
+      <h4>👆 交互二：用户切换关注点</h4>
+      <div class="flow-steps">
+        <div class="step frontend"><span class="step-num">1</span>用户点击树节点/属性</div>
+        <div class="step ws"><span class="step-num">2</span>WS: focus_change {path}</div>
+        <div class="step backend"><span class="step-num">3</span>session.set_focus(path)</div>
+        <div class="step backend"><span class="step-num">4</span>计算 focus_lines + 历史清理</div>
+        <div class="step ws"><span class="step-num">5</span>WS: focus_state {focus_param, focus_lines}</div>
+        <div class="step frontend"><span class="step-num">6</span>右侧面板显示关注点</div>
+      </div>
+    </div>
+
+    <div class="flow-card">
+      <h4>💬 交互三：用户提问</h4>
+      <div class="flow-steps">
+        <div class="step frontend"><span class="step-num">1</span>用户输入问题 → 发送</div>
+        <div class="step ws"><span class="step-num">2</span>WS: question {text}</div>
+        <div class="step backend"><span class="step-num">3</span>QAService.answer(session, text)</div>
+        <div class="step backend"><span class="step-num">4</span>PromptBuilder.render(L0-L5) → LLMClient.chat()</div>
+        <div class="step backend"><span class="step-num">5</span>LLMOutput.parse() → UpdateResolver</div>
+        <div class="step backend"><span class="step-num">6</span>apply updates → validate_tree(service_types) → rebuild_line_map()</div>
+        <div class="step ws"><span class="step-num">7</span>WS: qa_result {bot_msg, updates, errors, line_map}</div>
+        <div class="step frontend"><span class="step-num">8</span>追加对话 + 更新树 + 显示校验结果</div>
+      </div>
+    </div>
+
+    <div class="flow-card">
+      <h4>✓ 交互四：手动校验全部</h4>
+      <div class="flow-steps">
+        <div class="step frontend"><span class="step-num">1</span>点击「校验全部」</div>
+        <div class="step ws"><span class="step-num">2</span>WS: validate {}</div>
+        <div class="step backend"><span class="step-num">3</span>ValidationPipeline.validate_tree(service_types) (L1-L4)</div>
+        <div class="step backend"><span class="step-num">4</span>mappyfile.validate(version=8.4)</div>
+        <div class="step ws"><span class="step-num">5</span>WS: validation_result {state, errors, can_export}</div>
+        <div class="step frontend"><span class="step-num">6</span>显示全局错误面板 + 更新导出按钮</div>
+      </div>
+    </div>
+
+    <div class="flow-card">
+      <h4>📤 交互五：导出</h4>
+      <div class="flow-steps">
+        <div class="step frontend"><span class="step-num">1</span>点击「导出」</div>
+        <div class="step backend"><span class="step-num">2</span>先执行 validate_tree（同交互四）</div>
+        <div class="step backend"><span class="step-num">3</span>通过后：ExportService.export(session)</div>
+        <div class="step backend"><span class="step-num">4</span>mappyfile.dumps() → .map + 可选 mapcache.xml</div>
+        <div class="step ws"><span class="step-num">5</span>WS: export_result {files: [{name, content_base64}]}</div>
+        <div class="step frontend"><span class="step-num">6</span>弹出保存对话框</div>
+      </div>
+    </div>
+
+    <div class="flow-card">
+      <h4>📂 交互六：导入 Mapfile</h4>
+      <div class="flow-steps">
+        <div class="step frontend"><span class="step-num">1</span>点击「导入」→ Electron 文件选择</div>
+        <div class="step frontend"><span class="step-num">2</span>主进程读取 → IPC → 渲染进程</div>
+        <div class="step ws"><span class="step-num">3</span>WS: import_mapfile { content }</div>
+        <div class="step backend"><span class="step-num">4</span>mappyfile.loads() → 失败则返回 error</div>
+        <div class="step backend"><span class="step-num">5</span>新建 session → _build_tree(service_types) → validate_tree(service_types)</div>
+        <div class="step ws"><span class="step-num">6</span>WS: import_result { success } + tree_state</div>
+        <div class="step frontend"><span class="step-num">7</span>完全刷新树，清空历史，轮数归零</div>
+      </div>
+    </div>
+
+    <div class="flow-card">
+      <h4>🔄 交互七：重置会话</h4>
+      <div class="flow-steps">
+        <div class="step frontend"><span class="step-num">1</span>点击「重置」→ 确认</div>
+        <div class="step ws"><span class="step-num">2</span>WS: reset_session {}</div>
+        <div class="step backend"><span class="step-num">3</span>销毁旧 session，新建空 MAP</div>
+        <div class="step ws"><span class="step-num">4</span>WS: tree_state {空MAP, idle, [], {}, null, null}</div>
+        <div class="step frontend"><span class="step-num">5</span>清空树 + 清空对话历史</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- 5. 模块依赖关系 -->
+<!-- ═══════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">
+    <span class="dot" style="background:var(--data)"></span>
+    5. 模块依赖关系（SourceCode/）
+  </div>
+
+  <div class="dep-wrap">
+    <div class="dep-col">
+      <div class="dep-box" style="border-left:3px solid var(--backend);background:var(--backend-bg);">
+        <h4 style="color:var(--backend)">backend/core/</h4>
+        <ul>
+          <li>依赖: template_mapper (data/)</li>
+          <li>依赖: llm/ (QAService → LLMClient)</li>
+          <li>依赖: mapcache/ (ExportService)</li>
+          <li>被依赖: main.py (WS 路由)</li>
+        </ul>
+      </div>
+      <div class="dep-box" style="border-left:3px solid var(--llm);background:var(--llm-bg);">
+        <h4 style="color:var(--llm)">backend/llm/</h4>
+        <ul>
+          <li>依赖: config/ (API Key)</li>
+          <li>被依赖: core/qa_service.py</li>
+        </ul>
+      </div>
+      <div class="dep-box" style="border-left:3px solid var(--cache);background:var(--cache-bg);">
+        <h4 style="color:var(--cache)">backend/mapcache/</h4>
+        <ul>
+          <li>独立模块，无外部依赖</li>
+          <li>被依赖: core/export_service.py</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="dep-col">
+      <div class="dep-box" style="border-left:3px solid var(--frontend);background:var(--frontend-bg);">
+        <h4 style="color:var(--frontend)">frontend/src/</h4>
+        <ul>
+          <li>components/ → 依赖: services/ws.ts</li>
+          <li>components/ → 依赖: stores/ (Pinia)</li>
+          <li>services/ws.ts → 外部: ws://localhost:8765/ws</li>
+          <li>无直接依赖后端 Python 代码</li>
+        </ul>
+      </div>
+      <div class="dep-box" style="border-left:3px solid var(--electron);background:var(--electron-bg);">
+        <h4 style="color:var(--electron)">electron/</h4>
+        <ul>
+          <li>依赖: frontend/ (加载渲染进程)</li>
+          <li>依赖: backend/ (spawn Python 子进程)</li>
+          <li>打包时: frontend/dist + backend/dist_exe</li>
+        </ul>
+      </div>
+      <div class="dep-box" style="border-left:3px solid var(--data);background:var(--data-bg);">
+        <h4 style="color:var(--data)">data/ + scripts/</h4>
+        <ul>
+          <li>scripts/generate_rules.py → 合并 schema + 7 个覆盖文件 + object-fields.json → 生成 mapguide_rules.json</li>
+          <li>templates/：aliases.json · required.json · phase-map.json · defaults-override.json · dependencies.json · custom-allowed.json · object-fields.json</li>
+          <li>backend/core/template_mapper.py → 只读 mapguide_rules.json</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="dep-col">
+      <div class="dep-box" style="border-left:3px solid #ef4444;background:#fef2f2;">
+        <h4 style="color:#ef4444">tests/</h4>
+        <ul>
+          <li>unit/ → 测试 backend/core/ 各模块</li>
+          <li>unit/ → 测试 backend/llm/ 各模块</li>
+          <li>integration/ → 测试 generate_rules.py 输出</li>
+          <li>integration/ → LLM mock 端到端问答</li>
+        </ul>
+      </div>
+      <div class="dep-box" style="border-left:3px solid var(--data);background:var(--data-bg);">
+        <h4 style="color:var(--data)">config/</h4>
+        <ul>
+          <li>config.json — 运行时读取（gitignored）</li>
+          <li>config.json.template — 参考结构</li>
+          <li>被依赖: backend/llm/llm_client.py</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><span class="legend-dot" style="background:var(--electron)"></span>Electron</div>
+    <div class="legend-item"><span class="legend-dot" style="background:var(--frontend)"></span>Vue 前端</div>
+    <div class="legend-item"><span class="legend-dot" style="background:var(--backend)"></span>Python 后端</div>
+    <div class="legend-item"><span class="legend-dot" style="background:var(--llm)"></span>LLM 层</div>
+    <div class="legend-item"><span class="legend-dot" style="background:var(--cache)"></span>MapCache</div>
+    <div class="legend-item"><span class="legend-dot" style="background:var(--data)"></span>数据/配置</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- 6. 设计决策速查 -->
+<!-- ═══════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">
+    <span class="dot" style="background:#10b981"></span>
+    6. 核心设计决策速查
+  </div>
+  <table style="width:100%;border-collapse:collapse;font-size:13px;">
+    <thead>
+      <tr style="border-bottom:2px solid var(--border);">
+        <th style="text-align:left;padding:8px 12px;width:28%">决策点</th>
+        <th style="text-align:left;padding:8px 12px;width:42%">结论</th>
+        <th style="text-align:left;padding:8px 12px;width:30%">依据</th>
+      </tr>
+    </thead>
+    <tbody style="color:var(--text-sec);">
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:8px 12px;color:var(--text)"><strong>前后端通信</strong></td>
+        <td style="padding:8px 12px;">统一 WebSocket（ws://localhost:8765/ws），禁止 HTTP/WS 混合；后端 → LLM 走 HTTP API</td>
+        <td style="padding:8px 12px;">技术细节 §12</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:8px 12px;color:var(--text)"><strong>交互模式</strong></td>
+        <td style="padding:8px 12px;">用户主导配置树 + LLM 被动应答，无主动引导</td>
+        <td style="padding:8px 12px;">需求输入 §1.2</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:8px 12px;color:var(--text)"><strong>初始界面</strong></td>
+        <td style="padding:8px 12px;">空 MAP 根节点（默认展开），无预置 LAYER；意图从 data/init_session_intent.json 读取，不强求用户输入</td>
+        <td style="padding:8px 12px;">需求输入 §3.1 / 技术细节 §4.1</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:8px 12px;color:var(--text)"><strong>配置树渲染</strong></td>
+        <td style="padding:8px 12px;">分层渲染：ObjectCard（对象）+ FieldEditor（属性），不使用 n-tree；STYLE 内联</td>
+        <td style="padding:8px 12px;">技术细节 §4.2 / §13.2</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:8px 12px;color:var(--text)"><strong>默认展开状态</strong></td>
+        <td style="padding:8px 12px;">MAP / LAYER / CLASS / STYLE 全部默认展开</td>
+        <td style="padding:8px 12px;">技术细节 §4.2 TreeNode.expanded</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:8px 12px;color:var(--text)"><strong>行号策略</strong></td>
+        <td style="padding:8px 12px;">preview_mapfile() 预生成统一行号；内部维护，前端不显示；界面用扁平路径</td>
+        <td style="padding:8px 12px;">技术细节 §4.3 / §8</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:8px 12px;color:var(--text)"><strong>属性状态标记</strong></td>
+        <td style="padding:8px 12px;">`*` 必填 / `D` 默认值 / `○` 可选 / `→` 推导 / `✎` 自定义；顶部显示图例说明栏</td>
+        <td style="padding:8px 12px;">需求输入 §2.1</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:8px 12px;color:var(--text)"><strong>显示模式"仅必填"</strong></td>
+        <td style="padding:8px 12px;">隐藏 `○` 可选和已填默认值的 `D` 字段（除非用户手动修改过）；有错误的始终显示</td>
+        <td style="padding:8px 12px;">需求输入 §2.1</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:8px 12px;color:var(--text)"><strong>校验策略</strong></td>
+        <td style="padding:8px 12px;">4层：别名→类型→语义→mappyfile；失焦只跑1-3层，导出跑全部4层</td>
+        <td style="padding:8px 12px;">需求输入 §4 / 技术细节 §9</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:8px 12px;color:var(--text)"><strong>删除确认</strong></td>
+        <td style="padding:8px 12px;">删除 LAYER / CLASS / STYLE 时弹出确认对话框</td>
+        <td style="padding:8px 12px;">需求输入 §2.1</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:8px 12px;color:var(--text)"><strong>导出保存</strong></td>
+        <td style="padding:8px 12px;">后端通过 WS 返回 base64 文件内容；前端调用 Electron dialog.showSaveDialog 选择目录写入</td>
+        <td style="padding:8px 12px;">需求输入 §5.3 / 技术细节 §7.6</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:8px 12px;color:var(--text)"><strong>MapCache 入口</strong></td>
+        <td style="padding:8px 12px;">作为 MAP 同级可选节点（树底部展开），非独立标签页</td>
+        <td style="padding:8px 12px;">需求输入 §2.1</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:8px 12px;color:var(--text)"><strong>导入已有 Mapfile</strong></td>
+        <td style="padding:8px 12px;">Electron dialog.showOpenDialog 选文件 → 主进程读取 → IPC → WS 发送内容 → 后端 mappyfile.loads() → 失败拒绝/成功重建 session → 自动四层校验 → 返回 tree_state</td>
+        <td style="padding:8px 12px;">需求输入 §3.5 / 技术细节 §11.6</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:8px 12px;color:var(--text)"><strong>导入失败策略</strong></td>
+        <td style="padding:8px 12px;">分层策略：mappyfile 解析失败 → 完全拒绝；解析成功但校验失败 → 允许导入 + 标红修复</td>
+        <td style="padding:8px 12px;">需求输入 §3.5</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:8px 12px;color:var(--text)"><strong>自定义属性识别</strong></td>
+        <td style="padding:8px 12px;">导入时 schema 未定义字段全部标记 custom=True，不维护白名单，由用户自行判断</td>
+        <td style="padding:8px 12px;">技术细节 §11.6</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:8px 12px;color:var(--text)"><strong>焦点切换 → 历史</strong></td>
+        <td style="padding:8px 12px;">切换关注点自动清空 QA messages（保留初始意图）；界面显示当前轮数，切换后归零</td>
+        <td style="padding:8px 12px;">技术细节 §5.2 / 需求输入 §2.2</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:8px 12px;color:var(--text)"><strong>LLM 提供商</strong></td>
+        <td style="padding:8px 12px;">MVP 只支持 Anthropic Claude；LLMClient 封装 SDK，不裸露 API 给上层</td>
+        <td style="padding:8px 12px;">技术细节 §15.2</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:8px 12px;color:var(--text)"><strong>LLM 输出</strong></td>
+        <td style="padding:8px 12px;">JSON 解析失败降级为纯文本；行号无法解析静默忽略；错误提示封装语气</td>
+        <td style="padding:8px 12px;">需求输入 §4.4 / 技术细节 §15.2</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:8px 12px;color:var(--text)"><strong>LLM 边界</strong></td>
+        <td style="padding:8px 12px;">不生成原始 Mapfile/XML；只输出自然语言 + params_update；所有规则后端处理</td>
+        <td style="padding:8px 12px;">技术细节 §15.2</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:8px 12px;color:var(--text)"><strong>颜色格式</strong></td>
+        <td style="padding:8px 12px;">前端 ColorEditor 文本框直接显示 RGB 数组 `[0, 0, 255]`，直接存入 params；不使用 hex</td>
+        <td style="padding:8px 12px;">技术细节 §15.1</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:8px 12px;color:var(--text)"><strong>Prompt 架构</strong></td>
+        <td style="padding:8px 12px;">单模板 _framework.j2；L0-L5 分级注入；~1500 tokens 总量</td>
+        <td style="padding:8px 12px;">技术细节 §6 / §7.5</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:8px 12px;color:var(--text)"><strong>版本锁定</strong></td>
+        <td style="padding:8px 12px;">MapServer 8.4（mappyfile.validate 传 float）；MapCache 1.16.0；Python 3.11；Vue 3 + Naive UI</td>
+        <td style="padding:8px 12px;">技术细节 §15.1</td>
+      </tr>
+      <tr>
+        <td style="padding:8px 12px;color:var(--text)"><strong>持久化</strong></td>
+        <td style="padding:8px 12px;">无持久化；ConfigSession 纯内存；重置=销毁重建</td>
+        <td style="padding:8px 12px;">技术细节 §15.3</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div style="text-align:center;color:var(--text-sec);font-size:12px;margin-top:30px;">
+  MapGuide Architecture Diagram · Generated 2026-06-05
+</div>
+
+</body>
+</html>

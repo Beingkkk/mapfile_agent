@@ -1,0 +1,11 @@
+{
+  "_description": "对象类型 → 阶段归属。阶段用于颜色徽章和 Prompt 上下文分类。",
+  "MAP": "service",
+  "WEB": "service",
+  "METADATA": "service",
+  "LAYER": "datasource",
+  "CLASS": "style",
+  "STYLE": "style",
+  "LABEL": "style",
+  "CACHE": "cache"
+}

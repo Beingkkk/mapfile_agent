@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MapGuide — 6大交互场景数据流图</title>
+<style>
+  :root {
+    --bg: #f5f7fa;
+    --card-bg: #fff;
+    --border: #e0e6ed;
+    --text: #2c3e50;
+    --text-sec: #7b8794;
+    --frontend: #10b981;
+    --frontend-bg: #ecfdf5;
+    --frontend-light: #d1fae5;
+    --ws: #8b5cf6;
+    --ws-bg: #f5f3ff;
+    --ws-light: #ede9fe;
+    --backend: #f59e0b;
+    --backend-bg: #fffbeb;
+    --backend-light: #fef3c7;
+    --data: #64748b;
+    --data-bg: #f1f5f9;
+    --arrow: #94a3b8;
+    --shadow: 0 2px 8px rgba(0,0,0,0.06);
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    padding: 40px 20px;
+  }
+  h1 {
+    text-align: center;
+    font-size: 28px;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+  .subtitle {
+    text-align: center;
+    color: var(--text-sec);
+    margin-bottom: 16px;
+    font-size: 14px;
+  }
+
+  /* Legend */
+  .legend-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+    margin-bottom: 40px;
+    padding: 12px 20px;
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-sec);
+  }
+  .legend-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+  }
+  .legend-dot.frontend { background: var(--frontend); }
+  .legend-dot.ws { background: var(--ws); }
+  .legend-dot.backend { background: var(--backend); }
+  .legend-dot.electron { background: #3b82f6; }
+
+  /* Scene Section */
+  .scene {
+    max-width: 900px;
+    margin: 0 auto 48px;
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 28px 32px;
+  }
+  .scene-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding-bottom: 14px;
+    border-bottom: 2px solid var(--border);
+  }
+  .scene-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .scene-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .scene-desc {
+    font-size: 13px;
+    color: var(--text-sec);
+    margin-top: 2px;
+  }
+
+  /* Flow Steps */
+  .flow {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    position: relative;
+  }
+  .step {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    position: relative;
+    padding: 8px 0;
+  }
+  .step-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+    z-index: 2;
+    border: 3px solid var(--card-bg);
+  }
+  .step-avatar.frontend { background: var(--frontend-bg); border-color: var(--frontend-light); }
+  .step-avatar.ws { background: var(--ws-bg); border-color: var(--ws-light); }
+  .step-avatar.backend { background: var(--backend-bg); border-color: var(--backend-light); }
+  .step-avatar.electron { background: #eff6ff; border-color: #dbeafe; }
+
+  .step-body {
+    flex: 1;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border-left: 4px solid;
+    background: #fafbfc;
+    min-height: 44px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .step-body.frontend { border-left-color: var(--frontend); }
+  .step-body.ws { border-left-color: var(--ws); }
+  .step-body.backend { border-left-color: var(--backend); }
+  .step-body.electron { border-left-color: #3b82f6; }
+
+  .step-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+  .step-label.frontend { color: var(--frontend); }
+  .step-label.ws { color: var(--ws); }
+  .step-label.backend { color: var(--backend); }
+  .step-label.electron { color: #3b82f6; }
+
+  .step-text {
+    font-size: 14px;
+    color: var(--text);
+    line-height: 1.6;
+  }
+  .step-text code {
+    font-family: "SF Mono", Monaco, "Cascadia Code", Consolas, monospace;
+    font-size: 12.5px;
+    background: rgba(0,0,0,0.04);
+    padding: 1px 5px;
+    border-radius: 4px;
+    color: var(--text);
+  }
+  .step-text .highlight {
+    background: var(--backend-light);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-weight: 600;
+    color: #92400e;
+  }
+  .step-text .method {
+    color: var(--ws);
+    font-weight: 600;
+  }
+
+  /* Vertical connector line */
+  .step::before {
+    content: "";
+    position: absolute;
+    left: 21px;
+    top: 52px;
+    bottom: -8px;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--border), var(--border));
+    z-index: 1;
+  }
+  .step:last-child::before {
+    display: none;
+  }
+
+  /* Branch / conditional flows */
+  .branch {
+    margin-left: 60px;
+    margin-top: -4px;
+    margin-bottom: 8px;
+    padding: 12px 16px;
+    background: #fff8f0;
+    border: 1.5px dashed #fdba74;
+    border-radius: 10px;
+    font-size: 13px;
+    color: #9a3412;
+    position: relative;
+  }
+  .branch::before {
+    content: "◆";
+    position: absolute;
+    left: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #fdba74;
+    font-size: 10px;
+  }
+  .branch-title {
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: #c2410c;
+  }
+  .branch-item {
+    padding: 3px 0;
+    padding-left: 14px;
+    position: relative;
+  }
+  .branch-item::before {
+    content: "→";
+    position: absolute;
+    left: 0;
+    color: #fb923c;
+    font-size: 11px;
+  }
+
+  /* Return arrow indicator */
+  .return-flow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 8px 0 8px 60px;
+    padding: 8px 14px;
+    background: var(--ws-bg);
+    border-radius: 8px;
+    font-size: 12px;
+    color: var(--ws);
+    font-weight: 600;
+    width: fit-content;
+  }
+  .return-flow::before {
+    content: "↩";
+    font-size: 14px;
+  }
+
+  /* Note block */
+  .note {
+    margin-top: 16px;
+    padding: 12px 16px;
+    background: var(--data-bg);
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--text-sec);
+    border-left: 3px solid var(--data);
+  }
+  .note strong {
+    color: var(--text);
+  }
+
+  @media (max-width: 640px) {
+    body { padding: 20px 12px; }
+    .scene { padding: 18px 16px; }
+    .step-avatar { width: 36px; height: 36px; font-size: 15px; }
+    .step::before { left: 17px; }
+    .branch { margin-left: 48px; }
+  }
+</style>
+</head>
+<body>
+
+<h1>🔄 MapGuide 7 大交互场景数据流图</h1>
+<p class="subtitle">版本 v2.2 | 对应文档：需求输入.md §3 / 技术细节.md §11–§12</p>
+
+<!-- Legend -->
+<div class="legend-bar">
+  <div class="legend-item"><span class="legend-dot electron"></span> Electron 主进程</div>
+  <div class="legend-item"><span class="legend-dot frontend"></span> Vue 前端</div>
+  <div class="legend-item"><span class="legend-dot ws"></span> WebSocket 消息</div>
+  <div class="legend-item"><span class="legend-dot backend"></span> Python 后端</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- 场景 0：设置服务类型 -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="scene">
+  <div class="scene-header">
+    <div class="scene-icon" style="background:var(--frontend-bg)">☑️</div>
+    <div>
+      <div class="scene-title">场景 0：设置服务类型</div>
+      <div class="scene-desc">勾选 WMS/WFS/WCS / MapCache → 更新 session → 重建树 → 字段可见性同步</div>
+    </div>
+  </div>
+
+  <div class="flow">
+    <div class="step">
+      <div class="step-avatar frontend">👤</div>
+      <div class="step-body frontend">
+        <div class="step-label frontend">Vue 前端</div>
+        <div class="step-text">用户在顶部勾选/取消 WMS、WFS、WCS，或勾选 MapCache(WMTS/TMS)</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-avatar ws">📡</div>
+      <div class="step-body ws">
+        <div class="step-label ws">WebSocket → 后端</div>
+        <div class="step-text"><code class="method">set_service_types</code> <code>{ services: ["wms", "wfs"], mapcache_enabled: true }</code></div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-avatar backend">⚙️</div>
+      <div class="step-body backend">
+        <div class="step-label backend">Python 后端</div>
+        <div class="step-text"><span class="highlight">session.service_types = services</span>
+          <br><span class="highlight">session.mapcache_enabled = mapcache_enabled</span>
+          <br>更新后触发 <span class="highlight">ConfigTree 重建</span>（字段可见性重新计算）
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-avatar backend">🌲</div>
+      <div class="step-body backend">
+        <div class="step-label backend">Python 后端</div>
+        <div class="step-text"><span class="highlight">ConfigTree._build_tree(params, service_types)</span> — 按新的 service_types 过滤 METADATA/LAYER 字段可见性
+          <br>├─ 取消勾选 WFS → <code>gml_*</code> / <code>wfs_*</code> 字段隐藏（值保留在 params 中）
+          <br>├─ 取消勾选 WMS → <code>wms_*</code> 字段隐藏
+          <br>└─ <code>ows_*</code> 始终可见
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-avatar backend">📐</div>
+      <div class="step-body backend">
+        <div class="step-label backend">Python 后端</div>
+        <div class="step-text"><span class="highlight">ConfigTree.rebuild_line_map()</span> — 行号重新分配</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-avatar ws">📡</div>
+      <div class="step-body ws">
+        <div class="step-label ws">WebSocket → 前端</div>
+        <div class="step-text"><code class="method">tree_state</code> <code>{ params_snapshot, validation_state, errors, line_map, service_types, mapcache_enabled }</code></div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-avatar frontend">🖥️</div>
+      <div class="step-body frontend">
+        <div class="step-label frontend">Vue 前端</div>
+        <div class="step-text">配置树按新的服务类型重新渲染，隐藏/显示对应字段块</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note">
+    <strong>关键约束：</strong>隐藏字段的值保留在 params 中，只是不在 UI 渲染。取消勾选后重新勾选，之前填写的值会恢复显示。
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- 场景 1：用户编辑参数 -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="scene">
+  <div class="scene-header">
+    <div class="scene-icon" style="background:var(--frontend-bg)">🔧</div>
+    <div>
+      <div class="scene-title">场景 1：用户编辑参数（失焦触发）</div>
+      <div class="scene-desc">字段失焦 → 实时校验（L1-L3）→ 行号重建 → 前端同步</div>
+    </div>
+  </div>
+
+  <div class="flow">
+    <div class="step">
+      <div class="step-avatar frontend">👤</div>
+      <div class="step-body frontend">
+        <div class="step-label frontend">Vue 前端</div>
+        <div class="step-text">用户在配置树中编辑某字段，<strong>失焦</strong>（blur）触发更新</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-avatar ws">📡</div>
+      <div class="step-body ws">
+        <div class="step-label ws">WebSocket → 后端</div>
+        <div class="step-text"><code class="method">tree_update</code> <code>{ updates: [{ path: "layers.0.name", value: "buildings" }] }</code></div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-avatar backend">⚙️</div>
+      <div class="step-body backend">
+        <div class="step-label backend">Python 后端</div>
+        <div class="step-text"><span class="highlight">ConfigTree.update_value(path, value)</span> — 遍历 <code>updates</code> 逐个更新叶子节点并写回 params dict</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-avatar backend">🔍</div>
+      <div class="step-body backend">
+        <div class="step-label backend">Python 后端</div>
+        <div class="step-text"><span class="highlight">ValidationPipeline.validate_field(path, service_types, full=false)</span>
+          <br>├─ L1 别名解析（如 "红色" → [255,0,0]）
+          <br>├─ L2 类型校验（Pydantic）
+          <br>└─ L3 语义校验（dependencies.json，含 service_types 条件）
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-avatar backend">📐</div>
+      <div class="step-body backend">
+        <div class="step-label backend">Python 后端</div>
+        <div class="step-text"><span class="highlight">ConfigTree.rebuild_line_map()</span> — 按 Mapfile 输出顺序重新分配行号</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-avatar ws">📡</div>
+      <div class="step-body ws">
+        <div class="step-label ws">WebSocket → 前端</div>
+        <div class="step-text"><code class="method">tree_state</code> <code>{ params_snapshot, validation_state, validation_errors, line_map, can_export }</code></div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-avatar frontend">🖥️</div>
+      <div class="step-body frontend">
+        <div class="step-label frontend">Vue 前端</div>
+        <div class="step-text">更新配置树显示、错误标记（红框）、导出按钮可用状态</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note">
+    <strong>关键约束：</strong>失焦只执行 L1-L3 校验，不执行 mappyfile 语法校验（L4）——因为不完整 map 无法做语法校验。
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- 场景 2：用户切换关注点 -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="scene">
+  <div class="scene-header">
+    <div class="scene-icon" style="background:var(--frontend-bg)">👆</div>
+    <div>
+      <div class="scene-title">场景 2：用户切换关注点</div>
+      <div class="scene-desc">点击树节点/属性 → 计算 focus_lines → 清空历史 → 同步前端</div>
+    </div>
+  </div>
+
+  <div class="flow">
+    <div class="step">
+      <div class="step-avatar frontend">👤</div>
+      <div class="step-body frontend">
+        <div class="step-label frontend">Vue 前端</div>
+        <div class="step-text">用户<strong>点击</strong>配置树中的属性行或对象节点，设为提问焦点</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-avatar ws">📡</div>
+      <div class="step-body ws">
+        <div class="step-label ws">WebSocket → 后端</div>
+        <div class="step-text"><code class="method">focus_change</code> <code>{ path: "layers.0.connectiontype" }</code></div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-avatar backend">⚙️</div>
+      <div class="step-body backend">
+        <div class="step-label backend">Python 后端</div>
+        <div class="step-text"><span class="highlight">session.set_focus(path)</span>
+          <br>├─ 计算 <code>focus_lines</code>（如 "L9-L23"）
+          <br>├─ 若 <code>focus_param</code> 改变 → <span class="highlight">清空 messages</span>（保留 intent_message）
+          <br>└─ 更新 session.focus_param / focus_lines
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-avatar ws">📡</div>
+      <div class="step-body ws">
+        <div class="step-label ws">WebSocket → 前端</div>
+        <div class="step-text"><code class="method">focus_state</code> <code>{ focus_param: "layers.0.connectiontype", focus_lines: "L9-L23" }</code></div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-avatar frontend">🖥️</div>
+      <div class="step-body frontend">
+        <div class="step-label frontend">Vue 前端</div>
+        <div class="step-text">右侧面板显示关注点信息，QA 轮数<strong>归零</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note">
+    <strong>关键约束：</strong>切换关注点 = 开启新话题，之前关于 color 的讨论对 projection 问题没有帮助。intent_message 永久保留。
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- 场景 3：用户提问 -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="scene">
+  <div class="scene-header">
+    <div class="scene-icon" style="background:var(--frontend-bg)">💬</div>
+    <div>
+      <div class="scene-title">场景 3：用户提问（LLM 问答）</div>
+      <div class="scene-desc">用户输入问题 → Prompt 组装（L0-L5）→ LLM 调用 → 解析更新 → 校验 → 返回结果</div>
+    </div>
+  </div>
+
+  <div class="flow">
+    <div class="step">
+      <div class="step-avatar frontend">👤</div>
+      <div class="step-body frontend">
+        <div class="step-label frontend">Vue 前端</div>
+        <div class="step-text">用户在输入框输入问题，点击发送</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-avatar ws">📡</div>
+      <div class="step-body ws">
+        <div class="step-label ws">WebSocket → 后端</div>
+        <div class="step-text"><code class="method">question</code> <code>{ text: "connectiontype 是什么？" }</code></div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-avatar backend">📝</div>
+      <div class="step-body backend">
+        <div class="step-label backend">Python 后端</div>
+        <div class="step-text"><span class="highlight">history.add_message("user", text)</span> — 记录用户问题</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-avatar backend">🧩</div>
+      <div class="step-body backend">
+        <div class="step-label backend">Python 后端</div>
+        <div class="step-text"><span class="highlight">PromptBuilder.render(L0-L5)</span>
+          <br>├─ L0 系统角色（_framework.j2 ~200 tokens）
+          <br>├─ L1 用户意图 + 当前 map 结构快照
+          <br>├─ L2 关注点参数摘要
+          <br>├─ L3 focus_param + focus_lines
+          <br>├─ L4 当前校验错误（如有）
+          <br>└─ L5 最近 4-6 轮对话
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-avatar backend">🤖</div>
+      <div class="step-body backend">
+        <div class="step-label backend">Python 后端 → LLM</div>
+        <div class="step-text"><span class="highlight">LLMClient.chat(prompt)</span> — Anthropic Claude, temperature=0.1, 3× 重试</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-avatar backend">🔧</div>
+      <div class="step-body backend">
+        <div class="step-label backend">Python 后端</div>
+        <div class="step-text"><span class="highlight">LLMOutput.parse(raw_json)</span> → <span class="highlight">UpdateResolver.resolve(line)</span> → path
+          <br>├─ 若返回 <code>params_update</code> → <span class="highlight">ConfigTree.update_value()</span>
+          <br>└─ 若 JSON 解析失败 → <strong>降级为纯文本回答</strong>（不更新参数）
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-avatar backend">🔍</div>
+      <div class="step-body backend">
+        <div class="step-label backend">Python 后端</div>
+        <div class="step-text"><span class="highlight">ValidationPipeline.validate_tree(service_types)</span> — 四层完整校验 + <span class="highlight">rebuild_line_map()</span></div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-avatar backend">📝</div>
+      <div class="step-body backend">
+        <div class="step-label backend">Python 后端</div>
+        <div class="step-text"><span class="highlight">history.add_message("bot", answer)</span> — 记录 LLM 回答</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-avatar ws">📡</div>
+      <div class="step-body ws">
+        <div class="step-label ws">WebSocket → 前端</div>
+        <div class="step-text"><code class="method">qa_result</code> <code>{ bot_message, params_update, validation_state, errors, can_export, line_map }</code></div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-avatar frontend">🖥️</div>
+      <div class="step-body frontend">
+        <div class="step-label frontend">Vue 前端</div>
+        <div class="step-text">追加对话气泡、更新树（如有 LLM 修改）、显示校验结果、更新导出按钮</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note">
+    <strong>关键约束：</strong>LLM 输出不稳定时采用宽容降级——JSON 解析失败只展示纯文本；行号无法解析静默忽略该项。所有规则后端处理，LLM 不感知 schema。
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- 场景 4：手动校验全部 -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="scene">
+  <div class="scene-header">
+    <div class="scene-icon" style="background:var(--frontend-bg)">✓</div>
+    <div>
+      <div class="scene-title">场景 4：手动校验全部</div>
+      <div class="scene-desc">点击「校验全部」→ 遍历所有字段（L1-L3）→ mappyfile 语法校验（L4）→ 返回结果</div>
+    </div>
+  </div>
+
+  <div class="flow">
+    <div class="step">
+      <div class="step-avatar frontend">👤</div>
+      <div class="step-body frontend">
+        <div class="step-label frontend">Vue 前端</div>
+        <div class="step-text">用户点击底部 <strong>「✓ 校验全部」</strong>按钮</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-avatar ws">📡</div>
+      <div class="step-body ws">
+        <div class="step-label ws">WebSocket → 后端</div>
+        <div class="step-text"><code class="method">validate</code> <code>{}</code></div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-avatar backend">🔍</div>
+      <div class="step-body backend">
+        <div class="step-label backend">Python 后端</div>
+        <div class="step-text"><span class="highlight">ValidationPipeline.validate_tree(service_types)</span>
+          <br>├─ 遍历所有叶子字段：L1 别名 + L2 类型 + L3 语义（含 service_types 条件）
+          <br>└─ L4: <code>mappyfile.validate(mf_dict, version=8.4)</code>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-avatar backend">📐</div>
+      <div class="step-body backend">
+        <div class="step-label backend">Python 后端</div>
+        <div class="step-text">去重错误 → 计算 <code>validation_state</code>（pass / fail）→ <span class="highlight">rebuild_line_map()</span></div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-avatar ws">📡</div>
+      <div class="step-body ws">
+        <div class="step-label ws">WebSocket → 前端</div>
+        <div class="step-text"><code class="method">validation_result</code> <code>{ validation_state, validation_errors, can_export }</code></div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-avatar frontend">🖥️</div>
+      <div class="step-body frontend">
+        <div class="step-label frontend">Vue 前端</div>
+        <div class="step-text">显示全局错误面板，更新导出按钮状态（pass → 可用，fail → 禁用）</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note">
+    <strong>关键约束：</strong>手动校验和导出前校验共享同一套 <code>validate_tree()</code> 逻辑。L4 mappyfile 语法校验只在手动校验、导出前、导入后执行，字段失焦不执行。
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- 场景 5：导出 -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="scene">
+  <div class="scene-header">
+    <div class="scene-icon" style="background:var(--frontend-bg)">📤</div>
+    <div>
+      <div class="scene-title">场景 5：导出配置</div>
+      <div class="scene-desc">点击「导出」→ 前置校验 → 生成 .map + 可选 .xml → 返回 base64 → Electron 保存</div>
+    </div>
+  </div>
+
+  <div class="flow">
+    <div class="step">
+      <div class="step-avatar frontend">👤</div>
+      <div class="step-body frontend">
+        <div class="step-label frontend">Vue 前端</div>
+        <div class="step-text">用户点击底部 <strong>「📤 导出」</strong>按钮（仅校验通过时可用）</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-avatar backend">🔍</div>
+      <div class="step-body backend">
+        <div class="step-label backend">Python 后端（前置校验）</div>
+        <div class="step-text">先执行 <span class="highlight">validate_tree()</span>（同场景 4）——<strong>不可跳级导出</strong></div>
+      </div>
+    </div>
+
+    <div class="branch">
+      <div class="branch-title">校验结果分支</div>
+      <div class="branch-item"><strong>失败：</strong>导出按钮保持禁用，返回错误列表，流程终止</div>
+      <div class="branch-item"><strong>通过：</strong>继续执行 ExportService.export()</div>
+    </div>
+
+    <div class="step">
+      <div class="step-avatar backend">📦</div>
+      <div class="step-body backend">
+        <div class="step-label backend">Python 后端</div>
+        <div class="step-text"><span class="highlight">ExportService.export(session)</span>
+          <br>├─ <code>mappyfile.dumps(tree.to_mappyfile_dict())</code> → <strong>.map</strong>（自动过滤 cache / _custom 内部节点）
+          <br>└─ 若 <code>session.mapcache_enabled == true</code> → <code>MapCacheGenerator.render()</code> → <strong>.xml</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-avatar ws">📡</div>
+      <div class="step-body ws">
+        <div class="step-label ws">WebSocket → 前端</div>
+        <div class="step-text"><code class="method">export_result</code> <code>{ success: true, files: [{ name, content_base64 }] }</code></div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-avatar electron">💾</div>
+      <div class="step-body electron">
+        <div class="step-label electron">Electron 主进程</div>
+        <div class="step-text">前端调用 <code>dialog.showSaveDialog</code> → 用户选择保存目录 → 主进程将 base64 解码写入磁盘</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-avatar frontend">🖥️</div>
+      <div class="step-body frontend">
+        <div class="step-label frontend">Vue 前端</div>
+        <div class="step-text">显示「保存成功」提示，QA 面板追加系统消息</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note">
+    <strong>关键约束：</strong>导出条件链不可跳过：<code>validation_state == "pass"</code> ∧ <code>无 validation_errors</code>。LLM 永远不生成原始 Mapfile/XML 文本，所有生成由后端确定性代码完成。
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- 场景 6：导入 Mapfile -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="scene">
+  <div class="scene-header">
+    <div class="scene-icon" style="background:#eff6ff">📂</div>
+    <div>
+      <div class="scene-title">场景 6：导入已有 Mapfile</div>
+      <div class="scene-desc">点击「导入」→ 文件选择 → mappyfile 解析 → 分层处理 → 重建 session → 自动校验 → 同步前端</div>
+    </div>
+  </div>
+
+  <div class="flow">
+    <div class="step">
+      <div class="step-avatar frontend">👤</div>
+      <div class="step-body frontend">
+        <div class="step-label frontend">Vue 前端</div>
+        <div class="step-text">用户点击底部 <strong>「📂 导入 Mapfile」</strong>按钮</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-avatar electron">📂</div>
+      <div class="step-body electron">
+        <div class="step-label electron">Electron 主进程</div>
+        <div class="step-text"><code>dialog.showOpenDialog({ filters: [{ name: 'Mapfile', extensions: ['map'] }] })</code></div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-avatar electron">📖</div>
+      <div class="step-body electron">
+        <div class="step-label electron">Electron 主进程</div>
+        <div class="step-text">读取选中文件内容（UTF-8）→ 通过 IPC / preload 传给渲染进程</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-avatar ws">📡</div>
+      <div class="step-body ws">
+        <div class="step-label ws">WebSocket → 后端</div>
+        <div class="step-text"><code class="method">import_mapfile</code> <code>{ content: "MAP\nNAME \"city\"\n...\nEND" }</code></div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-avatar backend">🔧</div>
+      <div class="step-body backend">
+        <div class="step-label backend">Python 后端</div>
+        <div class="step-text"><span class="highlight">ConfigSession.from_mapfile_content(session_id, content, mapper)</span>
+          <br>├─ <code>mappyfile.loads(content)</code> → dict
+          <br>├─ <strong>失败</strong> → 抛 <code>MapfileParseError</code>
+          <br>└─ <strong>成功</strong> → 以解析结果新建 ConfigSession
+        </div>
+      </div>
+    </div>
+
+    <div class="branch">
+      <div class="branch-title">解析结果分支（分层策略）</div>
+      <div class="branch-item"><strong>解析失败：</strong>WS 返回 <code>import_result { success: false, error }</code>，当前会话<strong>不受影响</strong></div>
+      <div class="branch-item"><strong>解析成功：</strong>销毁旧 session，继续构建 ConfigTree → 自动四层校验</div>
+    </div>
+
+    <div class="step">
+      <div class="step-avatar backend">🌲</div>
+      <div class="step-body backend">
+        <div class="step-label backend">Python 后端</div>
+        <div class="step-text"><span class="highlight">ConfigTree._build_tree(parsed_dict, service_types)</span>
+          <br>├─ Schema 已定义字段 → 正常 TreeLeaf（按 service_types 过滤可见性）
+          <br>└─ 未知字段 → 统一标记 <code>custom=True</code>（显示 ✎ 图标）
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-avatar backend">🔍</div>
+      <div class="step-body backend">
+        <div class="step-label backend">Python 后端</div>
+        <div class="step-text"><span class="highlight">ValidationPipeline.validate_tree(service_types)</span> — 四层完整校验（L1-L4）
+          <br>├─ 校验通过 → state="pass"，导出按钮可用
+          <br>└─ 校验失败 → state="fail"，错误标红，用户可在应用内修复
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-avatar backend">📐</div>
+      <div class="step-body backend">
+        <div class="step-label backend">Python 后端</div>
+        <div class="step-text"><span class="highlight">ConfigTree.rebuild_line_map()</span> + 清空历史（保留 intent_message），focus_param 置空</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-avatar ws">📡</div>
+      <div class="step-body ws">
+        <div class="step-label ws">WebSocket → 前端</div>
+        <div class="step-text"><code class="method">import_result</code> <code>{ success: true }</code>
+          <br>→ 紧接着 <code class="method">tree_state</code> <code>{ params_snapshot, validation_state, errors, line_map, can_export }</code>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-avatar frontend">🖥️</div>
+      <div class="step-body frontend">
+        <div class="step-label frontend">Vue 前端</div>
+        <div class="step-text">完全刷新配置树，显示自定义属性（✎）和校验错误（红框），清空问答历史，<strong>轮数归零</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note">
+    <strong>关键约束：</strong>导入 = 完全重置 + 从文件填充。文件读取必须由 Electron 主进程完成（安全沙箱限制）。未知字段不维护白名单，全部标记为 custom，由用户自行判断删除或保留。
+  </div>
+</div>
+
+<div style="text-align:center;color:var(--text-sec);font-size:12px;margin-top:30px;padding-bottom:20px;">
+  MapGuide Dataflow Diagram · 7 Scenes · Generated 2026-06-06
+</div>
+
+</body>
+</html>

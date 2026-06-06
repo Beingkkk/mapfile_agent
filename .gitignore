@@ -9,3 +9,6 @@ CLAUDE.local.md
 
 # 本地配置文件（含敏感信息或环境相关配置）
 config.json
+
+# 介绍视频（暂不开放）
+Introduce/

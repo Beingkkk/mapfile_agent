@@ -1,0 +1,52 @@
+{
+  "_description": "默认值覆盖/补充。优先级：defaults-override.json > schema default > 无默认值。",
+  "MAP": {
+    "imagetype": "png",
+    "status": "on"
+  },
+  "LAYER": {
+    "projection": ["init=epsg:3857"],
+    "status": "on",
+    "connectiontype": "local"
+  },
+  "CLASS": {
+    "name": "default"
+  },
+  "STYLE": {
+    "conditional": {
+      "parent.type == 'point'": {
+        "color": [128, 128, 128],
+        "symbol": "circle",
+        "size": 8
+      },
+      "parent.type == 'line'": {
+        "color": [128, 128, 128],
+        "width": 1
+      },
+      "parent.type == 'polygon'": {
+        "color": [200, 200, 200],
+        "outlinecolor": [128, 128, 128],
+        "width": 1
+      }
+    }
+  },
+  "LABEL": {
+    "color": [0, 0, 0],
+    "size": 8,
+    "position": "auto",
+    "antialias": true,
+    "partials": false,
+    "priority": 5
+  },
+  "METADATA": {
+    "ows_enable_request": "*",
+    "wms_enable_request": "*",
+    "wfs_enable_request": "*",
+    "wcs_enable_request": "*"
+  },
+  "CACHE": {
+    "type": "disk",
+    "metatile": "5 5",
+    "metabuffer": 10
+  }
+}

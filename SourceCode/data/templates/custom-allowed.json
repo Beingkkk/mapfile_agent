@@ -1,0 +1,11 @@
+{
+  "_description": "哪些对象类型允许用户添加自定义属性（Schema 外字段）。",
+  "MAP": true,
+  "WEB": true,
+  "METADATA": true,
+  "LAYER": true,
+  "CLASS": true,
+  "STYLE": false,
+  "LABEL": false,
+  "CACHE": true
+}

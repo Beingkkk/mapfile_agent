@@ -1,0 +1,64 @@
+{
+  "_description": "必填规则。required = 绝对必填；required_when = 条件必填（支持 parent.type / parent.connectiontype 等上下文变量）。",
+  "MAP": {
+    "required": ["name"],
+    "business_required": ["imagetype", "status"],
+    "required_when": {}
+  },
+  "WEB": {
+    "required": [],
+    "business_required": [],
+    "required_when": {}
+  },
+  "METADATA": {
+    "required": [],
+    "business_required": ["ows_title", "ows_onlineresource", "ows_enable_request"],
+    "required_when": {
+      "wms_title": "'wms' in session.service_types and not map.web.metadata.get('ows_title')",
+      "wfs_title": "'wfs' in session.service_types and not map.web.metadata.get('ows_title')",
+      "wcs_title": "'wcs' in session.service_types and not map.web.metadata.get('ows_title')",
+      "wms_srs": "'wms' in session.service_types",
+      "wfs_srs": "'wfs' in session.service_types",
+      "wcs_srs": "'wcs' in session.service_types",
+      "wms_onlineresource": "'wms' in session.service_types and not map.web.metadata.get('ows_onlineresource')",
+      "wfs_onlineresource": "'wfs' in session.service_types and not map.web.metadata.get('ows_onlineresource')",
+      "wcs_onlineresource": "'wcs' in session.service_types and not map.web.metadata.get('ows_onlineresource')",
+      "wcs_extent": "'wcs' in session.service_types"
+    }
+  },
+  "LAYER": {
+    "required": ["name", "type"],
+    "business_required": ["connectiontype", "projection", "status"],
+    "required_when": {
+      "connection": "connectiontype in ['postgis', 'ogr', 'wms']",
+      "data": "connectiontype != 'wms'"
+    }
+  },
+  "CLASS": {
+    "required": [],
+    "business_required": [],
+    "required_when": {}
+  },
+  "STYLE": {
+    "required": [],
+    "business_required": ["color"],
+    "required_when": {
+      "symbol": "parent.type == 'point'",
+      "size": "parent.type == 'point'",
+      "width": "parent.type in ['line', 'polygon']",
+      "outlinecolor": "parent.type == 'polygon'"
+    }
+  },
+  "LABEL": {
+    "required": ["text"],
+    "business_required": ["font", "size", "color"],
+    "required_when": {
+      "position": "parent.type in ['point', 'polygon']"
+    }
+  },
+  "CACHE": {
+    "required": ["type"],
+    "business_required": ["base"],
+    "required_when": {}
+  }
+}

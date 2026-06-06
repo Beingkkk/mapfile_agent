@@ -1,0 +1,135 @@
+{
+  "_description": "跨字段依赖边。relation 可选：requires_when | forbids_when | derives | invalidates。",
+  "edges": [
+    {
+      "source": "LAYER.type",
+      "target": "STYLE.symbol",
+      "relation": "requires_when",
+      "condition": "value == 'point'",
+      "description": "point 类型需要 symbol"
+    },
+    {
+      "source": "LAYER.type",
+      "target": "STYLE.size",
+      "relation": "requires_when",
+      "condition": "value == 'point'",
+      "description": "point 类型需要 size"
+    },
+    {
+      "source": "LAYER.type",
+      "target": "STYLE.width",
+      "relation": "requires_when",
+      "condition": "value in ['line', 'polygon']",
+      "description": "line/polygon 类型需要 width"
+    },
+    {
+      "source": "LAYER.type",
+      "target": "STYLE.outlinecolor",
+      "relation": "requires_when",
+      "condition": "value == 'polygon'",
+      "description": "polygon 类型需要 outlinecolor"
+    },
+    {
+      "source": "LAYER.connectiontype",
+      "target": "LAYER.connection",
+      "relation": "requires_when",
+      "condition": "value in ['postgis', 'ogr', 'wms']",
+      "description": "postgis/ogr/wms 需要 connection"
+    },
+    {
+      "source": "LAYER.connectiontype",
+      "target": "LAYER.data",
+      "relation": "forbids_when",
+      "condition": "value == 'wms'",
+      "description": "wms 不需要 data"
+    },
+    {
+      "source": "LAYER.projection",
+      "target": "CACHE.grid",
+      "relation": "derives",
+      "description": "投影决定 MapCache 网格"
+    },
+    {
+      "source": "MAP.name",
+      "target": "METADATA.wms_onlineresource",
+      "relation": "derives",
+      "description": "map 名称决定 WMS 地址"
+    },
+    {
+      "source": "LAYER.type",
+      "target": "STYLE.color",
+      "relation": "derives",
+      "description": "LAYER 类型决定 STYLE 默认颜色"
+    },
+    {
+      "source": "LAYER.type",
+      "target": "STYLE.symbol",
+      "relation": "derives",
+      "condition": "value == 'point'",
+      "description": "point 类型默认 symbol"
+    },
+    {
+      "source": "LAYER.type",
+      "target": "STYLE.size",
+      "relation": "derives",
+      "condition": "value == 'point'",
+      "description": "point 类型默认 size"
+    },
+    {
+      "source": "LAYER.type",
+      "target": "STYLE.width",
+      "relation": "derives",
+      "condition": "value in ['line', 'polygon']",
+      "description": "line/polygon 类型默认 width"
+    },
+    {
+      "source": "LAYER.type",
+      "target": "STYLE.outlinecolor",
+      "relation": "derives",
+      "condition": "value == 'polygon'",
+      "description": "polygon 类型默认 outlinecolor"
+    },
+    {
+      "source": "session.service_types",
+      "target": "LAYER.gml_include_items",
+      "relation": "requires_when",
+      "condition": "'wfs' in value",
+      "description": "启用 WFS 时，建议设置 gml_include_items 指定返回字段"
+    },
+    {
+      "source": "session.service_types",
+      "target": "LAYER.gml_featureid",
+      "relation": "requires_when",
+      "condition": "'wfs' in value",
+      "description": "启用 WFS 时，建议设置 gml_featureid 指定要素 ID 字段"
+    },
+    {
+      "source": "session.service_types",
+      "target": "LAYER.type",
+      "relation": "conditional_value",
+      "condition": "'wcs' in value",
+      "description": "启用 WCS 时，LAYER.type 应为 raster"
+    },
+    {
+      "source": "METADATA.ows_title",
+      "target": "METADATA.wms_title",
+      "relation": "forbids_when",
+      "condition": "value",
+      "description": "已设置 ows_title 时，wms_title 非必需（MapServer 会自动回退）"
+    },
+    {
+      "source": "METADATA.ows_title",
+      "target": "METADATA.wfs_title",
+      "relation": "forbids_when",
+      "condition": "value",
+      "description": "已设置 ows_title 时，wfs_title 非必需（MapServer 会自动回退）"
+    },
+    {
+      "source": "METADATA.ows_title",
+      "target": "METADATA.wcs_title",
+      "relation": "forbids_when",
+      "condition": "value",
+      "description": "已设置 ows_title 时，wcs_title 非必需（MapServer 会自动回退）"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "_description": "默认初始意图，ConfigSession 启动时自动加载。描述用户默认身份和典型场景。",
+  "intent": "我是一个 GIS 工程师，需要将空间数据发布为 WMS 地图服务。",
+  "examples": [
+    {
+      "title": "Shapefile 发布 WMS",
+      "description": "本地 Shapefile 矢量数据发布为 WMS 服务，可配置样式",
+      "intent": "我有一个 Shapefile 文件，想把它发布成 WMS 地图服务，可以设置线条颜色和面填充颜色。"
+    },
+    {
+      "title": "PostGIS 发布 WMS",
+      "description": "PostgreSQL/PostGIS 数据库表发布为 WMS 服务，支持复杂查询",
+      "intent": "我的数据存储在 PostGIS 数据库里，想把它发布成 WMS 服务，可能还需要加 MapCache 瓦片缓存来加速。"
+    },
+    {
+      "title": "GeoTIFF 栅格发布 WMS",
+      "description": "栅格影像数据（GeoTIFF 等）发布为 WMS 服务",
+      "intent": "我有一些 GeoTIFF 影像数据，想发布成 WMS 服务用于底图。"
+    }
+  ]
+}

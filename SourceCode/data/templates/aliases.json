@@ -1,0 +1,121 @@
+{
+  "_description": "业务别名映射：自然语言 / 中文输入 → 参数值。按对象类型分层。",
+  "MAP": {
+    "imagetype": {
+      "png": "png",
+      "jpeg": "jpeg",
+      "jpg": "jpeg",
+      "gif": "gif"
+    }
+  },
+  "LAYER": {
+    "type": {
+      "点": "point",
+      "地标": "point",
+      "marker": "point",
+      "线": "line",
+      "线条": "line",
+      "道路": "line",
+      "road": "line",
+      "面": "polygon",
+      "区域": "polygon",
+      "多边形": "polygon",
+      "area": "polygon",
+      "栅格": "raster",
+      "影像": "raster",
+      "image": "raster",
+      "注记": "annotation",
+      "标注": "annotation",
+      "标签": "annotation",
+      "annotation": "annotation"
+    },
+    "connectiontype": {
+      "shapefile": "local",
+      "shp": "local",
+      "本地文件": "local",
+      "本地": "local",
+      "postgis": "postgis",
+      "postgres": "postgis",
+      "数据库": "postgis",
+      "pg": "postgis",
+      "geotiff": "local",
+      "tif": "local",
+      "tiff": "local",
+      "geojson": "local",
+      "json": "local",
+      "wms": "wms",
+      "远程": "wms",
+      "远程服务": "wms"
+    },
+    "projection": {
+      "3857": ["init=epsg:3857"],
+      "4326": ["init=epsg:4326"],
+      "900913": ["init=epsg:900913"],
+      "web墨卡托": ["init=epsg:3857"],
+      "wgs84": ["init=epsg:4326"]
+    }
+  },
+  "STYLE": {
+    "color": {
+      "红": [255, 0, 0],
+      "红色": [255, 0, 0],
+      "red": [255, 0, 0],
+      "蓝": [0, 0, 255],
+      "蓝色": [0, 0, 255],
+      "blue": [0, 0, 255],
+      "绿": [0, 255, 0],
+      "绿色": [0, 255, 0],
+      "green": [0, 255, 0],
+      "黄": [255, 255, 0],
+      "黄色": [255, 255, 0],
+      "yellow": [255, 255, 0],
+      "黑": [0, 0, 0],
+      "黑色": [0, 0, 0],
+      "black": [0, 0, 0],
+      "灰": [128, 128, 128],
+      "灰色": [128, 128, 128],
+      "gray": [128, 128, 128],
+      "grey": [128, 128, 128],
+      "白": [255, 255, 255],
+      "白色": [255, 255, 255],
+      "white": [255, 255, 255]
+    },
+    "outlinecolor": {
+      "红": [255, 0, 0],
+      "红色": [255, 0, 0],
+      "red": [255, 0, 0],
+      "蓝": [0, 0, 255],
+      "蓝色": [0, 0, 255],
+      "blue": [0, 0, 255],
+      "黑": [0, 0, 0],
+      "黑色": [0, 0, 0],
+      "black": [0, 0, 0]
+    },
+    "symbol": {
+      "圆": "circle",
+      "圆形": "circle",
+      "circle": "circle",
+      "方块": "square",
+      "方形": "square",
+      "square": "square",
+      "三角": "triangle",
+      "三角形": "triangle",
+      "triangle": "triangle"
+    }
+  },
+  "CACHE": {
+    "type": {
+      "磁盘": "disk",
+      "disk": "disk",
+      "文件": "disk",
+      "sqlite": "sqlite3",
+      "sqlite3": "sqlite3",
+      "数据库": "sqlite3"
+    },
+    "grid": {
+      "3857": "GoogleMapsCompatible",
+      "900913": "GoogleMapsCompatible",
+      "4326": "WGS84"
+    }
+  }
+}

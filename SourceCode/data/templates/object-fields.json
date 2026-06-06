@@ -1,0 +1,418 @@
+{
+  "_description": "补充 schema 中没有预定义但我们业务需要的字段。用于 METADATA 等开放键值容器。参数名均从 MapServer 8.6.3 源码提取验证（mapwms.cpp / mapwfs.cpp / mapwfs11.cpp / mapwfs20.c / mapwcs.cpp / mapwcs11.cpp / mapwcs20.cpp / mapgml.c）。",
+  "METADATA": {
+    "ows_title": {
+      "value_type": "string",
+      "description": "OGC 通用服务/图层标题（wms_title / wfs_title / wcs_title 的 fallback）"
+    },
+    "ows_abstract": {
+      "value_type": "string",
+      "description": "OGC 通用服务/图层摘要"
+    },
+    "ows_onlineresource": {
+      "value_type": "string",
+      "description": "OGC 通用在线资源地址"
+    },
+    "ows_enable_request": {
+      "value_type": "string",
+      "description": "OGC 通用请求开关",
+      "default": "*"
+    },
+    "ows_srs": {
+      "value_type": "string",
+      "description": "OGC 通用坐标系列表"
+    },
+    "ows_fees": {
+      "value_type": "string",
+      "description": "服务费用信息"
+    },
+    "ows_accessconstraints": {
+      "value_type": "string",
+      "description": "访问约束说明"
+    },
+    "wms_title": {
+      "value_type": "string",
+      "description": "WMS 服务标题（服务级）或图层标题（图层级）"
+    },
+    "wms_abstract": {
+      "value_type": "string",
+      "description": "WMS 服务或图层的摘要描述"
+    },
+    "wms_onlineresource": {
+      "value_type": "string",
+      "description": "WMS 在线资源地址（自动从 map.name 推导）",
+      "derived": true
+    },
+    "wms_enable_request": {
+      "value_type": "string",
+      "description": "允许的 WMS 请求类型",
+      "default": "*"
+    },
+    "wms_srs": {
+      "value_type": "string",
+      "description": "WMS 支持的坐标系列表，如 \"EPSG:3857 EPSG:4326\""
+    },
+    "wms_extent": {
+      "value_type": "string",
+      "description": "WMS 服务/图层空间范围，格式：minx miny maxx maxy"
+    },
+    "wms_keywordlist": {
+      "value_type": "string",
+      "description": "WMS 服务关键字列表，逗号分隔"
+    },
+    "wms_fees": {
+      "value_type": "string",
+      "description": "WMS 服务费用信息"
+    },
+    "wms_accessconstraints": {
+      "value_type": "string",
+      "description": "WMS 访问约束说明"
+    },
+    "wms_rootlayer_name": {
+      "value_type": "string",
+      "description": "WMS GetCapabilities 根图层名称"
+    },
+    "wms_rootlayer_title": {
+      "value_type": "string",
+      "description": "WMS GetCapabilities 根图层标题"
+    },
+    "wms_rootlayer_abstract": {
+      "value_type": "string",
+      "description": "WMS GetCapabilities 根图层摘要"
+    },
+    "wms_layerlimit": {
+      "value_type": "integer",
+      "description": "WMS 服务允许的最大图层数"
+    },
+    "wms_updatesequence": {
+      "value_type": "string",
+      "description": "WMS 服务更新序列号（用于缓存控制）"
+    },
+    "wms_sld_enabled": {
+      "value_type": "boolean",
+      "description": "是否启用 SLD（Styled Layer Descriptor）支持"
+    },
+    "wms_style_name": {
+      "value_type": "string",
+      "description": "WMS 全局样式名称"
+    },
+    "wms_style_title": {
+      "value_type": "string",
+      "description": "WMS 全局样式标题"
+    },
+    "wms_getmap_formatlist": {
+      "value_type": "string",
+      "description": "GetMap 支持的格式列表，如 \"png,jpeg,tiff\""
+    },
+    "wms_getfeatureinfo_formatlist": {
+      "value_type": "string",
+      "description": "GetFeatureInfo 支持的格式列表"
+    },
+    "wms_getlegendgraphic_formatlist": {
+      "value_type": "string",
+      "description": "GetLegendGraphic 支持的格式列表"
+    },
+    "wms_dataurl_href": {
+      "value_type": "string",
+      "description": "图层数据链接地址"
+    },
+    "wms_metadataurl_href": {
+      "value_type": "string",
+      "description": "图层元数据链接地址"
+    },
+    "wms_metadataurl_list": {
+      "value_type": "string",
+      "description": "图层元数据链接列表"
+    },
+    "wms_attribution_title": {
+      "value_type": "string",
+      "description": "归属信息标题，显示在地图角落的数据来源说明"
+    },
+    "wms_attribution_onlineresource": {
+      "value_type": "string",
+      "description": "归属信息链接地址"
+    },
+    "wms_attribution_logourl": {
+      "value_type": "string",
+      "description": "归属 Logo URL"
+    },
+    "wms_include_items": {
+      "value_type": "string",
+      "description": "GetFeatureInfo 响应中需要包含的属性字段；\"all\" 表示全部",
+      "default": "all"
+    },
+    "wms_exclude_items": {
+      "value_type": "string",
+      "description": "GetFeatureInfo 响应中需要排除的属性字段"
+    },
+    "wms_http_max_age": {
+      "value_type": "integer",
+      "description": "HTTP Cache-Control max-age（秒）"
+    },
+    "wms_inspire_capabilities": {
+      "value_type": "string",
+      "description": "INSPIRE 扩展能力文档路径"
+    },
+    "wfs_title": {
+      "value_type": "string",
+      "description": "WFS 服务标题（服务级）或图层标题（图层级）"
+    },
+    "wfs_abstract": {
+      "value_type": "string",
+      "description": "WFS 服务或图层的摘要描述"
+    },
+    "wfs_onlineresource": {
+      "value_type": "string",
+      "description": "WFS 在线资源地址"
+    },
+    "wfs_enable_request": {
+      "value_type": "string",
+      "description": "允许的 WFS 请求类型",
+      "default": "*"
+    },
+    "wfs_srs": {
+      "value_type": "string",
+      "description": "WFS 支持的坐标系列表，如 \"EPSG:4326\""
+    },
+    "wfs_extent": {
+      "value_type": "string",
+      "description": "WFS 服务/图层空间范围"
+    },
+    "wfs_namespace_uri": {
+      "value_type": "string",
+      "description": "WFS 命名空间 URI"
+    },
+    "wfs_namespace_prefix": {
+      "value_type": "string",
+      "description": "WFS 命名空间前缀"
+    },
+    "wfs_maxfeatures": {
+      "value_type": "integer",
+      "description": "GetFeature 返回的最大要素数"
+    },
+    "wfs_updatesequence": {
+      "value_type": "string",
+      "description": "WFS 服务更新序列号"
+    },
+    "wfs_getfeature_formatlist": {
+      "value_type": "string",
+      "description": "GetFeature 响应格式列表，如 \"gml,geojson\""
+    },
+    "wfs_metadataurl_href": {
+      "value_type": "string",
+      "description": "WFS 元数据链接地址"
+    },
+    "wfs_metadataurl_list": {
+      "value_type": "string",
+      "description": "WFS 元数据链接列表"
+    },
+    "wfs_layer_type": {
+      "value_type": "string",
+      "description": "WFS 图层类型覆盖"
+    },
+    "wfs_feature_collection": {
+      "value_type": "string",
+      "description": "WFS 要素集合包装元素名称"
+    },
+    "wfs_validate_xml": {
+      "value_type": "boolean",
+      "description": "是否对 WFS 输出进行 XML 验证"
+    },
+    "wfs_return_srs_as_urn": {
+      "value_type": "boolean",
+      "description": "是否将 SRS 返回为 URN 格式"
+    },
+    "wfs_storedqueries": {
+      "value_type": "string",
+      "description": "WFS 2.0 存储查询定义"
+    },
+    "wfs_inspire_capabilities": {
+      "value_type": "string",
+      "description": "INSPIRE 扩展能力文档路径"
+    },
+    "wfs_inspire_dsid_code": {
+      "value_type": "string",
+      "description": "INSPIRE 数据集标识符代码"
+    },
+    "wfs_inspire_dsid_ns": {
+      "value_type": "string",
+      "description": "INSPIRE 数据集标识符命名空间"
+    },
+    "wcs_title": {
+      "value_type": "string",
+      "description": "WCS 服务标题（服务级）或图层标题（图层级）"
+    },
+    "wcs_abstract": {
+      "value_type": "string",
+      "description": "WCS 服务或图层的摘要描述"
+    },
+    "wcs_onlineresource": {
+      "value_type": "string",
+      "description": "WCS 在线资源地址"
+    },
+    "wcs_enable_request": {
+      "value_type": "string",
+      "description": "允许的 WCS 请求类型",
+      "default": "*"
+    },
+    "wcs_srs": {
+      "value_type": "string",
+      "description": "WCS 支持的坐标系列表"
+    },
+    "wcs_extent": {
+      "value_type": "string",
+      "description": "WCS 服务/图层空间范围"
+    },
+    "wcs_formats": {
+      "value_type": "string",
+      "description": "WCS 输出格式列表，如 \"tiff,png,jpeg\""
+    },
+    "wcs_size": {
+      "value_type": "string",
+      "description": "WCS 输出图像大小（宽 高）"
+    },
+    "wcs_resolution": {
+      "value_type": "string",
+      "description": "WCS 输出分辨率"
+    },
+    "wcs_imagemode": {
+      "value_type": "string",
+      "description": "WCS 图像模式（如 BYTE、INT16、FLOAT32）"
+    },
+    "wcs_bandcount": {
+      "value_type": "integer",
+      "description": "栅格图层波段数量"
+    },
+    "wcs_bands_name": {
+      "value_type": "string",
+      "description": "WCS 波段名称"
+    },
+    "wcs_bands_label": {
+      "value_type": "string",
+      "description": "WCS 波段标签"
+    },
+    "wcs_bands_rangeitem": {
+      "value_type": "string",
+      "description": "WCS 波段范围项"
+    },
+    "wcs_rangeset_name": {
+      "value_type": "string",
+      "description": "WCS 范围集名称"
+    },
+    "wcs_rangeset_label": {
+      "value_type": "string",
+      "description": "WCS 范围集标签"
+    },
+    "wcs_rangeset_axes": {
+      "value_type": "string",
+      "description": "WCS 范围集轴定义"
+    },
+    "wcs_metadatalink_href": {
+      "value_type": "string",
+      "description": "WCS 元数据链接地址"
+    },
+    "wcs_metadatalink_list": {
+      "value_type": "string",
+      "description": "WCS 元数据链接列表"
+    },
+    "wcs_timeitem": {
+      "value_type": "string",
+      "description": "WCS 时间字段名"
+    },
+    "wcs_timeperiod": {
+      "value_type": "string",
+      "description": "WCS 时间段"
+    },
+    "wcs_timeposition": {
+      "value_type": "string",
+      "description": "WCS 时间位置"
+    },
+    "wcs_updatesequence": {
+      "value_type": "string",
+      "description": "WCS 服务更新序列号"
+    },
+    "wcs_validate_xml": {
+      "value_type": "boolean",
+      "description": "是否对 WCS 输出进行 XML 验证"
+    },
+    "wcs_schemas_dir": {
+      "value_type": "string",
+      "description": "WCS XML Schema 目录路径"
+    },
+    "wcs_inspire_capabilities": {
+      "value_type": "string",
+      "description": "INSPIRE 扩展能力文档路径"
+    },
+    "wcs_inspire_dsid_code": {
+      "value_type": "string",
+      "description": "INSPIRE 数据集标识符代码"
+    },
+    "wcs_inspire_dsid_ns": {
+      "value_type": "string",
+      "description": "INSPIRE 数据集标识符命名空间"
+    },
+    "gml_include_items": {
+      "value_type": "string",
+      "description": "GML 输出中包含的属性字段；\"all\" 表示全部",
+      "default": "all"
+    },
+    "gml_featureid": {
+      "value_type": "string",
+      "description": "GML 输出中用作要素 ID 的字段名"
+    },
+    "gml_geometries": {
+      "value_type": "string",
+      "description": "GML 输出中几何字段的名称列表，逗号分隔"
+    },
+    "gml_geomtype": {
+      "value_type": "string",
+      "description": "GML 几何类型，如 point/line/polygon/multipoint；支持 25d 后缀表示 3D"
+    },
+    "gml_geometry_precision": {
+      "value_type": "integer",
+      "description": "GML 几何坐标输出精度（小数位数）"
+    }
+  },
+  "CACHE": {
+    "type": {
+      "value_type": "enum",
+      "enum": ["disk", "sqlite3"],
+      "description": "缓存类型"
+    },
+    "base": {
+      "value_type": "string",
+      "description": "缓存存储路径（disk类型为目录，sqlite3类型为数据库文件路径）"
+    },
+    "expires": {
+      "value_type": "integer",
+      "description": "瓦片过期时间（秒），用于HTTP Cache-Control"
+    },
+    "auto_expire": {
+      "value_type": "integer",
+      "description": "自动重新验证过期时间（秒），缓存瓦片超过此时间后自动从源重新获取"
+    },
+    "metatile": {
+      "value_type": "string",
+      "description": "元瓦片大小（如 5 5），表示后端一次渲染的瓦片矩阵"
+    },
+    "metabuffer": {
+      "value_type": "integer",
+      "description": "元缓冲区像素数，防止标签在瓦片边缘被截断"
+    },
+    "grid": {
+      "value_type": "enum",
+      "enum": ["GoogleMapsCompatible", "WGS84"],
+      "description": "瓦片网格（自动从投影推导）"
+    },
+    "wmts_enabled": {
+      "value_type": "boolean",
+      "description": "是否启用 WMTS 服务",
+      "default": true
+    },
+    "tms_enabled": {
+      "value_type": "boolean",
+      "description": "是否启用 TMS 服务",
+      "default": true
+    }
+  }
+}

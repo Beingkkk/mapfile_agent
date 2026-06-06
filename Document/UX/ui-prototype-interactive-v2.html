@@ -1,0 +1,3228 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MapGuide v2 — 交互式 Mapfile 配置编辑器</title>
+  <style>
+    /* ============================================================
+       DESIGN TOKENS
+       ============================================================ */
+    :root {
+      --brand-50:  #f0f4f8;
+      --brand-100: #d9e2ec;
+      --brand-200: #bcccdc;
+      --brand-300: #9fb3c8;
+      --brand-400: #829ab1;
+      --brand-500: #627d98;
+      --brand-600: #486581;
+      --brand-700: #334e68;
+      --brand-800: #243b53;
+      --brand-900: #102a43;
+
+      --gray-0:   #ffffff;
+      --gray-50:  #f7f8fa;
+      --gray-100: #f0f2f5;
+      --gray-150: #e4e7eb;
+      --gray-200: #d1d5db;
+      --gray-250: #c4cdd5;
+      --gray-300: #9aa5b1;
+      --gray-400: #7b8794;
+      --gray-500: #616e7c;
+      --gray-600: #52606d;
+      --gray-700: #3e4c59;
+      --gray-800: #323f4b;
+      --gray-900: #1f2933;
+
+      --success-50:  #f0f9f4;
+      --success-100: #d4edda;
+      --success-500: #36b37e;
+      --success-700: #006644;
+
+      --warn-50:  #fff8e6;
+      --warn-100: #ffe9a8;
+      --warn-500: #ffab00;
+      --warn-700: #ff8b00;
+
+      --error-50:  #fff0f0;
+      --error-100: #ffd6d6;
+      --error-200: #ffb3b3;
+      --error-500: #de350b;
+      --error-700: #bf2600;
+
+      --phase-ds: #2563eb;
+      --phase-ds-bg: #dbeafe;
+      --phase-ds-light: #eff6ff;
+      --phase-st: #ea580c;
+      --phase-st-bg: #ffedd5;
+      --phase-st-light: #fff7ed;
+      --phase-sv: #16a34a;
+      --phase-sv-bg: #dcfce7;
+      --phase-sv-light: #f0fdf4;
+      --phase-ca: #9333ea;
+      --phase-ca-bg: #f3e8ff;
+      --phase-ca-light: #faf5ff;
+
+      --shadow-xs:  0 1px 2px 0 rgb(31 41 51 / 0.04);
+      --shadow-sm:  0 1px 3px 0 rgb(31 41 51 / 0.06), 0 1px 2px -1px rgb(31 41 51 / 0.04);
+      --shadow-md:  0 4px 6px -1px rgb(31 41 51 / 0.05), 0 2px 4px -2px rgb(31 41 51 / 0.04);
+      --shadow-lg:  0 10px 15px -3px rgb(31 41 51 / 0.05), 0 4px 6px -4px rgb(31 41 51 / 0.04);
+
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 10px;
+      --radius-xl: 14px;
+      --radius-full: 9999px;
+
+      --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+      --font-mono: "JetBrains Mono", "SF Mono", "Cascadia Code", "Fira Code", Consolas, "Liberation Mono", monospace;
+    }
+
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: var(--font-sans);
+      background: var(--gray-100);
+      color: var(--gray-800);
+      font-size: 16px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+    }
+
+    /* ============================================================
+       APP SHELL — Two Columns
+       ============================================================ */
+    .app {
+      display: grid;
+      grid-template-columns: 1.25fr 1fr;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    /* ============================================================
+       LEFT PANEL — Config Tree
+       ============================================================ */
+    .left-panel {
+      display: flex;
+      flex-direction: column;
+      background: var(--gray-0);
+      border-right: 1px solid var(--gray-150);
+      overflow: hidden;
+      min-width: 520px;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 18px;
+      background: var(--gray-0);
+      border-bottom: 1px solid var(--gray-150);
+      flex-shrink: 0;
+    }
+    .panel-header-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--gray-900);
+      letter-spacing: -0.2px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .panel-header-sub {
+      font-size: 13px;
+      color: var(--gray-400);
+    }
+    .panel-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Show Mode Toggle */
+    /* Legend Bar */
+    .legend-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 18px;
+      background: var(--gray-50);
+      border-bottom: 1px solid var(--gray-150);
+      font-size: 13px;
+      color: var(--gray-500);
+      flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+    .legend-title {
+      font-weight: 600;
+      color: var(--gray-600);
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .showmode-toggle {
+      display: flex;
+      align-items: center;
+      background: var(--gray-100);
+      border-radius: var(--radius-md);
+      padding: 2px;
+      border: 1px solid var(--gray-200);
+    }
+    .showmode-btn {
+      padding: 5px 10px;
+      border-radius: var(--radius-sm);
+      border: none;
+      background: transparent;
+      color: var(--gray-500);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .showmode-btn:hover { color: var(--gray-700); }
+    .showmode-btn.active {
+      background: var(--gray-0);
+      color: var(--gray-900);
+      box-shadow: var(--shadow-xs);
+      font-weight: 600;
+    }
+
+    /* Service Type Selector */
+    .service-type-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 18px;
+      background: var(--gray-0);
+      border-bottom: 1px solid var(--gray-150);
+      font-size: 13px;
+      flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+    .service-type-label {
+      font-weight: 600;
+      color: var(--gray-600);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    .service-type-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .service-type-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      user-select: none;
+      color: var(--gray-600);
+      font-size: 13px;
+      transition: color 0.15s;
+    }
+    .service-type-item:hover { color: var(--gray-900); }
+    .service-type-item input[type="checkbox"] {
+      width: 14px;
+      height: 14px;
+      accent-color: var(--brand-600);
+      cursor: pointer;
+    }
+    .service-type-item.disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .service-divider {
+      width: 1px;
+      height: 16px;
+      background: var(--gray-200);
+      margin: 0 2px;
+    }
+
+    .btn-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--gray-200);
+      background: var(--gray-0);
+      color: var(--gray-500);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 16px;
+      transition: all 0.15s;
+    }
+    .btn-icon:hover {
+      background: var(--gray-50);
+      border-color: var(--gray-400);
+      color: var(--gray-700);
+    }
+
+    /* Tree Scroll Area */
+    .tree-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 16px 18px;
+    }
+
+    .tree { font-size: 14px; }
+
+    /* Object Node */
+    .tree-obj { margin-bottom: 2px; }
+    .tree-obj-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 10px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.12s;
+      user-select: none;
+      position: relative;
+    }
+    .tree-obj-header:hover { background: var(--gray-50); }
+    .tree-obj-header.selected {
+      background: var(--brand-50);
+      box-shadow: inset 3px 0 0 var(--brand-500);
+    }
+    .tree-toggle {
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      color: var(--gray-400);
+      flex-shrink: 0;
+      transition: transform 0.15s;
+    }
+    .tree-toggle.collapsed { transform: rotate(-90deg); }
+    .tree-obj-icon {
+      width: 22px;
+      height: 22px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+    .tree-obj-icon.map   { background: rgba(36,59,83,0.08); color: var(--brand-800); }
+    .tree-obj-icon.layer { background: var(--phase-ds-light); color: var(--phase-ds); }
+    .tree-obj-icon.class { background: var(--phase-st-light); color: var(--phase-st); }
+    .tree-obj-icon.style { background: var(--phase-st-light); color: var(--phase-st); }
+    .tree-obj-icon.label { background: var(--phase-st-light); color: var(--phase-st); }
+    .tree-obj-icon.web   { background: var(--phase-sv-light); color: var(--phase-sv); }
+    .tree-obj-icon.cache { background: var(--phase-ca-light); color: var(--phase-ca); }
+    .tree-obj-icon.meta  { background: var(--phase-sv-light); color: var(--phase-sv); }
+
+    .tree-obj-name {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--gray-700);
+    }
+    .tree-obj-index {
+      font-size: 13px;
+      color: var(--gray-400);
+      font-weight: 400;
+      margin-left: 2px;
+    }
+    .tree-obj-status {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .status-icon {
+      font-size: 14px;
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .status-icon.pass { color: var(--success-500); }
+    .status-icon.fail { color: var(--error-500); }
+    .status-icon.idle { color: var(--gray-300); }
+
+    /* Line number badge */
+    .line-badge {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--gray-300);
+      padding: 1px 5px;
+      border-radius: var(--radius-sm);
+      background: transparent;
+      letter-spacing: -0.2px;
+    }
+    .tree-obj-header .line-badge {
+      margin-left: auto;
+      margin-right: 6px;
+    }
+    .tree-prop .line-badge {
+      margin-left: 6px;
+    }
+
+    .tree-obj-actions {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+    .tree-obj-header:hover .tree-obj-actions { opacity: 1; }
+    .tree-obj-btn {
+      width: 22px;
+      height: 22px;
+      border-radius: var(--radius-sm);
+      border: none;
+      background: transparent;
+      color: var(--gray-400);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.12s;
+    }
+    .tree-obj-btn:hover { background: var(--gray-100); color: var(--gray-700); }
+    .tree-obj-btn.add:hover { color: var(--success-500); }
+    .tree-obj-btn.del:hover { color: var(--error-500); }
+
+    .tree-children {
+      padding-left: 20px;
+      border-left: 1.5px solid var(--gray-150);
+      margin-left: 10px;
+    }
+    .tree-children.collapsed { display: none; }
+
+    /* ============================================================
+       PROPERTY ROW
+       ============================================================ */
+    .tree-prop {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 8px 5px 10px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 1px;
+      transition: all 0.12s;
+      position: relative;
+    }
+    .tree-prop:hover { background: var(--gray-50); }
+    .tree-prop.selected {
+      background: var(--brand-50);
+      box-shadow: inset 3px 0 0 var(--brand-500);
+    }
+    .tree-prop.has-error {
+      background: var(--error-50);
+    }
+    .tree-prop.has-error.selected {
+      background: #fff0f0;
+      box-shadow: inset 3px 0 0 var(--error-500);
+    }
+
+    .req-indicator {
+      width: 16px;
+      height: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      flex-shrink: 0;
+      border-radius: var(--radius-sm);
+      user-select: none;
+    }
+    .req-indicator.required { color: var(--error-500); font-size: 14px; line-height: 1; }
+    .req-indicator.default { color: var(--gray-400); font-size: 10px; font-weight: 700; background: var(--gray-100); }
+    .req-indicator.optional { color: var(--gray-300); font-size: 11px; }
+    .req-indicator.derived { color: var(--gray-400); font-size: 12px; }
+    .req-indicator.custom { color: var(--brand-500); font-size: 12px; background: var(--brand-50); }
+
+    .tree-prop-key {
+      font-family: var(--font-mono);
+      font-size: 14px;
+      color: var(--gray-500);
+      min-width: 90px;
+      flex-shrink: 0;
+      user-select: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .tree-prop-key:hover { color: var(--gray-700); }
+    .tree-prop-key::after {
+      content: ":";
+      color: var(--gray-300);
+      margin-left: 1px;
+    }
+    .tree-prop-key .custom-tag {
+      font-size: 10px;
+      color: var(--brand-500);
+      background: var(--brand-50);
+      padding: 1px 4px;
+      border-radius: 3px;
+      font-family: var(--font-sans);
+      font-weight: 600;
+      margin-left: 3px;
+    }
+
+    .tree-prop-value {
+      flex: 1;
+      min-width: 0;
+    }
+
+    /* Inline Edit Controls */
+    .ctrl-input {
+      width: 100%;
+      padding: 5px 9px;
+      border: 1.5px solid var(--gray-200);
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-family: var(--font-mono);
+      color: var(--gray-700);
+      background: var(--gray-0);
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .ctrl-input:focus {
+      border-color: var(--brand-500);
+      box-shadow: 0 0 0 2px var(--brand-100);
+    }
+    .ctrl-input.has-error {
+      border-color: var(--error-500);
+      background: var(--error-50);
+    }
+    .ctrl-input.has-error:focus {
+      box-shadow: 0 0 0 2px var(--error-100);
+    }
+    .ctrl-input.empty {
+      color: var(--gray-400);
+      font-style: italic;
+      font-family: var(--font-sans);
+    }
+
+    .ctrl-select {
+      width: 100%;
+      padding: 5px 9px;
+      border: 1.5px solid var(--gray-200);
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-family: var(--font-mono);
+      color: var(--gray-700);
+      background: var(--gray-0);
+      outline: none;
+      cursor: pointer;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .ctrl-select:focus {
+      border-color: var(--brand-500);
+      box-shadow: 0 0 0 2px var(--brand-100);
+    }
+
+    .ctrl-color {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 9px;
+      border: 1.5px solid var(--gray-200);
+      border-radius: var(--radius-sm);
+      background: var(--gray-0);
+      cursor: pointer;
+      transition: border-color 0.15s;
+      width: fit-content;
+    }
+    .ctrl-color:hover { border-color: var(--gray-400); }
+    .ctrl-color-swatch {
+      width: 18px;
+      height: 18px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--gray-200);
+      flex-shrink: 0;
+    }
+    .ctrl-color-text {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--gray-600);
+    }
+
+    .ctrl-array {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+    .array-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 3px 8px;
+      border-radius: var(--radius-sm);
+      background: var(--gray-100);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--gray-600);
+      border: 1px solid var(--gray-200);
+    }
+    .array-tag-input {
+      padding: 3px 8px;
+      border: 1.5px dashed var(--gray-300);
+      border-radius: var(--radius-sm);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--gray-500);
+      background: transparent;
+      outline: none;
+      min-width: 80px;
+    }
+    .array-tag-input:focus {
+      border-color: var(--brand-400);
+      border-style: solid;
+    }
+
+    /* Property Actions */
+    .tree-prop-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+    .tree-prop:hover .tree-prop-actions,
+    .tree-prop.has-error .tree-prop-actions,
+    .tree-prop.selected .tree-prop-actions {
+      opacity: 1;
+    }
+    .prop-btn {
+      width: 20px;
+      height: 20px;
+      border-radius: var(--radius-sm);
+      border: none;
+      background: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.12s;
+    }
+    .prop-btn.help {
+      color: var(--gray-400);
+    }
+    .prop-btn.help:hover {
+      background: var(--brand-100);
+      color: var(--brand-600);
+    }
+    .prop-btn.error-help {
+      color: var(--error-500);
+      background: var(--error-50);
+      animation: pulseHelp 2s infinite;
+    }
+    .prop-btn.error-help:hover {
+      background: var(--error-100);
+    }
+    .prop-btn.del-prop {
+      color: var(--gray-300);
+    }
+    .prop-btn.del-prop:hover {
+      color: var(--error-500);
+      background: var(--error-50);
+    }
+    @keyframes pulseHelp {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .prop-error-tooltip {
+      position: absolute;
+      left: 120px;
+      top: calc(100% + 4px);
+      z-index: 50;
+      background: var(--error-700);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      line-height: 1.5;
+      max-width: 320px;
+      box-shadow: var(--shadow-lg);
+    }
+    .prop-error-tooltip::before {
+      content: "";
+      position: absolute;
+      top: -5px;
+      left: 16px;
+      width: 10px;
+      height: 10px;
+      background: var(--error-700);
+      transform: rotate(45deg);
+    }
+
+    /* Phase Badge */
+    .phase-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .phase-dot.ds { background: var(--phase-ds); }
+    .phase-dot.st { background: var(--phase-st); }
+    .phase-dot.sv { background: var(--phase-sv); }
+    .phase-dot.ca { background: var(--phase-ca); }
+    .phase-dot.derived { background: var(--gray-400); }
+
+    .derived-tag {
+      font-size: 11px;
+      padding: 1px 5px;
+      border-radius: var(--radius-sm);
+      background: var(--gray-100);
+      color: var(--gray-500);
+      font-weight: 600;
+      margin-left: 4px;
+      letter-spacing: 0.3px;
+    }
+
+    /* Add buttons */
+    .tree-add-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 10px;
+      margin: 4px 0 4px 20px;
+      border-radius: var(--radius-sm);
+      border: 1.5px dashed var(--gray-300);
+      background: transparent;
+      color: var(--gray-500);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+    .tree-add-btn:hover {
+      border-color: var(--brand-400);
+      color: var(--brand-600);
+      background: var(--brand-50);
+    }
+    .tree-add-btn.custom {
+      border-color: var(--brand-200);
+      color: var(--brand-500);
+      margin-left: 0;
+    }
+    .tree-add-btn.custom:hover {
+      border-color: var(--brand-400);
+      color: var(--brand-700);
+      background: var(--brand-50);
+    }
+
+    .hidden-params-hint {
+      padding: 6px 10px;
+      margin: 4px 0 4px 20px;
+      border-radius: var(--radius-sm);
+      background: var(--gray-50);
+      color: var(--gray-400);
+      font-size: 12px;
+      font-style: italic;
+    }
+
+    /* Bottom Action Bar */
+    .tree-action-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 18px;
+      background: var(--gray-0);
+      border-top: 1px solid var(--gray-150);
+      flex-shrink: 0;
+    }
+    .btn-main {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 18px;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      font-weight: 600;
+      border: 1.5px solid var(--gray-200);
+      background: #fff;
+      color: var(--gray-700);
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .btn-main:hover:not(:disabled) {
+      border-color: var(--gray-400);
+      background: var(--gray-50);
+    }
+    .btn-main:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+    .btn-main.primary {
+      background: var(--gray-900);
+      color: #fff;
+      border-color: var(--gray-900);
+    }
+    .btn-main.primary:hover:not(:disabled) {
+      background: var(--gray-800);
+    }
+    .btn-main.primary:disabled {
+      background: var(--gray-300);
+      border-color: var(--gray-300);
+      color: var(--gray-500);
+    }
+    .btn-main.danger {
+      border-color: var(--error-200);
+      background: var(--error-50);
+      color: var(--error-700);
+    }
+    .btn-main.danger:hover:not(:disabled) {
+      background: var(--error-100);
+      border-color: var(--error-500);
+    }
+
+    .tree-status-summary {
+      font-size: 13px;
+      color: var(--gray-400);
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .status-summary-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .status-summary-item .pass { color: var(--success-500); }
+    .status-summary-item .fail { color: var(--error-500); }
+
+    /* ============================================================
+       RIGHT PANEL — QA Panel
+       ============================================================ */
+    .right-panel {
+      display: flex;
+      flex-direction: column;
+      background: var(--gray-50);
+      overflow: hidden;
+      min-width: 380px;
+    }
+
+    .qa-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 18px;
+      background: var(--gray-0);
+      border-bottom: 1px solid var(--gray-150);
+      flex-shrink: 0;
+    }
+    .qa-header-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--gray-900);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .qa-header-sub {
+      font-size: 13px;
+      color: var(--gray-400);
+    }
+
+    /* QA Round Indicator */
+    .qa-round-indicator {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      background: var(--gray-100);
+      border: 1px solid var(--gray-200);
+      font-size: 13px;
+      color: var(--gray-500);
+    }
+    .qa-round-num {
+      font-weight: 700;
+      color: var(--gray-700);
+      font-size: 14px;
+    }
+    .qa-round-label {
+      font-size: 12px;
+    }
+
+    .qa-focus {
+      padding: 8px 18px;
+      background: var(--brand-50);
+      border-top: 1px solid var(--brand-200);
+      border-bottom: 1px solid var(--brand-200);
+      font-size: 13px;
+      color: var(--brand-700);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .qa-focus.hidden { display: none; }
+    .qa-focus-label {
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .qa-focus-path {
+      font-family: var(--font-mono);
+      background: var(--brand-100);
+      padding: 2px 8px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+    }
+    .qa-focus-lines {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--brand-500);
+      margin-left: 22px;
+    }
+    .qa-focus-clear {
+      margin-left: auto;
+      font-size: 12px;
+      color: var(--brand-500);
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: var(--radius-sm);
+    }
+    .qa-focus-clear:hover {
+      background: var(--brand-100);
+    }
+
+    .chat-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 18px;
+    }
+    .chat-inner {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding-bottom: 8px;
+    }
+
+    .msg {
+      display: flex;
+      gap: 10px;
+      animation: msgAppear 0.3s ease both;
+    }
+    .msg.user { flex-direction: row-reverse; }
+    .msg-avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: var(--radius-md);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      background: #fff;
+      border: 1px solid var(--gray-150);
+      color: var(--gray-500);
+    }
+    .msg.bot .msg-avatar {
+      background: var(--gray-900);
+      color: #fff;
+      border-color: var(--gray-900);
+    }
+    .msg.user .msg-avatar {
+      background: var(--gray-200);
+      color: var(--gray-700);
+    }
+    .msg.system .msg-avatar {
+      background: var(--warn-500);
+      color: #fff;
+      border-color: var(--warn-500);
+    }
+    .msg-body {
+      max-width: 88%;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .msg-bubble {
+      padding: 12px 16px;
+      border-radius: var(--radius-lg);
+      font-size: 14px;
+      line-height: 1.7;
+      box-shadow: var(--shadow-xs);
+    }
+    .msg.bot .msg-bubble {
+      background: var(--gray-0);
+      color: var(--gray-800);
+      border: 1px solid var(--gray-150);
+      border-top-left-radius: 3px;
+    }
+    .msg.user .msg-bubble {
+      background: var(--msg-user-bg);
+      color: var(--msg-user-text);
+      border-top-right-radius: 3px;
+    }
+    .msg.system .msg-bubble {
+      background: var(--warn-50);
+      color: var(--warn-700);
+      border: 1px solid var(--warn-100);
+      font-size: 14px;
+    }
+    .msg-time {
+      font-size: 12px;
+      color: var(--gray-400);
+    }
+    .msg.user .msg-time { text-align: right; }
+
+    .code-block {
+      background: var(--gray-50);
+      border: 1px solid var(--gray-150);
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+      margin-top: 6px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--gray-700);
+      overflow-x: auto;
+    }
+    .code-block-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--gray-150);
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--gray-500);
+    }
+    .code-copy-btn {
+      font-size: 12px;
+      color: var(--gray-400);
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: var(--radius-sm);
+      border: none;
+      background: transparent;
+    }
+    .code-copy-btn:hover {
+      background: var(--gray-100);
+      color: var(--gray-600);
+    }
+
+    .chat-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 60px 20px;
+      color: var(--gray-400);
+      text-align: center;
+    }
+
+    .qa-suggestions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 0 18px 8px;
+    }
+    .qa-suggestion {
+      padding: 6px 12px;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--gray-200);
+      background: var(--gray-0);
+      color: var(--gray-600);
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+    .qa-suggestion:hover {
+      border-color: var(--brand-400);
+      color: var(--brand-700);
+      background: var(--brand-50);
+    }
+
+    .input-area {
+      padding: 10px 16px 14px;
+      background: var(--gray-0);
+      border-top: 1px solid var(--gray-150);
+      flex-shrink: 0;
+    }
+    .input-box {
+      background: #fff;
+      border: 1.5px solid var(--gray-200);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      align-items: flex-end;
+      gap: 6px;
+      padding: 5px 5px 5px 14px;
+      min-height: 48px;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .input-box:focus-within {
+      border-color: var(--gray-400);
+      box-shadow: 0 0 0 3px var(--gray-150), var(--shadow-sm);
+    }
+    .input-field {
+      flex: 1;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-size: 14px;
+      line-height: 1.6;
+      padding: 8px 0;
+      color: var(--gray-900);
+      resize: none;
+      max-height: 100px;
+      font-family: var(--font-sans);
+    }
+    .input-field::placeholder { color: var(--gray-400); }
+    .btn-send {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-full);
+      border: none;
+      background: var(--gray-900);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s;
+      flex-shrink: 0;
+      font-size: 14px;
+    }
+    .btn-send:hover { background: var(--gray-800); }
+    .btn-send:disabled { background: var(--gray-300); cursor: not-allowed; }
+
+    /* ============================================================
+       MODALS
+       ============================================================ */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.35);
+      z-index: 300;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      animation: fadeIn 0.2s ease;
+    }
+    .modal-overlay.hidden { display: none; }
+    .modal-card {
+      background: #fff;
+      border-radius: var(--radius-xl);
+      padding: 24px;
+      max-width: 460px;
+      width: 100%;
+      box-shadow: var(--shadow-lg);
+      animation: modalIn 0.25s ease;
+    }
+    .modal-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--gray-900);
+      margin-bottom: 6px;
+    }
+    .modal-desc {
+      font-size: 14px;
+      color: var(--gray-500);
+      margin-bottom: 18px;
+      line-height: 1.6;
+    }
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+    .modal-btn {
+      padding: 9px 18px;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      border: none;
+    }
+    .modal-btn.secondary {
+      background: var(--gray-50);
+      color: var(--gray-700);
+      border: 1px solid var(--gray-200);
+    }
+    .modal-btn.secondary:hover { background: var(--gray-100); }
+    .modal-btn.primary {
+      background: var(--gray-900);
+      color: #fff;
+    }
+    .modal-btn.primary:hover { background: var(--gray-800); }
+    .modal-btn.danger {
+      background: var(--error-500);
+      color: #fff;
+    }
+    .modal-btn.danger:hover { background: var(--error-700); }
+
+    /* Custom Property Modal */
+    .custom-prop-form {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .form-field {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .form-field label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--gray-600);
+    }
+    .form-field input,
+    .form-field select,
+    .form-field textarea {
+      padding: 9px 12px;
+      border: 1.5px solid var(--gray-200);
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      font-family: var(--font-sans);
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .form-field input:focus,
+    .form-field select:focus,
+    .form-field textarea:focus {
+      border-color: var(--brand-400);
+    }
+    .form-field textarea {
+      resize: vertical;
+      min-height: 60px;
+    }
+    .form-hint {
+      font-size: 12px;
+      color: var(--gray-400);
+      line-height: 1.4;
+    }
+
+    .modal-file-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .modal-file-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: var(--radius-md);
+      background: var(--gray-50);
+      border: 1px solid var(--gray-150);
+    }
+    .modal-file-icon { font-size: 18px; }
+    .modal-file-info { flex: 1; }
+    .modal-file-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--gray-800);
+    }
+    .modal-file-path {
+      font-size: 13px;
+      color: var(--gray-400);
+      margin-top: 1px;
+      font-family: var(--font-mono);
+    }
+    .modal-file-tag {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: var(--radius-full);
+      background: var(--success-100);
+      color: var(--success-700);
+    }
+    .modal-file-tag.conditional {
+      background: var(--warn-100);
+      color: var(--warn-700);
+    }
+
+    .reset-body {
+      text-align: center;
+      padding: 8px 0 4px;
+    }
+    .reset-icon {
+      font-size: 40px;
+      margin-bottom: 12px;
+    }
+    .reset-text {
+      font-size: 16px;
+      color: var(--gray-600);
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+
+    /* ============================================================
+       TOAST
+       ============================================================ */
+    .toast {
+      position: fixed;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 10px 20px;
+      border-radius: var(--radius-lg);
+      font-size: 14px;
+      font-weight: 500;
+      box-shadow: var(--shadow-lg);
+      z-index: 200;
+      animation: toastIn 0.3s ease;
+      white-space: nowrap;
+    }
+    .toast.success { background: var(--success-500); color: #fff; }
+    .toast.error   { background: var(--error-500); color: #fff; }
+    .toast.warn    { background: var(--warn-500); color: #fff; }
+
+    /* ============================================================
+       START OVERLAY
+       ============================================================ */
+    .start-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--gray-100);
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+    .start-overlay.hidden { display: none; }
+    .start-brand {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .start-brand h1 {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--gray-900);
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
+    }
+    .start-brand p {
+      color: var(--gray-500);
+      font-size: 16px;
+    }
+    .start-card {
+      background: #fff;
+      border-radius: var(--radius-xl);
+      padding: 28px;
+      max-width: 520px;
+      width: 100%;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--gray-150);
+    }
+    .start-intro {
+      text-align: center;
+      color: var(--gray-600);
+      font-size: 14px;
+      line-height: 1.7;
+      margin-bottom: 20px;
+    }
+    .start-btn {
+      width: 100%;
+      padding: 14px 24px;
+      border-radius: var(--radius-lg);
+      border: none;
+      background: var(--gray-900);
+      color: #fff;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      margin-bottom: 16px;
+    }
+    .start-btn:hover {
+      background: var(--gray-800);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+    .start-hint {
+      text-align: center;
+      color: var(--gray-400);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    /* ============================================================
+       ANIMATIONS
+       ============================================================ */
+    @keyframes msgAppear {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: translateY(16px) scale(0.97); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+      to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--gray-200); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--gray-300); }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 900px) {
+      .right-panel { display: none; }
+      .app { grid-template-columns: 1fr; }
+      .qa-toggle {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: var(--gray-900);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        box-shadow: var(--shadow-lg);
+        cursor: pointer;
+        z-index: 90;
+      }
+    }
+    @media (min-width: 901px) {
+      .qa-toggle { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ======================== START OVERLAY ======================== -->
+<div class="start-overlay" id="startOverlay">
+  <div class="start-brand">
+    <h1>🗺️ MapGuide</h1>
+    <p>交互式 Mapfile 配置编辑器 · MapServer 8.4</p>
+  </div>
+  <div class="start-card">
+    <div class="start-intro">
+      <p>左侧编辑配置参数，右侧问答助手随时解答。</p>
+      <p style="margin-top:8px;color:var(--gray-400);font-size:14px;">
+        所有交互通过 WebSocket 实时同步，无需刷新页面。
+      </p>
+    </div>
+    <button class="start-btn" onclick="app.startApp()">🚀 开始使用</button>
+    <div class="start-hint">
+      提示：首次使用可从左侧配置树的「添加图层」开始，<br>
+      或勾选 WFS/WCS 服务类型体验多服务配置，或直接在右侧问答助手描述需求。
+    </div>
+  </div>
+</div>
+
+<!-- ======================== CUSTOM PROPERTY MODAL ======================== -->
+<div class="modal-overlay hidden" id="customPropModal">
+  <div class="modal-card">
+    <div class="modal-title">➕ 添加自定义属性</div>
+    <div class="modal-desc">Mapfile 支持大量扩展参数。输入 key 名称、类型和描述，即可在配置树中添加自定义属性。</div>
+    <div class="custom-prop-form">
+      <div class="form-field">
+        <label>Key 名称 <span style="color:var(--error-500)">*</span></label>
+        <input type="text" id="customKey" placeholder="例如：transparency、filteritem">
+        <div class="form-hint">使用英文 key，对应 Mapfile 中的属性名</div>
+      </div>
+      <div class="form-field">
+        <label>类型 <span style="color:var(--error-500)">*</span></label>
+        <select id="customType">
+          <option value="string">string（字符串）</option>
+          <option value="enum">enum（枚举）</option>
+          <option value="integer">integer（整数）</option>
+          <option value="float">float（小数）</option>
+          <option value="boolean">boolean（布尔值）</option>
+          <option value="color">color（颜色）</option>
+          <option value="array">array（数组）</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label>描述</label>
+        <textarea id="customDesc" placeholder="该属性的用途说明（可选）"></textarea>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn secondary" onclick="app.closeCustomPropModal()">取消</button>
+      <button class="modal-btn primary" onclick="app.confirmAddCustomProp()">添加</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======================== EXPORT MODAL ======================== -->
+<div class="modal-overlay hidden" id="exportModal">
+  <div class="modal-card">
+    <div class="modal-title">📤 导出配置文件</div>
+    <div class="modal-desc">以下文件将导出到指定目录。MapCache XML 仅在配置了缓存参数时附带。</div>
+    <div class="modal-file-list" id="exportFileList"></div>
+    <div class="modal-actions">
+      <button class="modal-btn secondary" onclick="app.closeExportModal()">取消</button>
+      <button class="modal-btn primary" onclick="app.confirmExport()">确认导出</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======================== RESET CONFIRM MODAL ======================== -->
+<div class="modal-overlay hidden" id="resetModal">
+  <div class="modal-card" style="max-width: 380px;">
+    <div class="reset-body">
+      <div class="reset-icon">🔄</div>
+      <div style="font-size: 16px; font-weight: 700; color: var(--gray-900); margin-bottom: 8px;">重新开始新任务？</div>
+      <div class="reset-text">
+        当前配置参数和问答记录将全部清空，<br>就像刚打开软件一样。
+      </div>
+    </div>
+    <div class="modal-actions" style="justify-content: center;">
+      <button class="modal-btn secondary" onclick="app.closeResetModal()">取消</button>
+      <button class="modal-btn danger" onclick="app.doReset()">确认重置</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======================== IMPORT RESULT MODAL ======================== -->
+<div class="modal-overlay hidden" id="importModal">
+  <div class="modal-card" style="max-width: 420px;">
+    <div class="modal-title" id="importModalTitle">📂 导入 Mapfile</div>
+    <div class="modal-desc" id="importModalDesc">导入中...</div>
+    <div class="modal-actions" style="justify-content: center;" id="importModalActions">
+      <button class="modal-btn secondary" onclick="app.closeImportModal()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======================== MAIN APP ======================== -->
+<div class="app">
+
+  <!-- LEFT PANEL — Config Tree -->
+  <section class="left-panel">
+    <div class="panel-header">
+      <div>
+        <div class="panel-header-title">
+          🌲 配置树
+          <span class="panel-header-sub">MapServer 8.4 · 直接编辑参数</span>
+        </div>
+      </div>
+      <div class="panel-header-actions">
+        <div class="showmode-toggle">
+          <button class="showmode-btn active" id="showAllBtn" onclick="app.setShowMode('all')">全部</button>
+          <button class="showmode-btn" id="showRequiredBtn" onclick="app.setShowMode('required')">仅必填</button>
+        </div>
+        <button class="btn-icon" id="expandToggleBtn" title="展开全部" onclick="app.toggleExpandAll()">▶</button>
+      </div>
+    </div>
+
+    <!-- Service Type Selector -->
+    <div class="service-type-bar" id="serviceTypeBar">
+      <span class="service-type-label">☑️ 服务类型：</span>
+      <div class="service-type-group">
+        <label class="service-type-item" title="Web Map Service">
+          <input type="checkbox" id="cbWms" checked onchange="app.toggleServiceType('wms')">
+          <span>WMS</span>
+        </label>
+        <label class="service-type-item" title="Web Feature Service">
+          <input type="checkbox" id="cbWfs" onchange="app.toggleServiceType('wfs')">
+          <span>WFS</span>
+        </label>
+        <label class="service-type-item" title="Web Coverage Service">
+          <input type="checkbox" id="cbWcs" onchange="app.toggleServiceType('wcs')">
+          <span>WCS</span>
+        </label>
+        <span class="service-divider"></span>
+        <label class="service-type-item" title="MapCache 瓦片缓存 (WMTS/TMS)">
+          <input type="checkbox" id="cbMapcache" onchange="app.toggleMapcache()">
+          <span>MapCache</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Legend Bar -->
+    <div class="legend-bar" id="legendBar">
+      <span class="legend-title">📋 图例：</span>
+      <span class="legend-item"><span class="req-indicator required" style="position:static;display:inline-flex;">*</span> 必填</span>
+      <span class="legend-item"><span class="req-indicator default" style="position:static;display:inline-flex;">D</span> 默认值</span>
+      <span class="legend-item"><span class="req-indicator optional" style="position:static;display:inline-flex;">○</span> 可选</span>
+      <span class="legend-item"><span class="req-indicator derived" style="position:static;display:inline-flex;">→</span> 推导</span>
+      <span class="legend-item"><span class="req-indicator custom" style="position:static;display:inline-flex;">✎</span> 自定义</span>
+    </div>
+
+    <div class="tree-scroll" id="treeScroll">
+      <div class="tree" id="configTree"></div>
+    </div>
+
+    <div class="tree-action-bar">
+      <button class="btn-main" id="btnImport" onclick="app.importMapfile()">
+        📂 导入
+      </button>
+      <button class="btn-main" id="btnValidate" onclick="app.validate()">
+        ✓ 校验全部
+      </button>
+      <button class="btn-main primary" id="btnExport" onclick="app.openExportModal()" disabled>
+        📤 导出
+      </button>
+      <button class="btn-main danger" onclick="app.showResetModal()">
+        🔄 重置
+      </button>
+      <div class="tree-status-summary" id="statusSummary">
+        <span class="status-summary-item"><span class="idle">○</span> 未校验</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- RIGHT PANEL — QA Panel -->
+  <section class="right-panel">
+    <div class="qa-header">
+      <div>
+        <div class="qa-header-title">
+          💬 问答助手
+          <span class="qa-header-sub">选中参数或节点提问</span>
+        </div>
+      </div>
+      <div class="qa-round-indicator" id="qaRoundIndicator">
+        <span class="qa-round-num" id="qaRoundNum">0</span>
+        <span class="qa-round-label">轮</span>
+      </div>
+    </div>
+
+    <div class="chat-area" id="chatArea">
+      <div class="chat-inner" id="chatInner"></div>
+    </div>
+
+    <div class="qa-suggestions" id="qaSuggestions">
+      <span class="qa-suggestion" onclick="app.askQuick('connectiontype 是什么？')">connectiontype 是什么？</span>
+      <span class="qa-suggestion" onclick="app.askQuick('我要发布 WMS 需要哪些参数？')">WMS 发布需要哪些参数？</span>
+      <span class="qa-suggestion" onclick="app.askQuick('color 怎么填？')">color 怎么填？</span>
+    </div>
+
+    <div class="qa-focus hidden" id="qaFocus">
+      <div style="display:flex;align-items:center;gap:6px;width:100%;">
+        <span class="qa-focus-label">🔍 当前关注：</span>
+        <span class="qa-focus-path" id="qaFocusPath"></span>
+        <span class="qa-focus-clear" onclick="app.clearFocus()">✕ 取消关注</span>
+      </div>
+      <div class="qa-focus-lines" id="qaFocusLines"></div>
+    </div>
+
+    <div class="input-area">
+      <div class="input-box">
+        <textarea class="input-field" id="inputField" rows="1"
+          placeholder="输入问题，如：这个参数是什么？为什么报错？"
+          onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();app.sendMessage();}"
+          oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px';"></textarea>
+        <button class="btn-send" id="sendBtn" onclick="app.sendMessage()">➤</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<div class="qa-toggle" onclick="app.toggleQAPanel()">💬</div>
+
+<script>
+/* ============================================================
+   DATA MODEL
+   ============================================================ */
+const INITIAL_STATE = {
+  map: {
+    name:      { value: '', type: 'string', phase: 'service', required: true },
+    imagetype: { value: 'png', type: 'enum', phase: 'service', options: ['png','jpeg','gif'], defaultValue: 'png' },
+    projection:{ value: '', type: 'array', phase: 'datasource', placeholder: 'init=epsg:3857' },
+    status:    { value: 'idle', type: 'readonly' },
+    extent:    { value: '', type: 'string', phase: 'datasource', optional: true },
+    units:     { value: 'meters', type: 'enum', phase: 'datasource', options: ['meters','dd','feet','inches','kilometers','miles','nauticalmiles'], defaultValue: 'meters' },
+    debug:     { value: 'off', type: 'enum', phase: 'service', options: ['on','off'], defaultValue: 'off' },
+    _custom:   {},
+  },
+  web: {
+    metadata: {
+      // ows_* (general prefix) — always visible regardless of service types
+      'ows_title':          { value: '', type: 'string', phase: 'service', required: true },
+      'ows_enable_request': { value: '*', type: 'string', phase: 'service', defaultValue: '*' },
+      // wms_* — visible when WMS enabled
+      'wms_onlineresource': { value: '', type: 'string', phase: 'service', derived: true },
+      // wfs_* — visible when WFS enabled
+      'wfs_onlineresource': { value: '', type: 'string', phase: 'service', optional: true },
+      // wcs_* — visible when WCS enabled
+      'wcs_onlineresource': { value: '', type: 'string', phase: 'service', optional: true },
+      _custom: {},
+    },
+    status: { value: 'idle', type: 'readonly' },
+    _custom: {},
+  },
+  layers: [],
+  cache: {
+    type:         { value: 'disk', type: 'enum', phase: 'cache', options: ['disk','sqlite3'], defaultValue: 'disk' },
+    base:         { value: '', type: 'string', phase: 'cache', required: true },
+    expires:      { value: '86400', type: 'integer', phase: 'cache', defaultValue: '86400' },
+    auto_expire:  { value: '', type: 'integer', phase: 'cache', optional: true },
+    metatile:     { value: '5 5', type: 'string', phase: 'cache', defaultValue: '5 5' },
+    metabuffer:   { value: '10', type: 'integer', phase: 'cache', defaultValue: '10' },
+    grid:         { value: 'GoogleMapsCompatible', type: 'string', phase: 'cache', derived: true },
+    wmts_enabled: { value: true, type: 'boolean', phase: 'cache', defaultValue: true },
+    tms_enabled:  { value: true, type: 'boolean', phase: 'cache', defaultValue: true },
+    status:       { value: 'idle', type: 'readonly' },
+    _custom: {},
+  },
+};
+
+/* ============================================================
+   APP STATE
+   ============================================================ */
+const app = {
+  data: null,
+  focusParam: null,
+  focusNodeId: null,      // id of selected object node
+  focusLines: null,       // internal line range, not displayed in UI
+  messages: [],
+  validationState: 'idle',
+  validationErrors: {},
+  showMode: 'all',
+  userModified: new Set(),
+  expanded: { map: true, web: true },
+  lineMap: {},            // path -> line number (internal only, not displayed)
+  nextLine: 1,
+  customPropTarget: null, // path to object for adding custom prop
+  demoStep: 0,
+  demoTimer: null,
+  isPlaying: false,
+  roundCount: 0,          // QA round counter (messages.length // 2)
+  serviceTypes: ['wms'],  // selected service types: wms | wfs | wcs
+  mapcacheEnabled: false, // MapCache (WMTS/TMS) enabled
+
+  init() {
+    this.data = JSON.parse(JSON.stringify(INITIAL_STATE));
+    this.userModified = new Set();
+    this.lineMap = {};
+    this.nextLine = 1;
+    this.roundCount = 0;
+    this.renderTree();
+    this.renderMessages();
+    this.updateStatusSummary();
+    this.updateRoundIndicator();
+    this.updateExpandBtn();
+    this.bindInput();
+  },
+
+  /* ---------- Show Mode ---------- */
+  setShowMode(mode) {
+    this.showMode = mode;
+    document.getElementById('showAllBtn').classList.toggle('active', mode === 'all');
+    document.getElementById('showRequiredBtn').classList.toggle('active', mode === 'required');
+    this.renderTree();
+  },
+
+  /* ---------- Service Types ---------- */
+  toggleServiceType(type) {
+    const cb = document.getElementById(type === 'wms' ? 'cbWms' : type === 'wfs' ? 'cbWfs' : 'cbWcs');
+    if (cb.checked) {
+      if (!this.serviceTypes.includes(type)) this.serviceTypes.push(type);
+    } else {
+      this.serviceTypes = this.serviceTypes.filter(t => t !== type);
+    }
+    // WMS is default and cannot be fully unchecked (at least one service type)
+    if (this.serviceTypes.length === 0) {
+      this.serviceTypes = ['wms'];
+      document.getElementById('cbWms').checked = true;
+    }
+    this.renderTree();
+  },
+
+  toggleMapcache() {
+    const cb = document.getElementById('cbMapcache');
+    this.mapcacheEnabled = cb.checked;
+    this.renderTree();
+  },
+
+  isMetadataFieldVisible(key) {
+    if (key === '_custom') return true;
+    if (key.startsWith('ows_')) return true;
+    if (key.startsWith('wms_') && this.serviceTypes.includes('wms')) return true;
+    if (key.startsWith('wfs_') && this.serviceTypes.includes('wfs')) return true;
+    if (key.startsWith('wcs_') && this.serviceTypes.includes('wcs')) return true;
+    if (key.startsWith('gml_') && this.serviceTypes.includes('wfs')) return true;
+    return false;
+  },
+
+  shouldShowProp(prop, path) {
+    if (this.showMode === 'all') return true;
+    if (prop.custom) return true; // always show custom
+    if (prop.required) return true;
+    if (this.validationErrors[path]) return true;
+    if (this.userModified.has(path)) return true;
+    if (prop.derived) return false;
+    if (prop.defaultValue !== undefined && prop.value === prop.defaultValue) return false;
+    if (prop.optional) return false;
+    return true;
+  },
+
+  /* ---------- Line Numbering ---------- */
+  resetLineCounter() {
+    this.lineMap = {};
+    this.nextLine = 1;
+  },
+
+  allocateLine(path) {
+    const line = this.nextLine++;
+    this.lineMap[path] = line;
+    return line;
+  },
+
+  getLineRange(path) {
+    // Find all lines that start with this path
+    const lines = Object.entries(this.lineMap)
+      .filter(([p, l]) => p === path || p.startsWith(path + '.') || p.startsWith(path + '_'))
+      .map(([p, l]) => l)
+      .sort((a, b) => a - b);
+    if (lines.length === 0) return null;
+    if (lines.length === 1) return `L${lines[0]}`;
+    return `L${lines[0]}-L${lines[lines.length - 1]}`;
+  },
+
+  /* ---------- Start Overlay ---------- */
+  startApp() {
+    this.hideStartOverlay();
+    this.addBotMessage('你好！我是 MapGuide 问答助手。你可以在左侧配置树中直接编辑参数，点击任意参数或节点即可设为提问焦点。有任何问题随时在这里提问。\n\n💡 提示：点击「仅必填」可以只显示必须填写的参数。');
+  },
+
+  hideStartOverlay() {
+    document.getElementById('startOverlay').classList.add('hidden');
+  },
+
+  /* ---------- Demo Playback ---------- */
+  playDemo() {
+    this.isPlaying = true;
+    this.demoStep = 0;
+    this.messages = [];
+    this.validationErrors = {};
+    this.validationState = 'idle';
+    this.focusParam = null;
+    this.focusNodeId = null;
+    this.focusLines = null;
+    this.userModified = new Set();
+    this.showMode = 'all';
+    this.expanded = { map: true, web: true };
+    this.serviceTypes = ['wms'];
+    this.mapcacheEnabled = false;
+    document.getElementById('showAllBtn').classList.add('active');
+    document.getElementById('showRequiredBtn').classList.remove('active');
+    document.getElementById('cbWms').checked = true;
+    document.getElementById('cbWfs').checked = false;
+    document.getElementById('cbWcs').checked = false;
+    document.getElementById('cbMapcache').checked = false;
+    this.data = JSON.parse(JSON.stringify(INITIAL_STATE));
+
+    this.addBotMessage('你好！我是 MapGuide 问答助手。你可以在左侧配置树中直接编辑参数，点击任意参数或节点即可设为提问焦点。\n\n💡 试试勾选「WFS」服务类型，观察 METADATA 中 `gml_*` 字段的出现。');
+
+    const DEMO_ACTIONS = [
+      // Step 1: User selects map.name as focus
+      { action: 'selectProp', path: 'map.name' },
+      // Step 2: User fills map.name
+      { action: 'edit', path: 'map.name', value: 'city_buildings' },
+
+      { action: 'ask',
+        question: 'projection 是什么意思？',
+        answer: '**projection** 定义了地图使用的坐标参考系统（CRS）。\n\n对于 WMS 服务，推荐 **EPSG:3857**（Web Mercator）。\n\n格式：`["init=epsg:3857"]`',
+        focus: 'map.projection' },
+
+      { action: 'edit', path: 'map.projection', value: 'init=epsg:3857' },
+
+      { action: 'edit', path: 'web.metadata.ows_title', value: '城市建筑分布图' },
+
+      { action: 'setMode', mode: 'required' },
+
+      // Enable WFS to show gml_* fields in LAYER.METADATA
+      { action: 'setServiceType', type: 'wfs', enabled: true },
+
+      { action: 'ask',
+        question: '勾选了 WFS 之后多了哪些字段？',
+        answer: '勾选 **WFS** 后，以下字段会在 METADATA 中显示：\n\n**WEB.METADATA**\n- `wfs_onlineresource` — WFS 服务访问地址\n\n**LAYER.METADATA**\n- `gml_include_items` — 包含在 GML 输出中的字段（默认 `all`）\n- `gml_featureid` — 要素唯一标识字段\n- `gml_types` — GML 类型定义（默认 `auto`）\n\n这些字段仅在启用 WFS 时可见，隐藏时值仍保留在配置中。' },
+
+      { action: 'addLayer', layer: {
+          name: { value: 'buildings', type: 'string', phase: 'datasource', required: true },
+          type: { value: 'polygon', type: 'enum', phase: 'style', options: ['point','line','polygon','raster'], defaultValue: 'polygon' },
+          connectiontype: { value: 'postgis', type: 'enum', phase: 'datasource', options: ['local','postgis','ogr','wms'], required: true },
+          connection: { value: 'host=localhost dbname=city user=postgres', type: 'string', phase: 'datasource', required: true },
+          data: { value: 'geom from buildings', type: 'string', phase: 'datasource', required: true },
+          projection: { value: 'init=epsg:3857', type: 'array', phase: 'datasource', defaultValue: 'init=epsg:3857' },
+          status: { value: 'idle', type: 'readonly' },
+          opacity: { value: '100', type: 'integer', phase: 'style', optional: true },
+          _custom: {},
+          metadata: {
+            'gml_include_items': { value: 'all', type: 'string', phase: 'service', defaultValue: 'all' },
+            'gml_featureid': { value: 'id', type: 'string', phase: 'service' },
+            'gml_types': { value: 'auto', type: 'string', phase: 'service', defaultValue: 'auto' },
+            _custom: {},
+          },
+          classes: [{
+            name: { value: 'default', type: 'string', phase: 'style', defaultValue: 'default' },
+            status: { value: 'idle', type: 'readonly' },
+            _custom: {},
+            styles: [{
+              color: { value: '', type: 'color', phase: 'style' },
+              outlinecolor: { value: '', type: 'color', phase: 'style', optional: true },
+              width: { value: '1', type: 'integer', phase: 'style', defaultValue: '1' },
+              status: { value: 'idle', type: 'readonly' },
+              _custom: {},
+            }],
+            labels: [],
+          }],
+        }
+      },
+
+      { action: 'selectNode', id: 'layer_0' },
+
+      { action: 'ask',
+        question: 'LAYER[0] 这个节点包含哪些必填参数？',
+        answer: '根据当前选中的 **LAYER[0]**，必填参数如下：\n\n- **name** — 图层名称（已填：buildings）\n- **connectiontype** — 数据源类型（已填：postgis）\n- **connection** — 连接字符串（已填）\n- **data** — 数据查询（已填）\n\n✅ 该 LAYER 的所有必填参数已填写完成。' },
+
+      { action: 'edit', path: 'layers.0.classes.0.styles.0.color', value: '蓝色' },
+      { action: 'validate_field', path: 'layers.0.classes.0.styles.0.color',
+        error: 'color 必须是 RGB 数组格式 [R,G,B]。当前值 "蓝色" 是字符串。' },
+
+      { action: 'ask',
+        question: 'CLASS[0].STYLE[0].color 为什么报错？',
+        answer: '**错误原因**：color 必须是 RGB 数组格式 `[R, G, B]`，每个值是 0-255 的整数。\n\n你输入的是字符串 "蓝色"，这是无效的。\n\n**正确格式**：\n```\n[0, 0, 255]    // 蓝色\n```\n\n请修改为 `[0, 0, 255]`。' },
+
+      { action: 'edit', path: 'layers.0.classes.0.styles.0.color', value: '[0, 0, 255]' },
+      { action: 'clearError', path: 'layers.0.classes.0.styles.0.color' },
+
+      { action: 'setMode', mode: 'all' },
+
+      { action: 'edit', path: 'layers.0.classes.0.styles.0.outlinecolor', value: '[0, 0, 180]' },
+
+      // Demo custom property
+      { action: 'addCustomProp', parentPath: 'layers.0', key: 'filter', type: 'string', desc: '要素过滤条件' },
+
+      // Enable MapCache
+      { action: 'setMapcache', enabled: true },
+
+      { action: 'ask',
+        question: 'MapCache 是做什么的？',
+        answer: '**MapCache** 是 MapServer 的瓦片缓存系统，可以加速地图服务响应。\n\n配置参数：\n- `type` — 缓存类型：`disk` 或 `sqlite3`\n- `base` — 缓存存储路径\n- `expires` — 缓存有效期（秒，默认 86400 = 1天）\n- `metatile` — 元瓦片大小（默认 5×5）\n- `metabuffer` — 元瓦片缓冲像素（默认 10）\n- `grid` — 瓦片网格（自动推导）\n- `wmts_enabled` / `tms_enabled` — 启用 WMTS/TMS 服务\n\n**建议**：对于高并发访问的 WMS 服务，建议配置磁盘缓存。' },
+
+      { action: 'edit', path: 'cache.base', value: '/tmp/mapguide_cache' },
+
+      { action: 'validate_all', errors: [] },
+      { action: 'export' },
+    ];
+
+    const playNext = () => {
+      if (this.demoStep >= DEMO_ACTIONS.length) {
+        this.isPlaying = false;
+        this.showToast('✓ 演示完成', 'success');
+        return;
+      }
+
+      const step = DEMO_ACTIONS[this.demoStep];
+
+      switch (step.action) {
+        case 'edit':
+          this.setValueByPath(step.path, step.value);
+          this.userModified.add(step.path);
+          break;
+
+        case 'validate_field':
+          this.validationErrors[step.path] = step.error;
+          this.validationState = 'fail';
+          break;
+
+        case 'clearError':
+          delete this.validationErrors[step.path];
+          if (Object.keys(this.validationErrors).length === 0) this.validationState = 'pass';
+          break;
+
+        case 'ask':
+          this.addUserMessage(step.question);
+          setTimeout(() => {
+            this.addBotMessage(step.answer, step.focus);
+          }, 400);
+          if (step.focus) {
+            this.focusParam = step.focus;
+            this.focusNodeId = null;
+            this.renderQAFocus();
+          }
+          break;
+
+        case 'selectProp':
+          this.focusParam = step.path;
+          this.focusNodeId = null;
+          this.renderTree();
+          this.renderQAFocus();
+          break;
+
+        case 'selectNode':
+          this.focusParam = null;
+          this.focusNodeId = step.id;
+          this.renderTree();
+          this.renderQAFocus();
+          break;
+
+        case 'setMode':
+          this.setShowMode(step.mode);
+          break;
+
+        case 'addLayer':
+          this.data.layers.push(step.layer);
+          this.expanded['layer_0'] = true;
+          this.expanded['class_0_0'] = true;
+          this.expanded['style_0_0_0'] = true;
+          break;
+
+        case 'setServiceType':
+          if (step.enabled) {
+            if (!this.serviceTypes.includes(step.type)) this.serviceTypes.push(step.type);
+          } else {
+            this.serviceTypes = this.serviceTypes.filter(t => t !== step.type);
+          }
+          document.getElementById('cbWms').checked = this.serviceTypes.includes('wms');
+          document.getElementById('cbWfs').checked = this.serviceTypes.includes('wfs');
+          document.getElementById('cbWcs').checked = this.serviceTypes.includes('wcs');
+          break;
+
+        case 'setMapcache':
+          this.mapcacheEnabled = step.enabled;
+          document.getElementById('cbMapcache').checked = step.enabled;
+          break;
+
+        case 'addCustomProp':
+          const parent = this.getParentByPath(step.parentPath);
+          if (parent) {
+            parent._custom = parent._custom || {};
+            parent._custom[step.key] = {
+              value: '',
+              type: step.type,
+              phase: 'datasource',
+              custom: true,
+              customDesc: step.desc,
+            };
+            this.userModified.add(step.parentPath + '._custom.' + step.key);
+          }
+          break;
+
+        case 'validate_all':
+          this.validationErrors = {};
+          this.validationState = 'pass';
+          this.showToast('✓ 全部校验通过', 'success');
+          break;
+
+        case 'export':
+          this.openExportModal();
+          break;
+      }
+
+      this.renderTree();
+      this.updateStatusSummary();
+
+      this.demoStep++;
+      const delay = step.action === 'ask' ? 1500 : (step.action === 'edit' ? 600 : 400);
+      this.demoTimer = setTimeout(playNext, delay);
+    };
+
+    playNext();
+  },
+
+  /* ---------- Data Helpers ---------- */
+  setValueByPath(path, value) {
+    const parts = path.split('.');
+    let obj = this.data;
+    for (let i = 0; i < parts.length - 1; i++) {
+      if (/^\d+$/.test(parts[i])) {
+        obj = obj[parseInt(parts[i])];
+      } else {
+        obj = obj[parts[i]];
+      }
+    }
+    const last = parts[parts.length - 1];
+    if (obj[last] && typeof obj[last] === 'object' && obj[last].type) {
+      obj[last].value = value;
+    } else {
+      obj[last] = value;
+    }
+  },
+
+  getValueByPath(path) {
+    const parts = path.split('.');
+    let obj = this.data;
+    for (let i = 0; i < parts.length - 1; i++) {
+      if (/^\d+$/.test(parts[i])) {
+        obj = obj[parseInt(parts[i])];
+      } else {
+        obj = obj[parts[i]];
+      }
+    }
+    const last = parts[parts.length - 1];
+    if (obj && obj[last] && typeof obj[last] === 'object' && obj[last].value !== undefined) {
+      return obj[last];
+    }
+    return null;
+  },
+
+  getParentByPath(path) {
+    const parts = path.split('.');
+    let obj = this.data;
+    for (let i = 0; i < parts.length; i++) {
+      if (/^\d+$/.test(parts[i])) {
+        obj = obj[parseInt(parts[i])];
+      } else {
+        obj = obj[parts[i]];
+      }
+    }
+    return obj;
+  },
+
+  /* ---------- Requirement Indicator ---------- */
+  getReqIndicator(prop) {
+    if (prop.custom) return '<span class="req-indicator custom" title="自定义">✎</span>';
+    if (prop.derived) return '<span class="req-indicator derived" title="后端推导">→</span>';
+    if (prop.required) return '<span class="req-indicator required" title="必填">*</span>';
+    if (prop.defaultValue !== undefined) return '<span class="req-indicator default" title="默认值">D</span>';
+    if (prop.optional) return '<span class="req-indicator optional" title="可选">○</span>';
+    return '<span class="req-indicator optional" title="可选">○</span>';
+  },
+
+  /* ---------- Tree Rendering ---------- */
+  renderTree() {
+    this.resetLineCounter();
+    const tree = document.getElementById('configTree');
+    let html = '';
+
+    html += this.renderObjNode('map', 'MAP', 'map', this.data.map, 'map');
+
+    if (this.data.web) {
+      html += this.renderObjNode('web', 'WEB', 'web', this.data.web, 'web');
+    }
+
+    this.data.layers.forEach((layer, i) => {
+      html += this.renderObjNode(`layer_${i}`, `LAYER[${i}]`, 'layer', layer, `layers.${i}`);
+    });
+
+    html += `<button class="tree-add-btn" onclick="app.addLayer()">+ 添加图层</button>`;
+
+    if (this.mapcacheEnabled) {
+      html += this.renderObjNode('cache', 'MapCache', 'cache', this.data.cache, 'cache');
+    }
+
+    tree.innerHTML = html;
+    this.updateExpandBtn();
+  },
+
+  renderObjNode(id, label, iconType, obj, basePath) {
+    const isExpanded = this.expanded[id] !== false;
+    const toggleClass = isExpanded ? '' : 'collapsed';
+    const childrenClass = isExpanded ? '' : 'collapsed';
+    const status = obj.status?.value || 'idle';
+    const hasError = Object.keys(this.validationErrors).some(p => p.startsWith(basePath));
+    const displayStatus = hasError ? 'fail' : status;
+    const isSelected = this.focusNodeId === id;
+
+    const line = this.allocateLine(basePath);
+
+    let html = `<div class="tree-obj">`;
+    html += `<div class="tree-obj-header ${isSelected ? 'selected' : ''}" onclick="app.selectNode('${id}', '${basePath}')">`;
+    html += `<span class="tree-toggle ${toggleClass}" onclick="event.stopPropagation();app.toggleObj('${id}')">▼</span>`;
+    html += `<span class="tree-obj-icon ${iconType}">${this.getObjIcon(iconType)}</span>`;
+    html += `<span class="tree-obj-name">${label}</span>`;
+    html += `<span class="tree-obj-status">`;
+    html += `<span class="status-icon ${displayStatus}">${this.getStatusIcon(displayStatus)}</span>`;
+    html += `</span>`;
+    html += `<span class="tree-obj-actions">`;
+    if (iconType === 'layer') {
+      html += `<button class="tree-obj-btn add" title="添加 CLASS" onclick="event.stopPropagation();app.addClass('${basePath}')">+</button>`;
+      html += `<button class="tree-obj-btn del" title="删除" onclick="event.stopPropagation();app.delLayer(${id.replace('layer_', '')})">×</button>`;
+    }
+    if (iconType === 'class') {
+      html += `<button class="tree-obj-btn add" title="添加 STYLE" onclick="event.stopPropagation();app.addStyle('${basePath}')">+</button>`;
+      html += `<button class="tree-obj-btn add" title="添加 LABEL" onclick="event.stopPropagation();app.addLabel('${basePath}')">⊕</button>`;
+    }
+    html += `</span>`;
+    html += `</div>`;
+
+    html += `<div class="tree-children ${childrenClass}">`;
+
+    let hiddenCount = 0;
+
+    // Built-in properties
+    Object.entries(obj).forEach(([key, val]) => {
+      if (key === 'status' || key === 'classes' || key === 'styles' || key === 'metadata' || key === '_custom') return;
+      const propPath = `${basePath}.${key}`;
+      if (!this.shouldShowProp(val, propPath)) {
+        hiddenCount++;
+        return;
+      }
+      html += this.renderPropRow(key, val, propPath);
+    });
+
+    // Custom properties
+    if (obj._custom && Object.keys(obj._custom).length > 0) {
+      Object.entries(obj._custom).forEach(([key, val]) => {
+        const propPath = `${basePath}._custom.${key}`;
+        if (!this.shouldShowProp(val, propPath)) return;
+        html += this.renderPropRow(key, val, propPath, true);
+      });
+    }
+
+    if (this.showMode === 'required' && hiddenCount > 0) {
+      html += `<div class="hidden-params-hint">${hiddenCount} 个参数已隐藏 · <a href="#" onclick="event.preventDefault();app.setShowMode('all')" style="color:var(--brand-500);text-decoration:none;">显示全部</a></div>`;
+    }
+
+    // Add custom property button
+    html += `<button class="tree-add-btn custom" onclick="event.stopPropagation();app.openCustomPropModal('${basePath}')">+ 添加自定义属性</button>`;
+
+    // Metadata
+    if (obj.metadata) {
+      let metaVisible = 0;
+      let metaHidden = 0;
+      Object.entries(obj.metadata).forEach(([key, val]) => {
+        if (key === '_custom') return;
+        const propPath = `${basePath}.metadata.${key}`;
+        // Apply both service-type filter and show-mode filter
+        if (!this.isMetadataFieldVisible(key) || !this.shouldShowProp(val, propPath)) {
+          metaHidden++;
+          return;
+        }
+        metaVisible++;
+      });
+
+      if (metaVisible > 0 || this.showMode === 'all') {
+        html += `<div style="margin: 4px 0;">`;
+        html += `<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;font-size:13px;color:var(--gray-400);font-weight:600;">`;
+        html += `<span style="margin-left:4px;">◈ METADATA</span></div>`;
+        Object.entries(obj.metadata).forEach(([key, val]) => {
+          if (key === '_custom') return;
+          const propPath = `${basePath}.metadata.${key}`;
+          if (this.isMetadataFieldVisible(key) && this.shouldShowProp(val, propPath)) {
+            html += this.renderPropRow(key, val, propPath);
+          }
+        });
+        if (obj.metadata._custom && Object.keys(obj.metadata._custom).length > 0) {
+          Object.entries(obj.metadata._custom).forEach(([key, val]) => {
+            const propPath = `${basePath}.metadata._custom.${key}`;
+            html += this.renderPropRow(key, val, propPath, true);
+          });
+        }
+        html += `<button class="tree-add-btn custom" onclick="event.stopPropagation();app.openCustomPropModal('${basePath}.metadata')">+ 添加自定义属性</button>`;
+        if (this.showMode === 'required' && metaHidden > 0) {
+          html += `<div class="hidden-params-hint">${metaHidden} 个参数已隐藏 · <a href="#" onclick="event.preventDefault();app.setShowMode('all')" style="color:var(--brand-500);text-decoration:none;">显示全部</a></div>`;
+        }
+        html += `</div>`;
+      }
+    }
+
+    // Classes
+    if (obj.classes) {
+      obj.classes.forEach((cls, ci) => {
+        const clsId = `${id}_class_${ci}`;
+        const clsExpanded = this.expanded[clsId] !== false;
+        const clsPath = `${basePath}.classes.${ci}`;
+        const clsLine = this.allocateLine(clsPath);
+        html += `<div style="margin: 4px 0;">`;
+        html += `<div class="tree-obj-header ${this.focusNodeId === clsId ? 'selected' : ''}" style="padding:4px 8px;" onclick="app.selectNode('${clsId}', '${clsPath}')">`;
+        html += `<span class="tree-toggle ${clsExpanded ? '' : 'collapsed'}" onclick="event.stopPropagation();app.toggleObj('${clsId}')">▼</span>`;
+        html += `<span style="font-size:13px;color:var(--gray-500);font-weight:600;">○ CLASS[${ci}]</span>`;
+        html += `</div>`;
+        html += `<div class="tree-children ${clsExpanded ? '' : 'collapsed'}">`;
+
+        Object.entries(cls).forEach(([key, val]) => {
+          if (key === 'status' || key === 'styles' || key === 'labels' || key === '_custom') return;
+          const propPath = `${clsPath}.${key}`;
+          if (this.shouldShowProp(val, propPath)) {
+            html += this.renderPropRow(key, val, propPath);
+          }
+        });
+
+        if (cls._custom && Object.keys(cls._custom).length > 0) {
+          Object.entries(cls._custom).forEach(([key, val]) => {
+            const propPath = `${clsPath}._custom.${key}`;
+            html += this.renderPropRow(key, val, propPath, true);
+          });
+        }
+
+        html += `<button class="tree-add-btn custom" onclick="event.stopPropagation();app.openCustomPropModal('${clsPath}')">+ 添加自定义属性</button>`;
+
+        if (cls.styles) {
+          cls.styles.forEach((style, si) => {
+            const styleId = `${clsId}_style_${si}`;
+            const styleExpanded = this.expanded[styleId] !== false;
+            const stylePath = `${clsPath}.styles.${si}`;
+            const styleLine = this.allocateLine(stylePath);
+            html += `<div style="margin: 2px 0;">`;
+            html += `<div class="tree-obj-header ${this.focusNodeId === styleId ? 'selected' : ''}" style="padding:3px 8px;" onclick="app.selectNode('${styleId}', '${stylePath}')">`;
+            html += `<span class="tree-toggle ${styleExpanded ? '' : 'collapsed'}" onclick="event.stopPropagation();app.toggleObj('${styleId}')">▼</span>`;
+            html += `<span style="font-size:12px;color:var(--gray-400);font-weight:600;">◇ STYLE[${si}]</span>`;
+            html += `</div>`;
+            html += `<div class="tree-children ${styleExpanded ? '' : 'collapsed'}">`;
+            Object.entries(style).forEach(([key, val]) => {
+              if (key === 'status' || key === '_custom') return;
+              const propPath = `${stylePath}.${key}`;
+              if (this.shouldShowProp(val, propPath)) {
+                html += this.renderPropRow(key, val, propPath);
+              }
+            });
+            if (style._custom && Object.keys(style._custom).length > 0) {
+              Object.entries(style._custom).forEach(([key, val]) => {
+                const propPath = `${stylePath}._custom.${key}`;
+                html += this.renderPropRow(key, val, propPath, true);
+              });
+            }
+            html += `<button class="tree-add-btn custom" onclick="event.stopPropagation();app.openCustomPropModal('${stylePath}')">+ 添加自定义属性</button>`;
+            html += `</div></div>`;
+          });
+        }
+
+        if (cls.labels) {
+          cls.labels.forEach((label, li) => {
+            const labelId = `${clsId}_label_${li}`;
+            const labelExpanded = this.expanded[labelId] !== false;
+            const labelPath = `${clsPath}.labels.${li}`;
+            const labelLine = this.allocateLine(labelPath);
+            html += `<div style="margin: 2px 0;">`;
+            html += `<div class="tree-obj-header ${this.focusNodeId === labelId ? 'selected' : ''}" style="padding:3px 8px;" onclick="app.selectNode('${labelId}', '${labelPath}')">`;
+            html += `<span class="tree-toggle ${labelExpanded ? '' : 'collapsed'}" onclick="event.stopPropagation();app.toggleObj('${labelId}')">▼</span>`;
+            html += `<span style="font-size:12px;color:var(--gray-400);font-weight:600;">◈ LABEL[${li}]</span>`;
+            html += `</div>`;
+            html += `<div class="tree-children ${labelExpanded ? '' : 'collapsed'}">`;
+            Object.entries(label).forEach(([key, val]) => {
+              if (key === 'status' || key === '_custom') return;
+              const propPath = `${labelPath}.${key}`;
+              if (this.shouldShowProp(val, propPath)) {
+                html += this.renderPropRow(key, val, propPath);
+              }
+            });
+            if (label._custom && Object.keys(label._custom).length > 0) {
+              Object.entries(label._custom).forEach(([key, val]) => {
+                const propPath = `${labelPath}._custom.${key}`;
+                html += this.renderPropRow(key, val, propPath, true);
+              });
+            }
+            html += `<button class="tree-add-btn custom" onclick="event.stopPropagation();app.openCustomPropModal('${labelPath}')">+ 添加自定义属性</button>`;
+            html += `</div></div>`;
+          });
+        }
+
+        html += `</div></div>`;
+      });
+    }
+
+    html += `</div></div>`;
+    return html;
+  },
+
+  renderPropRow(key, val, propPath, isCustom = false) {
+    const isSelected = this.focusParam === propPath;
+    const error = this.validationErrors[propPath];
+    const propClass = `tree-prop ${isSelected ? 'selected' : ''} ${error ? 'has-error' : ''}`;
+    const reqInd = this.getReqIndicator(val);
+    const line = this.allocateLine(propPath);
+
+    let html = `<div class="${propClass}" data-path="${propPath}">`;
+    html += reqInd;
+    html += `<span class="tree-prop-key" onclick="app.selectProp('${propPath}')">${key}${isCustom ? '<span class="custom-tag">自定义</span>' : ''}</span>`;
+    html += `<span class="tree-prop-value">${this.renderControl(val, propPath, error)}</span>`;
+    html += `<span class="tree-prop-actions">`;
+    if (error) {
+      html += `<button class="prop-btn error-help" title="为什么报错？" onclick="event.stopPropagation();app.askErrorHelp('${propPath}', '${error.replace(/'/g, "\\'")}')">?</button>`;
+    } else {
+      html += `<button class="prop-btn help" title="这是什么参数？" onclick="event.stopPropagation();app.askAboutProp('${propPath}')">?</button>`;
+    }
+    if (isCustom) {
+      html += `<button class="prop-btn del-prop" title="删除" onclick="event.stopPropagation();app.delCustomProp('${propPath}')">×</button>`;
+    }
+    html += `</span>`;
+    html += `</div>`;
+    return html;
+  },
+
+  renderControl(prop, path, error) {
+    if (!prop || typeof prop !== 'object') return '<span style="color:var(--gray-400);font-style:italic;">--</span>';
+
+    const val = prop.value || '';
+    const emptyClass = !val ? 'empty' : '';
+    const errorClass = error ? 'has-error' : '';
+
+    if (prop.type === 'readonly') {
+      return `<span style="font-size:13px;color:var(--gray-400);">${val}</span>`;
+    }
+
+    if (prop.type === 'enum') {
+      const options = prop.options || [];
+      return `<select class="ctrl-select ${errorClass}" data-path="${path}"
+        onchange="app.onFieldChange('${path}', this.value)">
+        ${options.map(o => `<option value="${o}" ${o === val ? 'selected' : ''}>${o}</option>`).join('')}
+      </select>`;
+    }
+
+    if (prop.type === 'color') {
+      const colorVal = val || '';
+      let rgb = [200, 200, 200];
+      if (colorVal.startsWith('[')) {
+        try { rgb = JSON.parse(colorVal); } catch(e) {}
+      }
+      const hex = '#' + rgb.map(v => Math.max(0, Math.min(255, v)).toString(16).padStart(2, '0')).join('');
+      return `<span class="ctrl-color" onclick="app.showColorPicker('${path}')">
+        <span class="ctrl-color-swatch" style="background:${hex};"></span>
+        <span class="ctrl-color-text">${colorVal || '点击选择'}</span>
+      </span>`;
+    }
+
+    if (prop.type === 'array') {
+      const tags = val ? val.split(',').map(s => s.trim()).filter(Boolean) : [];
+      return `<span class="ctrl-array">
+        ${tags.map(t => `<span class="array-tag">${t}</span>`).join('')}
+        <input type="text" class="array-tag-input" placeholder="+ 添加" data-path="${path}"
+          onkeydown="if(event.key==='Enter'){app.onArrayAdd('${path}', this.value);this.value='';}">
+      </span>`;
+    }
+
+    const placeholder = prop.placeholder || (prop.required ? '必填' : '可选');
+    const displayVal = val || '';
+    return `<input type="text" class="ctrl-input ${emptyClass} ${errorClass}" value="${displayVal}"
+      placeholder="${placeholder}" data-path="${path}"
+      onblur="app.onFieldChange('${path}', this.value)"
+      onfocus="app.selectProp('${path}')">`;
+  },
+
+  getObjIcon(type) {
+    const icons = { map: '◆', layer: '▪', class: '○', style: '◇', label: '◈', web: '◈', cache: '⚡', meta: '□' };
+    return icons[type] || '◆';
+  },
+
+  getStatusIcon(status) {
+    const icons = { pass: '✓', fail: '⚠', idle: '○', checking: '◌' };
+    return icons[status] || '○';
+  },
+
+  /* ---------- Tree Interaction ---------- */
+  toggleObj(id) {
+    this.expanded[id] = this.expanded[id] === false;
+    this.renderTree();
+  },
+
+  expandAll() {
+    Object.keys(this.expanded).forEach(k => this.expanded[k] = true);
+    this.updateExpandBtn();
+    this.renderTree();
+  },
+
+  collapseAll() {
+    Object.keys(this.expanded).forEach(k => this.expanded[k] = false);
+    this.expanded.map = true;
+    this.updateExpandBtn();
+    this.renderTree();
+  },
+
+  isAllExpanded() {
+    const expandables = ['map', 'web', ...this.data.layers.map((_, i) => `layer_${i}`)];
+    this.data.layers.forEach((layer, li) => {
+      (layer.classes || []).forEach((_, ci) => {
+        expandables.push(`layer_${li}_class_${ci}`);
+        (layer.classes[ci].styles || []).forEach((_, si) => {
+          expandables.push(`layer_${li}_class_${ci}_style_${si}`);
+        });
+        (layer.classes[ci].labels || []).forEach((_, li2) => {
+          expandables.push(`layer_${li}_class_${ci}_label_${li2}`);
+        });
+      });
+    });
+    if (this.mapcacheEnabled) expandables.push('cache');
+    return expandables.every(id => this.expanded[id] !== false);
+  },
+
+  toggleExpandAll() {
+    if (this.isAllExpanded()) {
+      this.collapseAll();
+    } else {
+      this.expandAll();
+    }
+  },
+
+  updateExpandBtn() {
+    const btn = document.getElementById('expandToggleBtn');
+    if (!btn) return;
+    const allExpanded = this.isAllExpanded();
+    btn.textContent = allExpanded ? '▼' : '▶';
+    btn.title = allExpanded ? '折叠全部' : '展开全部';
+  },
+
+  selectProp(path) {
+    if (this.isPlaying) return;
+    this.focusParam = path;
+    this.focusNodeId = null;
+    this.focusLines = null; // line numbers internal only
+    this.renderQAFocus();
+    this.renderTree();
+  },
+
+  selectNode(id, path) {
+    if (this.isPlaying) return;
+    this.focusNodeId = id;
+    this.focusParam = path;
+    this.focusLines = null; // line numbers internal only
+    this.renderQAFocus();
+    this.renderTree();
+  },
+
+  clearFocus() {
+    this.focusParam = null;
+    this.focusNodeId = null;
+    this.focusLines = null;
+    this.messages = [];      // reset QA messages on focus change
+    this.roundCount = 0;
+    this.updateRoundIndicator();
+    this.renderQAFocus();
+    this.renderMessages();
+    this.renderTree();
+  },
+
+  onFieldChange(path, value) {
+    if (this.isPlaying) return;
+    this.setValueByPath(path, value);
+    this.userModified.add(path);
+    this.validateField(path, value);
+    this.renderTree();
+    this.updateStatusSummary();
+  },
+
+  onArrayAdd(path, value) {
+    if (!value.trim()) return;
+    const prop = this.getValueByPath(path);
+    if (prop) {
+      const current = prop.value || '';
+      prop.value = current ? current + ', ' + value.trim() : value.trim();
+      this.userModified.add(path);
+    }
+    this.renderTree();
+  },
+
+  showColorPicker(path) {
+    this.setValueByPath(path, '[0, 0, 255]');
+    this.userModified.add(path);
+    this.renderTree();
+  },
+
+  validateField(path, value) {
+    delete this.validationErrors[path];
+    if (path.includes('color') && value && !value.startsWith('[')) {
+      this.validationErrors[path] = 'color 必须是 RGB 数组格式 [R,G,B]';
+      this.validationState = 'fail';
+    } else if (path.includes('connectiontype') && value === 'postgis') {
+      const layerPath = path.replace('.connectiontype', '');
+      const conn = this.getValueByPath(layerPath + '.connection');
+      const data = this.getValueByPath(layerPath + '.data');
+      if (!conn?.value) this.validationErrors[layerPath + '.connection'] = 'connectiontype=postgis 时，connection 必填';
+      if (!data?.value) this.validationErrors[layerPath + '.data'] = 'connectiontype=postgis 时，data 必填';
+      if (Object.keys(this.validationErrors).length > 0) this.validationState = 'fail';
+    }
+  },
+
+  /* ---------- Custom Properties ---------- */
+  openCustomPropModal(parentPath) {
+    this.customPropTarget = parentPath;
+    document.getElementById('customKey').value = '';
+    document.getElementById('customType').value = 'string';
+    document.getElementById('customDesc').value = '';
+    document.getElementById('customPropModal').classList.remove('hidden');
+  },
+
+  closeCustomPropModal() {
+    this.customPropTarget = null;
+    document.getElementById('customPropModal').classList.add('hidden');
+  },
+
+  confirmAddCustomProp() {
+    const key = document.getElementById('customKey').value.trim();
+    const type = document.getElementById('customType').value;
+    const desc = document.getElementById('customDesc').value.trim();
+
+    if (!key) {
+      this.showToast('请输入 key 名称', 'error');
+      return;
+    }
+
+    const parent = this.getParentByPath(this.customPropTarget);
+    if (!parent) return;
+
+    parent._custom = parent._custom || {};
+    parent._custom[key] = {
+      value: '',
+      type: type,
+      phase: 'datasource',
+      custom: true,
+      customDesc: desc,
+    };
+
+    this.userModified.add(this.customPropTarget + '._custom.' + key);
+    this.renderTree();
+    this.closeCustomPropModal();
+    this.showToast(`已添加自定义属性 "${key}"`, 'success');
+  },
+
+  delCustomProp(path) {
+    const parts = path.split('.');
+    const key = parts.pop();
+    const customKey = parts.pop(); // should be '_custom'
+    let obj = this.data;
+    for (let i = 0; i < parts.length; i++) {
+      if (/^\d+$/.test(parts[i])) {
+        obj = obj[parseInt(parts[i])];
+      } else {
+        obj = obj[parts[i]];
+      }
+    }
+    if (obj && obj._custom && obj._custom[key]) {
+      delete obj._custom[key];
+      this.renderTree();
+      this.showToast('已删除自定义属性', 'warn');
+    }
+  },
+
+  /* ---------- Object CRUD ---------- */
+  addLayer() {
+    if (this.isPlaying) return;
+    const idx = this.data.layers.length;
+    this.data.layers.push({
+      name: { value: '', type: 'string', phase: 'datasource', required: true },
+      type: { value: 'polygon', type: 'enum', phase: 'style', options: ['point','line','polygon','raster'], defaultValue: 'polygon' },
+      connectiontype: { value: 'local', type: 'enum', phase: 'datasource', options: ['local','postgis','ogr','wms'] },
+      connection: { value: '', type: 'string', phase: 'datasource' },
+      data: { value: '', type: 'string', phase: 'datasource' },
+      projection: { value: '', type: 'array', phase: 'datasource' },
+      status: { value: 'idle', type: 'readonly' },
+      _custom: {},
+      metadata: {
+        'gml_include_items': { value: 'all', type: 'string', phase: 'service', defaultValue: 'all' },
+        'gml_featureid':     { value: '', type: 'string', phase: 'service', optional: true },
+        'gml_types':         { value: 'auto', type: 'string', phase: 'service', defaultValue: 'auto' },
+        _custom: {},
+      },
+      classes: [{
+        name: { value: 'default', type: 'string', phase: 'style', defaultValue: 'default' },
+        status: { value: 'idle', type: 'readonly' },
+        _custom: {},
+        styles: [{
+          color: { value: '', type: 'color', phase: 'style' },
+          outlinecolor: { value: '', type: 'color', phase: 'style', optional: true },
+          width: { value: '1', type: 'integer', phase: 'style', defaultValue: '1' },
+          status: { value: 'idle', type: 'readonly' },
+          _custom: {},
+        }],
+        labels: [],
+      }],
+    });
+    this.expanded[`layer_${idx}`] = true;
+    this.expanded[`class_${idx}_0`] = true;
+    this.expanded[`style_${idx}_0_0`] = true;
+    this.renderTree();
+    this.showToast(`已添加 LAYER[${idx}]`, 'success');
+  },
+
+  delLayer(idx) {
+    if (this.isPlaying) return;
+    this.data.layers.splice(idx, 1);
+    this.renderTree();
+    this.showToast('已删除图层', 'warn');
+  },
+
+  addClass(layerPath) {
+    if (this.isPlaying) return;
+    const parts = layerPath.split('.');
+    const layerIdx = parseInt(parts[1]);
+    const layer = this.data.layers[layerIdx];
+    if (!layer) return;
+    const ci = layer.classes.length;
+    layer.classes.push({
+      name: { value: 'default', type: 'string', phase: 'style', defaultValue: 'default' },
+      status: { value: 'idle', type: 'readonly' },
+      _custom: {},
+      styles: [{
+        color: { value: '', type: 'color', phase: 'style' },
+        outlinecolor: { value: '', type: 'color', phase: 'style', optional: true },
+        width: { value: '1', type: 'integer', phase: 'style', defaultValue: '1' },
+        status: { value: 'idle', type: 'readonly' },
+        _custom: {},
+      }],
+      labels: [],
+    });
+    this.expanded[`class_${layerIdx}_${ci}`] = true;
+    this.expanded[`style_${layerIdx}_${ci}_0`] = true;
+    this.renderTree();
+    this.showToast(`已添加 CLASS[${ci}]`, 'success');
+  },
+
+  addStyle(classPath) {
+    if (this.isPlaying) return;
+    const parts = classPath.split('.');
+    const layerIdx = parseInt(parts[1]);
+    const classIdx = parseInt(parts[3]);
+    const cls = this.data.layers[layerIdx]?.classes[classIdx];
+    if (!cls) return;
+    const si = cls.styles.length;
+    cls.styles.push({
+      color: { value: '', type: 'color', phase: 'style' },
+      outlinecolor: { value: '', type: 'color', phase: 'style', optional: true },
+      width: { value: '1', type: 'integer', phase: 'style', defaultValue: '1' },
+      status: { value: 'idle', type: 'readonly' },
+      _custom: {},
+    });
+    this.expanded[`style_${layerIdx}_${classIdx}_${si}`] = true;
+    this.renderTree();
+    this.showToast(`已添加 STYLE[${si}]`, 'success');
+  },
+
+  addLabel(classPath) {
+    if (this.isPlaying) return;
+    const parts = classPath.split('.');
+    const layerIdx = parseInt(parts[1]);
+    const classIdx = parseInt(parts[3]);
+    const cls = this.data.layers[layerIdx]?.classes[classIdx];
+    if (!cls) return;
+    const li = cls.labels.length;
+    cls.labels.push({
+      text: { value: '', type: 'string', phase: 'style', required: true },
+      size: { value: '10', type: 'integer', phase: 'style', defaultValue: '10' },
+      color: { value: '', type: 'color', phase: 'style' },
+      status: { value: 'idle', type: 'readonly' },
+      _custom: {},
+    });
+    this.expanded[`label_${layerIdx}_${classIdx}_${li}`] = true;
+    this.renderTree();
+    this.showToast(`已添加 LABEL[${li}]`, 'success');
+  },
+
+  addCache() {
+    if (this.isPlaying) return;
+    this.data.cache = {
+      type: { value: 'disk', type: 'enum', phase: 'cache', options: ['disk','sqlite3'], defaultValue: 'disk' },
+      base: { value: '', type: 'string', phase: 'cache', required: true },
+      expiry: { value: '86400', type: 'integer', phase: 'cache', defaultValue: '86400' },
+      grid: { value: 'GoogleMapsCompatible', type: 'string', phase: 'cache', derived: true },
+      status: { value: 'idle', type: 'readonly' },
+      _custom: {},
+    };
+    this.expanded.cache = true;
+    this.renderTree();
+    this.showToast('已添加缓存配置', 'success');
+  },
+
+  /* ---------- QA Panel ---------- */
+  renderQAFocus() {
+    const el = document.getElementById('qaFocus');
+    const pathEl = document.getElementById('qaFocusPath');
+    const linesEl = document.getElementById('qaFocusLines');
+
+    if (this.focusParam) {
+      el.classList.remove('hidden');
+      pathEl.textContent = this.focusParam;
+      linesEl.classList.add('hidden');
+    } else {
+      el.classList.add('hidden');
+    }
+  },
+
+  /* ---------- Messages ---------- */
+  renderMessages() {
+    const inner = document.getElementById('chatInner');
+    if (this.messages.length === 0) {
+      inner.innerHTML = `
+        <div class="chat-empty">
+          <div style="font-size:36px;opacity:0.3;">💬</div>
+          <div style="font-size:14px;color:var(--gray-400);line-height:1.7;">
+            选中左侧参数或节点提问，或自由提问<br>
+            我可以帮你：解释参数含义 · 分析错误原因 · 建议配置方案
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    inner.innerHTML = '';
+    this.messages.forEach((msg) => {
+      const el = this.createMessageEl(msg);
+      inner.appendChild(el);
+    });
+
+    const chatArea = document.getElementById('chatArea');
+    chatArea.scrollTop = chatArea.scrollHeight;
+  },
+
+  createMessageEl(msg) {
+    const wrap = document.createElement('div');
+    wrap.className = `msg ${msg.role}`;
+    const avatar = msg.role === 'user' ? '👤' : msg.role === 'system' ? '⚠️' : '🤖';
+
+    let content = msg.text.replace(/\n/g, '<br>');
+    content = content.replace(/```([^`]*?)```/g, (match, code) => {
+      return `<div class="code-block"><div class="code-block-header"><span>示例</span><button class="code-copy-btn">复制</button></div>${code.replace(/\n/g, '<br>')}</div>`;
+    });
+    content = content.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+    wrap.innerHTML = `
+      <div class="msg-avatar">${avatar}</div>
+      <div class="msg-body">
+        <div class="msg-bubble">${content}</div>
+        <div class="msg-time">${msg.time || this.formatTime()}</div>
+      </div>
+    `;
+    return wrap;
+  },
+
+  addUserMessage(text) {
+    this.messages.push({ role: 'user', text, time: this.formatTime() });
+    this.renderMessages();
+  },
+
+  addBotMessage(text, focus) {
+    this.messages.push({ role: 'bot', text, time: this.formatTime(), focus });
+    this.renderMessages();
+  },
+
+  addSystemMessage(text) {
+    this.messages.push({ role: 'system', text, time: this.formatTime() });
+    this.renderMessages();
+  },
+
+  formatTime() {
+    return new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+  },
+
+  /* ---------- Input ---------- */
+  bindInput() {
+    const field = document.getElementById('inputField');
+    field.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        this.sendMessage();
+      }
+    });
+  },
+
+  sendMessage() {
+    const field = document.getElementById('inputField');
+    const text = field.value.trim();
+    if (!text) return;
+
+    this.addUserMessage(text);
+    this.roundCount = Math.floor(this.messages.length / 2);
+    this.updateRoundIndicator();
+    field.value = '';
+    field.style.height = 'auto';
+
+    setTimeout(() => {
+      const answer = this.generateAnswer(text);
+      this.addBotMessage(answer);
+      this.roundCount = Math.floor(this.messages.length / 2);
+      this.updateRoundIndicator();
+    }, 600 + Math.random() * 400);
+  },
+
+  askQuick(text) {
+    this.addUserMessage(text);
+    this.roundCount = Math.floor(this.messages.length / 2);
+    this.updateRoundIndicator();
+    setTimeout(() => {
+      this.addBotMessage(this.generateAnswer(text));
+      this.roundCount = Math.floor(this.messages.length / 2);
+      this.updateRoundIndicator();
+    }, 500);
+  },
+
+  askErrorHelp(path, error) {
+    this.focusParam = path;
+    this.focusNodeId = null;
+    this.focusLines = null; // line numbers internal only
+    this.renderQAFocus();
+    this.renderTree();
+    const propName = path.split('.').pop();
+    this.addUserMessage(`${propName} 为什么报错？`);
+    this.roundCount = Math.floor(this.messages.length / 2);
+    this.updateRoundIndicator();
+    setTimeout(() => {
+      const answers = {
+        'color': '**错误原因**：color 必须是 RGB 数组格式 `[R, G, B]`，每个值是 0-255 的整数。\n\n你输入的是字符串 "蓝色"，这是无效的。\n\n**正确格式**：\n```\n[0, 0, 255]    // 蓝色\n[255, 0, 0]    // 红色\n```\n\n请修改为 `[0, 0, 255]`。',
+      };
+      this.addBotMessage(answers[propName] || `**错误原因**：${error}\n\n请检查该参数的格式是否符合要求，或查看 MapServer 文档获取详细信息。`);
+      this.roundCount = Math.floor(this.messages.length / 2);
+      this.updateRoundIndicator();
+    }, 500);
+  },
+
+  askAboutProp(path) {
+    this.focusParam = path;
+    this.focusNodeId = null;
+    this.focusLines = null; // line numbers are internal only
+    this.renderQAFocus();
+    this.renderTree();
+    const propName = path.split('.').pop();
+    this.addUserMessage(`${propName} 是什么参数？`);
+    this.roundCount = Math.floor(this.messages.length / 2);
+    this.updateRoundIndicator();
+    setTimeout(() => {
+      const answers = {
+        'connectiontype': '**connectiontype** 定义了图层的数据源连接类型。\n\n可选值：\n- **local**：本地文件（Shapefile、GeoTIFF）\n- **postgis**：PostgreSQL/PostGIS 数据库\n- **ogr**：OGR 矢量数据源\n- **wms**：远程 WMS 图层\n\n选择 **postgis** 时需要同时填写 connection 和 data。',
+        'projection': '**projection** 定义地图使用的坐标参考系统。\n\n常用值：\n- **EPSG:3857**：Web Mercator（推荐用于瓦片地图）\n- **EPSG:4326**：WGS84（GPS 标准坐标系）\n\n格式：`["init=epsg:3857"]`',
+        'data': '**data** 定义了图层的数据源。\n\n格式取决于 connectiontype：\n- **local**：文件路径，如 `/data/roads.shp`\n- **postgis**：SQL 查询，如 `geom from buildings`\n- **postgis (where)**：带条件的查询，如 `geom from buildings where type = \'residential\'`',
+      };
+      this.addBotMessage(answers[propName] || `**${propName}** 是 Mapfile 的一个参数。\n\n你可以在左侧配置树中直接编辑它的值，有任何具体问题可以继续问我。`);
+      this.roundCount = Math.floor(this.messages.length / 2);
+      this.updateRoundIndicator();
+    }, 500);
+  },
+
+  generateAnswer(text) {
+    const lower = text.toLowerCase();
+    if (lower.includes('wms') && (lower.includes('发布') || lower.includes('需要') || lower.includes('参数'))) {
+      return '发布 WMS 服务需要配置以下参数：\n\n**数据源** 📁\n- `layer.connectiontype` — 数据源类型\n- `layer.connection` — 数据库连接字符串（如果是 postgis）\n- `layer.data` — 数据查询\n- `layer.type` — 几何类型（point/line/polygon/raster）\n\n**样式** 🎨\n- `class.style.color` — 填充颜色\n- `class.style.outlinecolor` — 边框颜色\n\n**服务** 🌐\n- `map.name` — 地图名称\n- `web.metadata.ows_title` — 服务标题（通用，必配）\n- `web.metadata.wms_onlineresource` — WMS 服务 URL\n- `map.imagetype` — 输出格式（png/jpeg/gif）\n\n💡 提示：`ows_*` 前缀字段对所有 OGC 服务生效；`wms_*` 仅在勾选 WMS 时显示。';
+    }
+    if (lower.includes('mapcache') || lower.includes('缓存')) {
+      return '**MapCache** 是 MapServer 的瓦片缓存系统，可以加速地图服务响应。\n\n配置参数：\n- `cache.type` — 缓存类型：`disk` 或 `sqlite3`\n- `cache.base` — 缓存存储路径\n- `cache.expires` — 缓存有效期（秒，默认 86400 = 1天）\n- `cache.metatile` — 元瓦片大小（默认 5×5）\n- `cache.metabuffer` — 元瓦片缓冲像素（默认 10）\n- `cache.grid` — 瓦片网格（自动推导）\n- `cache.wmts_enabled` / `cache.tms_enabled` — 启用 WMTS/TMS\n\n**建议**：对于高并发访问的 WMS 服务，建议配置磁盘缓存。';
+    }
+    if (lower.includes('postgis') || lower.includes('数据库')) {
+      return '使用 **PostGIS** 作为数据源时，需要配置：\n\n1. `layer.connectiontype = "postgis"`\n2. `layer.connection = "host=localhost dbname=xxx user=xxx password=xxx"`\n3. `layer.data = "geom_column from table_name"`\n\n**connection 格式**：\n```\nhost=localhost dbname=city user=postgres password=secret port=5432\n```\n\n**data 格式**：\n```\ngeom from buildings\ngeom from roads where type = \'highway\'\n```\n\n> ⚠️ 注意：connectiontype=postgis 时，connection 和 data 都是必填的。';
+    }
+    return '收到你的问题！\n\n作为 MapGuide 问答助手，我可以帮你：\n\n- 📖 **解释参数含义** — 选中任意参数问我"这是什么？"\n- 🔧 **分析错误原因** — 校验出错时点击 ? 按钮\n- 📋 **建议配置方案** — 问我"发布 WMS 需要哪些参数？"\n- 💡 **最佳实践** — 询问特定场景的配置建议\n\n请告诉我具体想了解什么参数或配置？';
+  },
+
+  /* ---------- Validation ---------- */
+  validate() {
+    if (this.isPlaying) return;
+    this.validationState = 'checking';
+    this.updateStatusSummary();
+    this.showToast('正在校验...', 'warn');
+
+    setTimeout(() => {
+      this.validationErrors = {};
+
+      if (!this.data.map.name.value) {
+        this.validationErrors['map.name'] = 'MAP 必须包含 name 字段';
+      }
+
+      this.data.layers.forEach((layer, i) => {
+        if (!layer.name.value) this.validationErrors[`layers.${i}.name`] = `LAYER[${i}] 缺少 name`;
+        if (!layer.type.value) this.validationErrors[`layers.${i}.type`] = `LAYER[${i}] 缺少 type`;
+        if (!layer.data.value) this.validationErrors[`layers.${i}.data`] = `LAYER[${i}] 缺少 data`;
+        if (layer.connectiontype.value !== 'local' && !layer.connection.value) {
+          this.validationErrors[`layers.${i}.connection`] = `connectiontype=${layer.connectiontype.value} 时必须提供 connection`;
+        }
+      });
+
+      if (this.data.web && this.data.web.metadata) {
+        if (!this.data.web.metadata['ows_title'].value) {
+          this.validationErrors['web.metadata.ows_title'] = '必须配置 ows_title';
+        }
+      }
+
+      if (this.mapcacheEnabled) {
+        if (!this.data.cache.base.value) {
+          this.validationErrors['cache.base'] = '缓存必须配置 base 路径';
+        }
+      }
+
+      const hasErrors = Object.keys(this.validationErrors).length > 0;
+      this.validationState = hasErrors ? 'fail' : 'pass';
+
+      if (hasErrors) {
+        this.showToast(`✗ 校验失败：${Object.keys(this.validationErrors).length} 个错误`, 'error');
+        this.renderTree();
+      } else {
+        this.showToast('✓ 全部校验通过', 'success');
+      }
+
+      this.updateStatusSummary();
+    }, 800);
+  },
+
+  updateStatusSummary() {
+    const summary = document.getElementById('statusSummary');
+    const labels = {
+      idle:     { text: '未校验', icon: '○', class: 'idle' },
+      checking: { text: '校验中...', icon: '◌', class: '' },
+      pass:     { text: '校验通过', icon: '✓', class: 'pass' },
+      fail:     { text: '有错误', icon: '⚠', class: 'fail' },
+    };
+    const l = labels[this.validationState];
+    const errorCount = Object.keys(this.validationErrors).length;
+    summary.innerHTML = `
+      <span class="status-summary-item"><span class="${l.class}">${l.icon}</span> ${l.text}</span>
+      ${errorCount > 0 ? `<span class="status-summary-item"><span class="fail">${errorCount}</span> 个错误</span>` : ''}
+    `;
+
+    const btnExport = document.getElementById('btnExport');
+    btnExport.disabled = this.validationState !== 'pass';
+  },
+
+  /* ---------- Export ---------- */
+  openExportModal() {
+    if (this.validationState !== 'pass' && !this.isPlaying) {
+      this.showToast('请先通过校验', 'error');
+      return;
+    }
+
+    const hasCache = this.mapcacheEnabled;
+    const mapName = this.data.map?.name?.value || 'untitled';
+    const list = document.getElementById('exportFileList');
+
+    list.innerHTML = `
+      <div class="modal-file-item">
+        <span class="modal-file-icon">📄</span>
+        <div class="modal-file-info">
+          <div class="modal-file-name">${mapName}.map</div>
+          <div class="modal-file-path">保存路径由 Electron 对话框选择</div>
+        </div>
+        <span class="modal-file-tag">必导</span>
+      </div>
+      ${hasCache ? `
+      <div class="modal-file-item">
+        <span class="modal-file-icon">⚙️</span>
+        <div class="modal-file-info">
+          <div class="modal-file-name">mapcache.xml</div>
+          <div class="modal-file-path">保存路径由 Electron 对话框选择</div>
+        </div>
+        <span class="modal-file-tag">已配置</span>
+      </div>
+      ` : `
+      <div class="modal-file-item" style="opacity:0.6;">
+        <span class="modal-file-icon">⚙️</span>
+        <div class="modal-file-info">
+          <div class="modal-file-name">mapcache.xml</div>
+          <div class="modal-file-path">未配置缓存，不导出</div>
+        </div>
+        <span class="modal-file-tag conditional">跳过</span>
+      </div>
+      `}
+    `;
+
+    document.getElementById('exportModal').classList.remove('hidden');
+  },
+
+  closeExportModal() {
+    document.getElementById('exportModal').classList.add('hidden');
+  },
+
+  confirmExport() {
+    const mapName = this.data.map?.name?.value || 'untitled';
+    const hasCache = this.mapcacheEnabled;
+
+    this.showToast(`已导出 ${mapName}.map${hasCache ? ' + mapcache.xml' : ''}`, 'success');
+    this.closeExportModal();
+
+    this.addBotMessage(`✅ 配置文件已生成！\n\n📄 **${mapName}.map**\n${hasCache ? '⚙️ **mapcache.xml**' : ''}\n\n文件已通过 Electron 保存对话框写入指定目录。你可以点击「重置」开始新任务。`);
+  },
+
+  /* ---------- Import ---------- */
+  importMapfile() {
+    if (this.isPlaying) return;
+    // 原型中模拟导入流程
+    document.getElementById('importModal').classList.remove('hidden');
+    document.getElementById('importModalTitle').textContent = '📂 导入 Mapfile';
+    document.getElementById('importModalDesc').textContent = '正在解析文件内容...';
+    document.getElementById('importModalActions').classList.add('hidden');
+
+    setTimeout(() => {
+      // 模拟：构造一个示例 Mapfile 的数据结构
+      this.data = {
+        map: {
+          name:      { value: 'imported_map', type: 'string', phase: 'service', required: true, userModified: true },
+          imagetype: { value: 'png', type: 'enum', phase: 'service', options: ['png','jpeg','gif'], defaultValue: 'png' },
+          projection:{ value: 'init=epsg:3857', type: 'array', phase: 'datasource' },
+          status:    { value: 'idle', type: 'readonly' },
+          extent:    { value: '', type: 'string', phase: 'datasource', optional: true },
+          units:     { value: 'meters', type: 'enum', phase: 'datasource', options: ['meters','dd','feet','inches','kilometers','miles','nauticalmiles'], defaultValue: 'meters' },
+          debug:     { value: 'off', type: 'enum', phase: 'service', options: ['on','off'], defaultValue: 'off' },
+          // 模拟自定义属性（schema 未定义）
+          _custom:   {
+            transparency: { value: '50', type: 'integer', phase: 'datasource', custom: true, customDesc: '图层透明度' },
+          },
+        },
+        web: {
+          metadata: {
+            'ows_title':          { value: 'Imported Map', type: 'string', phase: 'service', required: true },
+            'ows_enable_request': { value: '*', type: 'string', phase: 'service', defaultValue: '*' },
+            'wms_onlineresource': { value: '', type: 'string', phase: 'service', derived: true },
+            _custom: {},
+          },
+          status: { value: 'idle', type: 'readonly' },
+          _custom: {},
+        },
+        layers: [{
+          name: { value: 'buildings', type: 'string', phase: 'datasource', required: true },
+          type: { value: 'polygon', type: 'enum', phase: 'style', options: ['point','line','polygon','raster'], defaultValue: 'polygon' },
+          connectiontype: { value: 'postgis', type: 'enum', phase: 'datasource', options: ['local','postgis','ogr','wms'], required: true },
+          connection: { value: 'host=localhost dbname=city user=postgres', type: 'string', phase: 'datasource', required: true },
+          data: { value: 'geom from buildings', type: 'string', phase: 'datasource', required: true },
+          projection: { value: 'init=epsg:3857', type: 'array', phase: 'datasource' },
+          status: { value: 'idle', type: 'readonly' },
+          _custom: {},
+          metadata: {
+            'gml_include_items': { value: 'all', type: 'string', phase: 'service', defaultValue: 'all' },
+            'gml_featureid': { value: 'id', type: 'string', phase: 'service' },
+            _custom: {},
+          },
+          classes: [{
+            name: { value: 'default', type: 'string', phase: 'style', defaultValue: 'default' },
+            status: { value: 'idle', type: 'readonly' },
+            _custom: {},
+            styles: [{
+              color: { value: '[0, 0, 255]', type: 'color', phase: 'style' },
+              outlinecolor: { value: '[0, 0, 180]', type: 'color', phase: 'style', optional: true },
+              width: { value: '1', type: 'integer', phase: 'style', defaultValue: '1' },
+              status: { value: 'idle', type: 'readonly' },
+              _custom: {},
+            }],
+            labels: [],
+          }],
+        }],
+        cache: INITIAL_STATE.cache,
+      };
+
+      this.messages = [];
+      this.focusParam = null;
+      this.focusNodeId = null;
+      this.focusLines = null;
+      this.validationState = 'idle';
+      this.validationErrors = {};
+      this.userModified = new Set();
+      this.showMode = 'all';
+      this.expanded = { map: true, web: true, layer_0: true, class_0_0: true, style_0_0_0: true };
+      this.roundCount = 0;
+      this.serviceTypes = ['wms'];
+      this.mapcacheEnabled = false;
+      document.getElementById('cbWms').checked = true;
+      document.getElementById('cbWfs').checked = false;
+      document.getElementById('cbWcs').checked = false;
+      document.getElementById('cbMapcache').checked = false;
+
+      // 模拟自动校验（会有一些错误）
+      this.validationErrors = {};
+      // 模拟一个自定义属性导致的"错误"（仅用于展示）
+      this.validationErrors['map._custom.transparency'] = 'transparency 不是标准 Mapfile 属性，已标记为自定义';
+      this.validationState = 'fail';
+
+      this.renderTree();
+      this.renderMessages();
+      this.renderQAFocus();
+      this.updateStatusSummary();
+      this.updateRoundIndicator();
+
+      document.getElementById('importModalTitle').textContent = '✓ 导入完成';
+      document.getElementById('importModalDesc').innerHTML =
+        'Mapfile 已成功导入！<br>' +
+        '· 检测到 1 个自定义属性（transparency）<br>' +
+        '· 1 个校验提示（已标红显示）';
+      document.getElementById('importModalActions').classList.remove('hidden');
+    }, 1200);
+  },
+
+  closeImportModal() {
+    document.getElementById('importModal').classList.add('hidden');
+  },
+
+  /* ---------- Reset ---------- */
+  showResetModal() {
+    document.getElementById('resetModal').classList.remove('hidden');
+  },
+
+  closeResetModal() {
+    document.getElementById('resetModal').classList.add('hidden');
+  },
+
+  doReset() {
+    if (this.demoTimer) { clearTimeout(this.demoTimer); this.demoTimer = null; }
+    this.isPlaying = false;
+
+    this.data = JSON.parse(JSON.stringify(INITIAL_STATE));
+    this.messages = [];
+    this.focusParam = null;
+    this.focusNodeId = null;
+    this.focusLines = null;
+    this.validationState = 'idle';
+    this.validationErrors = {};
+    this.userModified = new Set();
+    this.showMode = 'all';
+    this.expanded = { map: true, web: true };
+    this.roundCount = 0;
+    this.serviceTypes = ['wms'];
+    this.mapcacheEnabled = false;
+
+    document.getElementById('resetModal').classList.add('hidden');
+    document.getElementById('startOverlay').classList.remove('hidden');
+    document.getElementById('showAllBtn').classList.add('active');
+    document.getElementById('showRequiredBtn').classList.remove('active');
+    document.getElementById('cbWms').checked = true;
+    document.getElementById('cbWfs').checked = false;
+    document.getElementById('cbWcs').checked = false;
+    document.getElementById('cbMapcache').checked = false;
+
+    this.renderTree();
+    this.renderMessages();
+    this.renderQAFocus();
+    this.updateStatusSummary();
+    this.updateRoundIndicator();
+    this.showToast('已重置，准备新任务', 'success');
+  },
+
+  /* ---------- Mobile ---------- */
+  toggleQAPanel() {
+    const panel = document.querySelector('.right-panel');
+    panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
+  },
+
+  updateRoundIndicator() {
+    const el = document.getElementById('qaRoundNum');
+    if (el) el.textContent = this.roundCount;
+  },
+
+  /* ---------- Toast ---------- */
+  showToast(text, type) {
+    const existing = document.querySelector('.toast');
+    if (existing) existing.remove();
+
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = text;
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transition = 'opacity 0.3s';
+      setTimeout(() => toast.remove(), 300);
+    }, 2500);
+  },
+};
+
+app.init();
+</script>
+</body>
+</html>
