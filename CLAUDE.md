@@ -128,9 +128,6 @@ ConfigTree.update_value()  # 遍历 updates 逐个应用
 ValidationPipeline.validate_field(path, service_types)  # layers 1-3 only
     │
     ▼
-ConfigTree.rebuild_line_map()
-    │
-    ▼
 tree_state WS message → frontend
 ```
 
@@ -144,10 +141,9 @@ QAService.answer(session, text)
     ├──▶ PromptBuilder.render(L0-L5 context)
     ├──▶ LLMClient.chat()
     ├──▶ LLMOutput.parse(raw_json)
-    ├──▶ UpdateResolver: line → path
+    ├──▶ UpdateResolver.resolve() → path
     ├──▶ ConfigTree.apply_updates()
-    ├──▶ ValidationPipeline.validate_tree()
-    └──▶ ConfigTree.rebuild_line_map()
+    └──▶ ValidationPipeline.validate_tree()
     │
     ▼
 qa_result WS message → frontend
@@ -164,7 +160,7 @@ qa_result WS message → frontend
 - Validation is **layered**: alias → type → semantic → mappyfile syntax. Field blur only runs layers 1-3; add/remove node, manual validate, and export run all 4 layers.
 - **Export condition chain** (cannot skip): `validation_state == "pass"` ∧ `no validation errors`.
 - **No persistence**: `ConfigSession` is in-memory only. "Reset" destroys and recreates the session.
-- **Line numbers**: Computed internally by `preview_mapfile()` for LLM positioning; never displayed in UI. Front-end shows flat paths (e.g. `LAYER[0].connectiontype`).
+- **Flat path addressing**: LLM updates use stable paths (e.g. `layers.0.connectiontype`), not line numbers. No line_map or rebuild_line_map needed.
 - **Focus change clears QA**: Switching focus parameter resets the QA message history (but preserves initial intent). Round counter shown in UI resets to 0.
 
 ## Planned Development Commands
@@ -285,9 +281,9 @@ output = mappyfile.dumps(mf)
 ### ConfigTree Design
 
 - `ConfigSession.params` is the **single source of truth**: a mappyfile-compatible dict.
-- `ConfigTree` wraps it with `TreeNode`/`TreeLeaf` for UI rendering, line numbers, and custom properties.
+- `ConfigTree` wraps it with `TreeNode`/`TreeLeaf` for UI rendering and custom properties.
 - Custom properties are stored under `_custom` per object and expanded during serialization.
-- Line numbers are computed by `ConfigTree.rebuild_line_map()` and must match the final `.map` output.
+- LLM updates use **flat path addressing** (`layers.0.connectiontype`) — stable identifiers that do not change when tree structure changes.
 
 **Service type filtering in ConfigTree**: ConfigTree receives `service_types: list[str]` at construction time. METADATA field visibility follows prefix rules:
 - `ows_*` — always visible (general prefix shared by all OGC services)
@@ -307,7 +303,7 @@ The v2 UI design is specified in `Document/技术细节.md` §4/§11/§12 and vi
 
 - **Two-column layout**: left `ConfigTree` (55%), right `QAPanel` (45%)
 - **Inline editing**: each leaf uses a control mapped from `FieldDescriptor.value_type`
-- **Focus mechanism**: clicking a tree node sets `focus_param` + `focus_lines`, injected into the LLM prompt
+- **Focus mechanism**: clicking a tree node sets `focus_param` (flat path like `layers.0.name`), injected into the LLM prompt
 - **Phase color badges**: datasource=blue `#2563eb`, style=orange `#ea580c`, service=green `#16a34a`, cache=purple `#9333ea`
 - **Show-mode toggle**: "全部 / 仅必填" filters optional/default fields
 - **Custom properties**: modal dialog for key + description + type; rendered with `✎` indicator
