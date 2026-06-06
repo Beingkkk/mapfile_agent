@@ -10,27 +10,75 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **⚠️ README.md is outdated** — it describes an older phase-state-machine architecture that has been abandoned. The current design is documented in this file and in `Document/技术细节.md`. Do not rely on README.md for architecture decisions.
 
-## Current Implementation State
+**⚠️ Current implementation state**: The project is at the pre-coding research phase. Only `generate_rules.py` and JSON data templates exist. The `backend/`, `frontend/`, `electron/`, and `tests/` directories are planned but not yet scaffolded. See "Current Code" below for what actually exists, and "Design Blueprint" for what will be built.
 
-**Pre-built and working:**
-- `SourceCode/scripts/generate_rules.py` — deterministic rule merger (schema + templates → mapguide_rules.json)
-- `SourceCode/data/templates/*.json` — 9 template resource files (including `service-metadata.json` for WMS/WFS/WCS parameter filtering)
-- `SourceCode/data/mapguide_rules.json` — generated runtime rule file
-- `SourceCode/data/init_session_intent.json` — default user intent with 3 scenarios
-- `SourceCode/config/config.json.template` — LLM API config template
+## Current Code
 
-**Not yet scaffolded:**
-- `SourceCode/backend/core/` (ConfigSession, ConfigTree, TemplateMapper, ValidationPipeline, QAService, ExportService)
-- `SourceCode/backend/llm/` (PromptBuilder, LLMClient, LLMOutput, UpdateResolver)
-- `SourceCode/backend/main.py` (FastAPI + WebSocket routes)
-- `SourceCode/backend/mapcache/` — directory planned but empty; generator/validator code not yet written
-- `SourceCode/frontend/` (Vue 3 + Vite + Naive UI)
-- `SourceCode/electron/` (Electron main process)
-- `SourceCode/tests/` (unit + integration tests)
+The only executable code in this repo is `SourceCode/scripts/generate_rules.py` — a deterministic rule merger that combines the official mappyfile JSON Schema with business overrides into a single runtime rule file.
 
-The architecture and class interfaces are fully specified in `Document/技术细节.md` §2–§7. Use that as the implementation blueprint.
+### Data Flow: Schema + Templates → Rules
 
-## Architecture
+```
+mapfile-schema-8-4.json (official MapServer 8.4 schema)
+    │
+    ├─ aliases.json        → 自然语言/中文 → 参数值映射
+    ├─ required.json       → 必填/条件必填规则
+    ├─ phase-map.json      → 对象类型 → 阶段归属
+    ├─ defaults-override.json → 默认值覆盖
+    ├─ dependencies.json   → 跨字段依赖
+    ├─ custom-allowed.json → 自定义属性白名单
+    ├─ object-fields.json  → 业务补充字段（METADATA、CACHE 等 schema 未枚举的场景）
+    └─ service-metadata.json → WMS/WFS/WCS 多服务参数映射
+    │
+    ▼
+generate_rules.py 合并
+    │
+    ▼
+mapguide_rules.json（运行时唯一读取的规则文件）
+```
+
+**Key merge rules** (implemented in `generate_rules.py`):
+- `value_type`: Schema enum → `"enum"`; Schema type → mapped internal type; unknown → `"string"`
+- `default`: `defaults-override.json` > schema default > `None`
+- `required` / `required_when` / `business_required`: from `required.json`
+- `phase`: from `phase-map.json` (all fields in an object type share the same phase)
+- `aliases`: from `aliases.json`
+- `dependencies`: from `dependencies.json`
+- `custom_allowed`: from `custom-allowed.json`
+- Nested objects not in `EXPANDED_NESTED_FIELDS` are marked `editable: false`
+
+**Schema extraction paths** (`SCHEMA_LOCATIONS` in the script): MAP → `properties`; LAYER → `properties.layers.items.properties`; CLASS → `...classes.items.properties`; STYLE → `...styles.items.properties`; LABEL → `...labels.items.properties`; WEB → `properties.web.properties`; METADATA → `properties.web.properties.metadata.properties`.
+
+**Output structure**: `mapguide_rules.json` contains `object_types` (per-type field definitions), `flat_params` (indexed paths for PromptBuilder), `aliases`, `dependencies`, `phase_map`, `custom_allowed`, `service_metadata`.
+
+### Available Commands
+
+```bash
+# Generate rules (run whenever templates change)
+cd SourceCode
+"/c/Users/PC/.conda/envs/gis-agent/python" scripts/generate_rules.py
+
+# Verify output (check field counts and structure)
+"/c/Users/PC/.conda/envs/gis-agent/python" -c "import json; r=json.load(open('SourceCode/data/mapguide_rules.json')); print(f'Objects: {len(r[\"object_types\"])}, Fields: {sum(len(o[\"fields\"]) for o in r[\"object_types\"].values())}')"
+```
+
+**Note**: pytest, uvicorn, npm, and PyInstaller commands are listed in the Design Blueprint section but cannot be run yet — the corresponding directories do not exist.
+
+## Python Environment
+
+All Python work **must** use the `gis-agent` conda environment. `conda activate` does not work in this bash shell; always invoke Python by full path.
+
+```bash
+# Python executable
+"/c/Users/PC/.conda/envs/gis-agent/python" --version   # 3.11.15
+
+# Package installer (when needed)
+"/c/Users/PC/.conda/envs/gis-agent/python" -m pip install <pkg>
+```
+
+## Design Blueprint
+
+The architecture and class interfaces for the full application are fully specified in `Document/技术细节.md` §2–§7. Use that as the implementation blueprint. Below is a high-level summary of the target architecture.
 
 ### Big Picture
 
@@ -119,19 +167,9 @@ qa_result WS message → frontend
 - **Line numbers**: Computed internally by `preview_mapfile()` for LLM positioning; never displayed in UI. Front-end shows flat paths (e.g. `LAYER[0].connectiontype`).
 - **Focus change clears QA**: Switching focus parameter resets the QA message history (but preserves initial intent). Round counter shown in UI resets to 0.
 
-## Python Environment
+## Planned Development Commands
 
-All Python work **must** use the `gis-agent` conda environment. `conda activate` does not work in this bash shell; always invoke Python by full path.
-
-```bash
-# Python executable
-"/c/Users/PC/.conda/envs/gis-agent/python" --version   # 3.11.15
-
-# Package installer (when needed)
-"/c/Users/PC/.conda/envs/gis-agent/python" -m pip install <pkg>
-```
-
-## Development Commands
+These commands reference directories and files that do not yet exist. They will become available after scaffolding.
 
 ### Backend (Python)
 
@@ -190,15 +228,6 @@ cd SourceCode
 npm run electron:build
 # Output: dist/MapGuide-Setup-x.x.x.exe
 ```
-
-### Generate Rules
-
-```bash
-cd SourceCode
-"/c/Users/PC/.conda/envs/gis-agent/python" scripts/generate_rules.py
-```
-
-Run this whenever you modify files in `data/templates/`.
 
 ## Key Technical Decisions
 
