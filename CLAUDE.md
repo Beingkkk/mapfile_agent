@@ -10,121 +10,52 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **⚠️ README.md vs CLAUDE.md 分工**: README.md 面向快速上手（技术栈、启动命令、项目结构）；CLAUDE.md 面向开发决策（架构约束、关键规则、实现细节）。两者互补，但架构决策以本文档和 `Document/技术细节.md` 为准。
 
-**⚠️ Current implementation state**: `generate_rules.py` 和 `data/templates/*.json` 是主要已交付代码。`spike/` 目录存放预开发可行性验证脚本：
+---
 
-- **V1**（mappyfile 行为摸底，62 个用例，结论见 `spike/v1_result.md`）✅
-- **V2**（LLM Prompt 稳定性，30 次 API 调用，结论见 `spike/v2_result.md`）✅
-- **V3**（ConfigTree 前端递归渲染，280 节点、4 层嵌套、7 种控件映射，结论见 `spike/v3_result.md`）✅
+## SDD Workflow
 
-三个验证全部通过 → **Go 决策**（`spike/feasibility_report.md`）。`backend/`, `frontend/`, `electron/`, `tests/` 目录待脚手架搭建。
+This project uses **Specification-Driven Development (SDD)**. All plans are locked; changes must go through the proposal process.
 
-**V2 关键结论**（影响 LLMOutput / PromptBuilder 实现）：
-- JSON 可解析率 **93.3%**（≥90% 通过）；`action=update`（参数修改）场景 **100%** 稳定
-- LLM 输出需经 **4 层容错解析**：`direct_json → strip_codeblock → brace_extract → json5_tolerant → fallback`
-- `strip_codeblock` 挽救了 **23%** 的调用——即使 prompt 禁止，LLM 仍经常输出 ` ```json {...} ``` `
-- `action=answer`（长文本解释）有 content 超长导致 JSON 截断的风险，prompt 中需限制 `content≤300` 字
-- LLM 值类型常见错误：`projection` 有时输出字符串而非数组；`status` 有时输出 JSON 布尔而非 `"ON"`/`"OFF"`
+| Layer | File | Purpose |
+|-------|------|---------|
+| Constitution | `Document/constitution.md` | Rarely changes |
+| Spec | `Document/spec.md` | Source of truth for requirements |
+| Plans | `Document/plan-*.md` | Per-module design (locked) |
+| Proposals | `Document/changes/proposal-{NNNN}.md` | Active change deltas |
 
-详细结论记录在 [`design/llm-integration.md`](Document/design/llm-integration.md) §附录。
+**Rules**:
+- Never modify a locked plan or spec directly. Create a `proposal-{NNNN}.md` first.
+- Proposal types: Type-A (req change), Type-B (design change), Type-C (bug fix, no proposal needed), Type-D (tech debt).
+- TDD discipline: RED → GREEN → REFACTOR. One failing test at a time.
+- All proposals are in `Document/changes/`. See `Document/changes/proposal-0001.md` through `proposal-0003.md` for examples.
 
-**V3 关键结论**（影响前端组件实现）：
-- 自定义递归组件（ObjectCard + FieldEditor）验证通过，280 节点、4 层嵌套无卡顿
-- `FieldEditor` 内部分发 7 种 `value_type` 到对应 Naive UI 控件，无需拆分为独立原子编辑器
-- STYLE/LABEL 作为独立 ObjectCard 节点渲染（非内联），验证中表现更清晰
-- 详细结论记录在 [`design/data-structures.md`](Document/design/data-structures.md) §4.2 和 [`spike/v3_result.md`](SourceCode/spike/v3_result.md)
+---
 
-## Current Code
+## Current Implementation State
 
-The only executable code in this repo is `SourceCode/scripts/generate_rules.py` — a deterministic rule merger that combines the official mappyfile JSON Schema with business overrides into a single runtime rule file.
+**Completed modules** (have real code + tests):
 
-### Data Flow: Schema + Templates → Rules
+| Module | Files | Tests | Proposal |
+|--------|-------|-------|----------|
+| `generate_rules.py` | `scripts/generate_rules.py` | `tests/unit/test_generate_rules.py` (53), `tests/integration/test_rules_output.py` (17) | #0002 |
+| `TemplateMapper` + `FieldDescriptor` | `backend/core/template_mapper.py` | `tests/unit/test_template_mapper.py` (33) | #0003 |
+| `ConfigSession` + `ConfigTree` | `backend/core/session.py`, `backend/core/config_tree.py`, `backend/core/history.py` | `tests/unit/test_session.py` (12), `tests/unit/test_config_tree.py` (56) | #0004 |
 
-```
-mapfile-schema-8-4.json (official MapServer 8.4 schema)
-    │
-    ├─ aliases.json        → 自然语言/中文 → 参数值映射
-    ├─ required.json       → 必填/条件必填规则
-    ├─ phase-map.json      → 对象类型 → 阶段归属
-    ├─ defaults-override.json → 默认值覆盖
-    ├─ dependencies.json   → 跨字段依赖
-    ├─ custom-allowed.json → 自定义属性白名单
-    ├─ object-fields.json  → 业务补充字段（METADATA、CACHE 等 schema 未枚举的场景）
-    └─ service-metadata.json → WMS/WFS/WCS 多服务参数映射
-    │
-    ▼
-generate_rules.py 合并
-    │
-    ▼
-mapguide_rules.json（运行时唯一读取的规则文件）
-```
+**Scaffolded but empty** (placeholder `pass` only):
 
-**Key merge rules** (implemented in `generate_rules.py`):
-- `value_type`: Schema enum → `"enum"`; Schema type → mapped internal type; unknown → `"string"`
-- `default`: `defaults-override.json` > schema default > `None`
-- `required` / `required_when` / `business_required`: from `required.json`
-- `phase`: from `phase-map.json` (all fields in an object type share the same phase)
-- `aliases`: from `aliases.json`
-- `dependencies`: from `dependencies.json`
-- `custom_allowed`: from `custom-allowed.json`
-- Nested objects not in `EXPANDED_NESTED_FIELDS` are marked `editable: false`
+`backend/core/{validation,qa_service,export_service,import_service,result_types}.py`, `backend/llm/*.py`, `backend/mapcache/*.py`, `frontend/src/`, `electron/`
 
-**Schema extraction paths** (`SCHEMA_LOCATIONS` in the script): MAP → `properties`; LAYER → `properties.layers.items.properties`; CLASS → `...classes.items.properties`; STYLE → `...styles.items.properties`; LABEL → `...labels.items.properties`; WEB → `properties.web.properties`; METADATA → `properties.web.properties.metadata.properties`.
+**Spikes** (pre-development validation, not production code):
 
-**Output structure**: `mapguide_rules.json` contains `object_types` (per-type field definitions), `flat_params` (indexed paths for PromptBuilder), `aliases`, `dependencies`, `phase_map`, `custom_allowed`, `service_metadata`.
+- V1 (`spike/v1_mappyfile_validate.py`): mappyfile behavior, 62 cases
+- V2 (`spike/v2_llm_prompt_stability.py`): LLM JSON stability, 30 calls
+- V3 (`spike/v3-config-tree/`): ConfigTree recursive rendering, 280 nodes
 
-### Available Commands
+See `spike/v1_result.md`, `spike/v2_result.md`, `spike/v3_result.md`, `spike/feasibility_report.md`.
 
-```bash
-# Generate rules (run whenever templates change)
-cd SourceCode
-"/c/Users/PC/.conda/envs/gis-agent/python" scripts/generate_rules.py
+---
 
-# Verify output (check field counts and structure)
-"/c/Users/PC/.conda/envs/gis-agent/python" -c "import json; r=json.load(open('SourceCode/data/mapguide_rules.json')); print(f'Objects: {len(r[\"object_types\"])}, Fields: {sum(len(o[\"fields\"]) for o in r[\"object_types\"].values())}')"
-
-# Run V1 validation spike
-"/c/Users/PC/.conda/envs/gis-agent/python" SourceCode/spike/v1_mappyfile_validate.py
-```
-
-Commands for pytest, uvicorn, npm, and PyInstaller are in the Planned Commands section below.
-
-## Python Environment
-
-All Python work **must** use the `gis-agent` conda environment. `conda activate` does not work in this bash shell; always invoke Python by full path.
-
-```bash
-# Python executable
-"/c/Users/PC/.conda/envs/gis-agent/python" --version   # 3.11.15
-
-# Package installer (when needed)
-"/c/Users/PC/.conda/envs/gis-agent/python" -m pip install <pkg>
-```
-
-## CodeGraph
-
-This project has a CodeGraph MCP server (`codegraph_*` tools) configured. Use it for **structural** questions — what calls what, what would break, where is X defined, what is X's signature. Use native grep/read only for **literal text** queries (string contents, comments, log messages) or after you already have a specific file open.
-
-| Question | Tool |
-|---|---|
-| "Where is X defined?" / "Find symbol named X" | `codegraph_search` |
-| "What calls function Y?" | `codegraph_callers` |
-| "What does Y call?" | `codegraph_callees` |
-| "How does X reach/become Y?" | `codegraph_trace` |
-| "What would changing this break?" | `codegraph_impact` |
-| "Show me Y's source / signature" | `codegraph_node` |
-| "Give me focused context for a task" | `codegraph_context` |
-| "See several related symbols at once" | `codegraph_explore` |
-| "What's in directory X?" | `codegraph_files` |
-
-**Rules of thumb**:
-- Answer architecture questions **directly** with 2-3 codegraph calls instead of delegating to file-reading sub-agents.
-- Don't chain `codegraph_search + codegraph_node` when you just want context — `codegraph_context` is one call.
-- Don't loop `codegraph_node` over many symbols — one `codegraph_explore` returns several symbols' source grouped.
-- Index lags ~500ms behind writes; don't re-query immediately after editing a file in the same turn.
-
-## Design Blueprint
-
-The architecture and class interfaces for the full application are fully specified in `Document/技术细节.md` §2–§7. Use that as the implementation blueprint. Below is a high-level summary of the target architecture.
+## Architecture
 
 ### Big Picture
 
@@ -195,7 +126,9 @@ QAService.answer(session, text)
 qa_result WS message → frontend
 ```
 
-### Critical Rules
+---
+
+## Critical Rules
 
 - The LLM **never** generates raw Mapfile/XML text. It outputs structured JSON (`action`, `params_update`, `question`). Backend validates, merges into `ConfigSession.params`, then feeds to `mappyfile` / Jinja2 for deterministic generation.
 - **No per-phase prompt, no phase state machine**. Only one `_framework.j2` exists. Backend handles all rules.
@@ -209,9 +142,44 @@ qa_result WS message → frontend
 - **Flat path addressing**: LLM updates use stable paths (e.g. `layers.0.connectiontype`), not line numbers. No line_map or rebuild_line_map needed.
 - **Focus change clears QA**: Switching focus parameter resets the QA message history (but preserves initial intent). Round counter shown in UI resets to 0.
 
-## Available Commands
+---
 
-### Now (generate_rules + spikes)
+## Commands
+
+### Python Environment
+
+All Python work **must** use the `gis-agent` conda environment. `conda activate` does not work in this bash shell; always invoke Python by full path.
+
+```bash
+# Python executable
+"/c/Users/PC/.conda/envs/gis-agent/python" --version   # 3.11.15
+
+# Package installer (when needed)
+"/c/Users/PC/.conda/envs/gis-agent/python" -m pip install <pkg>
+```
+
+### Tests
+
+**pytest must be run from `SourceCode/`** because tests live under `SourceCode/tests/unit/`:
+
+```bash
+cd SourceCode
+
+# All tests
+"/c/Users/PC/.conda/envs/gis-agent/python" -m pytest tests/ -v
+
+# Single test file
+"/c/Users/PC/.conda/envs/gis-agent/python" -m pytest tests/unit/test_template_mapper.py -v
+"/c/Users/PC/.conda/envs/gis-agent/python" -m pytest tests/unit/test_config_tree.py -v
+"/c/Users/PC/.conda/envs/gis-agent/python" -m pytest tests/unit/test_session.py -v
+
+# Single test class or method
+"/c/Users/PC/.conda/envs/gis-agent/python" -m pytest tests/unit/test_template_mapper.py::TestResolveAlias -v
+"/c/Users/PC/.conda/envs/gis-agent/python" -m pytest tests/unit/test_generate_rules.py::TestInferValueType::test_enum_present_returns_enum -v
+"/c/Users/PC/.conda/envs/gis-agent/python" -m pytest tests/unit/test_config_tree.py::TestConfigTreeSerialize::test_transform_1_custom_expansion -v
+```
+
+### Rules Generation
 
 ```bash
 cd SourceCode
@@ -220,16 +188,11 @@ cd SourceCode
 "/c/Users/PC/.conda/envs/gis-agent/python" scripts/generate_rules.py
 
 # Verify output
-"/c/Users/PC/.conda/envs/gis-agent/python" -c "import json; r=json.load(open('data/mapguide_rules.json')); print(f'Objects: {len(r[\"object_types\"])}, Fields: {sum(len(o[\"fields\"]) for o in r[\"object_types\"].values())}')"
+"/c/Users/PC/.conda/envs/gis-agent/python" -c "import json; r=json.load(open('data/mapguide_rules.json', encoding='utf-8')); print(f'Objects: {len(r[\"object_types\"])}, Fields: {sum(len(o[\"fields\"]) for o in r[\"object_types\"].values())}')"
 
 # Run V1 validation spike
 "/c/Users/PC/.conda/envs/gis-agent/python" spike/v1_mappyfile_validate.py
-
-# Run V2 LLM stability spike (requires config/config.json with API key)
-"/c/Users/PC/.conda/envs/gis-agent/python" spike/v2_llm_prompt_stability.py
 ```
-
-### After scaffolding (backend/frontend/electron)
 
 ### Backend (Python)
 
@@ -241,14 +204,6 @@ cd SourceCode/backend
 
 # Install dependencies
 "/c/Users/PC/.conda/envs/gis-agent/python" -m pip install -r requirements.txt
-```
-
-**pytest must be run from `SourceCode/`** because tests live under `SourceCode/tests/unit/`:
-
-```bash
-cd SourceCode
-"/c/Users/PC/.conda/envs/gis-agent/python" -m pytest tests/unit/test_xxx.py -v
-"/c/Users/PC/.conda/envs/gis-agent/python" -m pytest tests/ -v
 ```
 
 ### Frontend (Vue)
@@ -263,13 +218,17 @@ npm run dev
 npm run build
 ```
 
-### Electron (Development Mode)
+### Electron
 
 ```bash
 cd SourceCode
 
-# Requires backend (port 8765) and frontend dev server already running
+# Dev mode (requires backend on 8765 + frontend dev server)
 npm run electron:dev
+
+# Production build
+npm run electron:build
+# Output: dist/MapGuide-Setup-x.x.x.exe
 ```
 
 ### Production Packaging
@@ -286,20 +245,106 @@ npm run build
 # Step 3: Electron → Windows installer
 cd SourceCode
 npm run electron:build
-# Output: dist/MapGuide-Setup-x.x.x.exe
 ```
+
+---
+
+## Testing: Importing Non-Package Modules
+
+`backend/core/` modules are not on the default PYTHONPATH during test runs. Each test file that imports them adds the directory via `sys.path.insert`:
+
+```python
+import sys
+from pathlib import Path
+
+_BACKEND_CORE = Path(__file__).resolve().parent.parent.parent / "backend" / "core"
+if str(_BACKEND_CORE) not in sys.path:
+    sys.path.insert(0, str(_BACKEND_CORE))
+
+from config_tree import ConfigTree, TreeNode, TreeLeaf
+```
+
+For `scripts/generate_rules.py` (outside any package), use `importlib.util`:
+
+```python
+import importlib.util
+import sys
+from pathlib import Path
+
+SCRIPTS_DIR = Path(__file__).resolve().parent.parent.parent / "scripts"
+_spec = importlib.util.spec_from_file_location("generate_rules", SCRIPTS_DIR / "generate_rules.py")
+assert _spec is not None and _spec.loader is not None
+gr = importlib.util.module_from_spec(_spec)
+sys.modules["generate_rules"] = gr
+_spec.loader.exec_module(gr)
+```
+
+---
+
+## CodeGraph
+
+This project has a CodeGraph MCP server (`codegraph_*` tools) configured. Use it for **structural** questions — what calls what, what would break, where is X defined, what is X's signature. Use native grep/read only for **literal text** queries (string contents, comments, log messages) or after you already have a specific file open.
+
+| Question | Tool |
+|---|---|
+| "Where is X defined?" / "Find symbol named X" | `codegraph_search` |
+| "What calls function Y?" | `codegraph_callers` |
+| "What does Y call?" | `codegraph_callees` |
+| "How does X reach/become Y?" | `codegraph_trace` |
+| "What would changing this break?" | `codegraph_impact` |
+| "Show me Y's source / signature" | `codegraph_node` |
+| "Give me focused context for a task" | `codegraph_context` |
+| "See several related symbols at once" | `codegraph_explore` |
+| "What's in directory X?" | `codegraph_files` |
+
+**Rules of thumb**:
+- Answer architecture questions **directly** with 2-3 codegraph calls instead of delegating to file-reading sub-agents.
+- Don't chain `codegraph_search + codegraph_node` when you just want context — `codegraph_context` is one call.
+- Don't loop `codegraph_node` over many symbols — one `codegraph_explore` returns several symbols' source grouped.
+- Index lags ~500ms behind writes; don't re-query immediately after editing a file in the same turn.
+
+---
 
 ## Key Technical Decisions
 
-### Template Resources
+### Data Flow: Schema + Templates → Rules
 
-Rules come from two layers:
-1. `mapfile-schema-8-4.json` — official mappyfile schema (types, enums, defaults)
-2. `data/templates/*.json` — business overrides (aliases, required, phase map, defaults, dependencies, custom-property whitelist, object field supplements)
+```
+mapfile-schema-8-4.json (official MapServer 8.4 schema)
+    │
+    ├─ aliases.json        → 自然语言/中文 → 参数值映射
+    ├─ required.json       → 必填/条件必填规则
+    ├─ phase-map.json      → 对象类型 → 阶段归属
+    ├─ defaults-override.json → 默认值覆盖
+    ├─ dependencies.json   → 跨字段依赖
+    ├─ custom-allowed.json → 自定义属性白名单
+    ├─ object-fields.json  → 业务补充字段（METADATA、CACHE 等 schema 未枚举的场景）
+    └─ service-metadata.json → WMS/WFS/WCS 多服务参数映射
+    │
+    ▼
+generate_rules.py 合并
+    │
+    ▼
+mapguide_rules.json（运行时唯一读取的规则文件）
+    │
+    ▼
+TemplateMapper.__init__() 加载
+    │
+    ▼
+FieldDescriptor
+```
 
-`generate_rules.py` deterministically merges these into `data/mapguide_rules.json`. At runtime, `TemplateMapper` only loads `mapguide_rules.json`.
+**Key merge rules** (implemented in `generate_rules.py`):
+- `value_type`: Schema enum → `"enum"`; Schema type → mapped internal type; unknown → `"string"`
+- `default`: `defaults-override.json` > schema default > `None`
+- `required` / `required_when` / `business_required`: from `required.json`
+- `phase`: from `phase-map.json` (all fields in an object type share the same phase)
+- `aliases`: from `aliases.json`
+- `dependencies`: from `dependencies.json`
+- `custom_allowed`: from `custom-allowed.json`
+- Nested objects not in `EXPANDED_NESTED_FIELDS` are marked `editable: false`
 
-Supported object types: MAP, LAYER, CLASS, STYLE, **LABEL**, WEB, METADATA, CACHE. LABEL is nested under CLASS (sibling to STYLE) and uses the style phase color.
+**Output structure**: `mapguide_rules.json` contains `object_types` (per-type field definitions), `flat_params` (indexed paths for PromptBuilder), `aliases`, `dependencies`, `phase_map`, `custom_allowed`, `service_metadata`.
 
 ### LLM Integration (anthropic SDK)
 
@@ -309,6 +354,13 @@ Supported object types: MAP, LAYER, CLASS, STYLE, **LABEL**, WEB, METADATA, CACH
 - Token budget: ~1500 tokens total (L0-L5), recent QA history capped at 4-6 rounds.
 - **LLM boundary**: The LLM only understands natural language and outputs raw parameter values or flat path-based updates (e.g. `layers.0.connectiontype`). All alias conversion, type conversion, validation, and default-filling is handled by backend code.
 - **Provider lock**: Only Anthropic Claude is supported. LLMClient encapsulates the SDK; no raw API exposure to upper layers.
+
+**V2 validation findings** (affect LLMOutput / PromptBuilder):
+- JSON parse rate **93.3%**; `action=update` is **100%** stable
+- 4-layer fallback parsing: `direct_json → strip_codeblock → brace_extract → json5_tolerant → fallback`
+- `strip_codeblock` saves **23%** of calls — LLM still wraps in ` ```json ` despite prompt forbidding it
+- `action=answer` content truncation risk → prompt limits `content≤300` chars
+- Common type errors: `projection` as string instead of array; `status` as JSON bool instead of `"ON"`/`"OFF"`
 
 ### Validation Pipeline
 
@@ -320,14 +372,6 @@ Validation happens after every parameter change:
 4. **mappyfile syntax**: `mappyfile.validate(mf, version=8.4)` validates the assembled Mapfile.
 
 Layers 1-3 run on every field blur. Layer 4 only runs on add/remove node, manual validate, and export.
-
-### MapCache Generator/Validator
-
-`backend/mapcache/` will contain two self-built components that are **peers to `mappyfile`**:
-- `MapCacheGenerator` — renders `mapcache.xml` from `mapcache.xml.j2` + session params
-- `MapCacheValidator` — validates generated XML against MapCache 1.16.0 rules without requiring MapCache installation
-
-Both are core infrastructure and need unit test coverage.
 
 ### Mapfile Generation
 
@@ -397,30 +441,39 @@ The UI design is specified in `Document/技术细节.md` §4/§11/§12 and visua
 - **No history persistence**: in-memory only
 - **Responsive breakpoints**: ≤900px collapses QAPanel; ≤600px uses bottom input bar
 
+---
+
 ## Documentation References
 
 | File | Purpose |
 |------|---------|
-| `Document/需求输入.md` | High-level requirements: MVP scope, UX layout, interaction scenarios, validation/export rules |
-| `Document/技术细节.md` | **总览索引**（已拆分）。设计前提 + 模块文档索引 |
+| `Document/constitution.md` | SDD constitution — project values, scope boundaries |
+| `Document/spec.md` | Requirements spec — MoSCoW, MVP scope, constraints |
+| `Document/plan-template-system.md` | Template resources plan — DC-001~DC-003 |
+| `Document/plan-config-tree.md` | ConfigSession/ConfigTree plan |
+| `Document/plan-validation.md` | ValidationPipeline plan |
+| `Document/plan-backend-llm.md` | LLM integration plan |
+| `Document/plan-frontend.md` | Frontend component plan |
+| `Document/plan-platform.md` | Electron + packaging plan |
+| `Document/需求输入.md` | High-level requirements (Chinese) |
+| `Document/技术细节.md` | Design overview index (Chinese) |
 | `Document/design/template-system.md` | Template resources, generate_rules.py merge logic, TemplateMapper, FieldDescriptor |
 | `Document/design/data-structures.md` | ConfigSession, ConfigTree, TreeNode/TreeLeaf, flat path addressing |
 | `Document/design/validation.md` | 4-layer validation strategy, mappyfile false-positive filtering |
 | `Document/design/core-services.md` | Architecture overview, ValidationPipeline, ExportService, ImportService, class directory |
-| `Document/design/llm-integration.md` | DialogueHistory, Prompt L0-L5 context, QAService, LLMClient, LLMOutput parsing, **LLM validation conclusions** |
+| `Document/design/llm-integration.md` | DialogueHistory, Prompt L0-L5 context, QAService, LLMClient, LLMOutput parsing |
 | `Document/design/interaction-flows.md` | 6 interaction scenario data flows |
 | `Document/design/frontend-backend-contract.md` | WebSocket message types, communication constraints |
 | `Document/design/conventions.md` | Tech stack, directory structure, dev commands, code constraints, debugging |
-| `Document/模板说明.md` | Template resource reference for GIS professionals: how to modify `data/templates/*.json` |
+| `Document/模板说明.md` | Template resource reference for GIS professionals |
 | `Document/UX/ui-prototype-interactive-v2.html` | Interactive UI prototype |
-| `Document/design/architecture.html` | Module architecture diagram (6 views) |
-| `Document/design/dataflow-6-scenes.html` | Interactive data flow diagrams |
-| `Document/核心难点验证计划.md` | Pre-development feasibility spikes (V1/V2/V3) |
-| `spike/v1_result.md` | V1 conclusions: mappyfile validate() behavior, to_mappyfile_dict() 7 mandatory transforms |
+| `spike/v1_result.md` | V1 conclusions: mappyfile validate() behavior, to_mappyfile_dict() 7 transforms |
 | `spike/v2_result.md` | V2 conclusions: LLM JSON output stability, graceful degradation patterns |
 | `spike/v3_result.md` | V3 conclusions: ConfigTree recursive rendering, 280-node perf, 7 value_type controls |
 | `spike/feasibility_report.md` | Go/No-go decision: all 3 spikes passed |
-| `Document/design/implementation-progress.md` | Remaining modules, difficulty heatmap, time estimate (5-6 weeks) |
+| `Document/design/implementation-progress.md` | Remaining modules, difficulty heatmap, time estimate |
+
+---
 
 ## Conventions
 
@@ -436,5 +489,6 @@ The UI design is specified in `Document/技术细节.md` §4/§11/§12 and visua
 - **`data/schemas/` removed**: the root-level `mapfile-schema-8-4.json` and `schemas/` directory were cleaned up; the canonical schema now lives in `data/templates/mapfile-schema-8-4.json`.
 - **Color format**: RGB arrays `[0, 0, 255]` everywhere. No hex conversion.
 - **Testing approach**: TDD. Unit tests for backend/core/ and backend/llm/. Integration tests for generate_rules.py output + LLM mock end-to-end.
+- **Commit format**: `type(scope): proposal-NNNN description`
 
 **Constraints**: `version` must be `float` (`8.4`), not `str`. `PROJECTION` must be an array `["init=epsg:3857"]`, not a string.

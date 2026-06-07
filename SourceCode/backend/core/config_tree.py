@@ -1,0 +1,498 @@
+"""ConfigTree — business isolation layer over mappyfile dict.
+
+DC-005: TreeNode/TreeLeaf  DC-006~011: ConfigTree
+plan-config-tree §3.2–§3.4
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Any
+
+from template_mapper import FieldDescriptor, TemplateMapper
+
+
+# ────────────────────────────────────────────────────────────────────────────
+# Tree model
+# ────────────────────────────────────────────────────────────────────────────
+
+
+@dataclass
+class TreeNode:
+    """Object node (MAP, LAYER, CLASS, STYLE, LABEL, WEB, METADATA, CACHE)."""
+
+    id: str
+    path: str
+    object_type: str
+    children: list[TreeNode | TreeLeaf] = field(default_factory=list)
+    expanded: bool = True
+
+    def leaves(self) -> list[TreeLeaf]:
+        return [c for c in self.children if isinstance(c, TreeLeaf)]
+
+    def nodes(self) -> list[TreeNode]:
+        return [c for c in self.children if isinstance(c, TreeNode)]
+
+
+@dataclass
+class TreeLeaf:
+    """Property leaf."""
+
+    id: str
+    path: str
+    key: str
+    descriptor: FieldDescriptor
+    value: Any
+    user_modified: bool = False
+    errors: list[str] = field(default_factory=list)
+
+
+# ────────────────────────────────────────────────────────────────────────────
+# ConfigTree
+# ────────────────────────────────────────────────────────────────────────────
+
+# Fields that mappyfile requires to be lists.
+_ARRAY_FIELDS = {"layers", "classes", "styles", "labels"}
+
+# Fields whose enum representation must be stringified from bool.
+_ENUM_BOOL_FIELDS = {"status"}
+
+
+class ConfigTree:
+    """Wrap a mappyfile-compatible dict with a frontend-friendly tree model."""
+
+    def __init__(
+        self,
+        params: dict[str, Any],
+        mapper: TemplateMapper,
+        service_types: list[str] | None = None,
+    ) -> None:
+        self.params = params
+        self.mapper = mapper
+        self.service_types = service_types if service_types is not None else ["wms"]
+        self.root = self._build_tree(params, path="map", object_type="MAP")
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Construction
+    # ─────────────────────────────────────────────────────────────────────────
+
+    # Nested-object keys that should render as TreeNode, never TreeLeaf.
+    _NESTED_KEYS: set[str] = {"layers", "classes", "styles", "labels", "web", "metadata", "cache"}
+
+    def _build_tree(self, obj: dict, path: str, object_type: str) -> TreeNode:
+        """Recursively turn a mappyfile dict into TreeNode + TreeLeaf."""
+        node = TreeNode(id=self._make_id(path), path=path, object_type=object_type)
+
+        # 1. Pre-defined fields (schema order, with service-type filtering)
+        for field in self.mapper.list_all_fields(object_type):
+            if object_type == "METADATA" and not self._is_metadata_field_visible(field):
+                continue
+            if object_type == "LAYER" and not self._is_layer_field_visible(field):
+                continue
+            # Nested objects render as TreeNode via _build_children, not TreeLeaf
+            if field in self._NESTED_KEYS:
+                continue
+            if field in obj:
+                value = obj[field]
+                desc = self.mapper.get_field_descriptor(object_type, field)
+                if desc is None:
+                    desc = FieldDescriptor(key=field, value_type="string")
+                leaf = TreeLeaf(
+                    id=self._make_id(f"{path}.{field}"),
+                    path=f"{path}.{field}",
+                    key=field,
+                    descriptor=desc,
+                    value=value,
+                )
+                node.children.append(leaf)
+
+        # 2. Custom properties (expanded from _custom)
+        for field, meta in obj.get("_custom", {}).items():
+            leaf = TreeLeaf(
+                id=self._make_id(f"{path}.{field}"),
+                path=f"{path}.{field}",
+                key=field,
+                descriptor=FieldDescriptor(
+                    key=field,
+                    value_type=meta["type"],
+                    custom=True,
+                    custom_desc=meta.get("desc", ""),
+                ),
+                value=meta["value"],
+            )
+            node.children.append(leaf)
+
+        # 3. Child objects
+        node.children.extend(self._build_children(obj, path, object_type))
+
+        return node
+
+    def _build_children(
+        self, obj: dict, parent_path: str, parent_type: str
+    ) -> list[TreeNode]:
+        """Build child object nodes according to object type."""
+        children: list[TreeNode] = []
+        if parent_type == "MAP":
+            if "web" in obj:
+                children.append(
+                    self._build_tree(obj["web"], "web", "WEB")
+                )
+            # Normalise layers to a list (handles transform-3 test data)
+            layers = obj.get("layers", [])
+            if isinstance(layers, dict):
+                layers = [layers]
+            for i, layer in enumerate(layers):
+                if isinstance(layer, dict):
+                    children.append(self._build_tree(layer, f"layers.{i}", "LAYER"))
+            if "cache" in obj:
+                children.append(self._build_tree(obj["cache"], "cache", "CACHE"))
+        elif parent_type == "LAYER":
+            if "metadata" in obj:
+                children.append(
+                    self._build_tree(
+                        obj["metadata"], f"{parent_path}.metadata", "METADATA"
+                    )
+                )
+            classes = obj.get("classes", [])
+            if isinstance(classes, dict):
+                classes = [classes]
+            for i, cls in enumerate(classes):
+                if isinstance(cls, dict):
+                    children.append(
+                        self._build_tree(cls, f"{parent_path}.classes.{i}", "CLASS")
+                    )
+        elif parent_type == "CLASS":
+            styles = obj.get("styles", [])
+            if isinstance(styles, dict):
+                styles = [styles]
+            for i, style in enumerate(styles):
+                if isinstance(style, dict):
+                    children.append(
+                        self._build_tree(style, f"{parent_path}.styles.{i}", "STYLE")
+                    )
+            labels = obj.get("labels", [])
+            if isinstance(labels, dict):
+                labels = [labels]
+            for i, label in enumerate(labels):
+                if isinstance(label, dict):
+                    children.append(
+                        self._build_tree(label, f"{parent_path}.labels.{i}", "LABEL")
+                    )
+        elif parent_type == "WEB":
+            if "metadata" in obj:
+                children.append(
+                    self._build_tree(
+                        obj["metadata"], f"{parent_path}.metadata", "METADATA"
+                    )
+                )
+        return children
+
+    def _is_metadata_field_visible(self, field: str) -> bool:
+        """Filter METADATA field visibility by service type."""
+        if field.startswith("ows_"):
+            return True
+        if field.startswith("wms_") and "wms" not in self.service_types:
+            return False
+        if field.startswith("wfs_") and "wfs" not in self.service_types:
+            return False
+        if field.startswith("wcs_") and "wcs" not in self.service_types:
+            return False
+        if field.startswith("gml_") and "wfs" not in self.service_types:
+            return False
+        return True
+
+    def _is_layer_field_visible(self, _field: str) -> bool:
+        """Filter LAYER field visibility by service type (no WFS/WCS-specific
+        direct LAYER fields at this time)."""
+        return True
+
+    def _make_id(self, path: str) -> str:
+        return path.replace(".", "_").replace("[", "").replace("]", "")
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Data access
+    # ─────────────────────────────────────────────────────────────────────────
+
+    def get_node(self, path: str) -> TreeNode | TreeLeaf | None:
+        """Look up a node by flat path.
+
+        Supports both relative paths (``"name"`` resolves against the MAP
+        root) and absolute paths (``"layers.0.name"``).
+        """
+        # Normalise: strip leading "map." if present
+        if path.startswith("map."):
+            path = path[4:]
+        if path in ("map", ""):
+            return self.root
+
+        # Fast path: direct key match against root children
+        for child in self.root.children:
+            if isinstance(child, TreeLeaf) and child.key == path:
+                return child
+            if isinstance(child, TreeNode) and child.path == path:
+                return child
+
+        # DFS for nested paths
+        def _search(node: TreeNode) -> TreeNode | TreeLeaf | None:
+            for child in node.children:
+                if isinstance(child, TreeLeaf):
+                    if child.path == path or child.key == path:
+                        return child
+                elif isinstance(child, TreeNode):
+                    if child.path == path:
+                        return child
+                    result = _search(child)
+                    if result is not None:
+                        return result
+            return None
+
+        return _search(self.root)
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Data mutation
+    # ─────────────────────────────────────────────────────────────────────────
+
+    def update_value(self, path: str, value: Any, user_modified: bool = True) -> None:
+        """Update a leaf value and write back to params."""
+        node = self.get_node(path)
+        if isinstance(node, TreeLeaf):
+            node.value = value
+            node.user_modified = user_modified
+            self._write_to_params(path, value)
+        else:
+            # Field not yet in tree — write directly to params, rebuild, then flag
+            self._write_to_params(path, value)
+            self.root = self._build_tree(self.params, "map", "MAP")
+            node = self.get_node(path)
+            if isinstance(node, TreeLeaf):
+                node.user_modified = user_modified
+
+    def add_object(self, parent_path: str, object_type: str) -> TreeNode:
+        """Add a new child object under the given parent."""
+        parent = self._resolve_dict(parent_path)
+
+        object_type_lower = object_type.lower()
+
+        if object_type == "WEB":
+            parent["web"] = {"__type__": object_type_lower}
+        elif object_type == "CACHE":
+            parent["cache"] = {"__type__": object_type_lower}
+        elif object_type == "METADATA":
+            parent["metadata"] = {}
+        elif object_type in {"LAYER", "CLASS", "STYLE", "LABEL"}:
+            list_key = self._PLURALS.get(object_type_lower, f"{object_type_lower}s")
+            if list_key not in parent:
+                parent[list_key] = []
+            new_item: dict[str, Any] = {"__type__": object_type_lower}
+            if object_type == "STYLE":
+                new_item["color"] = [128, 128, 128]
+            parent[list_key].append(new_item)
+        else:
+            raise ValueError(f"Unsupported object type: {object_type}")
+
+        self.root = self._build_tree(self.params, "map", "MAP")
+        return self._find_added_node(parent_path, object_type)
+
+    # object_type -> plural key used in params
+    _PLURALS = {
+        "layer": "layers",
+        "class": "classes",
+        "style": "styles",
+        "label": "labels",
+    }
+
+    def _find_added_node(self, parent_path: str, object_type: str) -> TreeNode:
+        """Return the last-added node of the given object type."""
+        object_type_lower = object_type.lower()
+
+        if object_type in {"WEB", "CACHE", "METADATA"}:
+            if object_type == "WEB":
+                return self.get_node("web")  # type: ignore[return-value]
+            if object_type == "CACHE":
+                return self.get_node("cache")  # type: ignore[return-value]
+            if object_type == "METADATA":
+                return self.get_node(f"{parent_path}.metadata")  # type: ignore[return-value]
+
+        list_key = self._PLURALS.get(object_type_lower, f"{object_type_lower}s")
+        parent = self._resolve_dict(parent_path)
+        items = parent.get(list_key, [])
+        if not items:
+            raise RuntimeError(f"Failed to add {object_type}")
+        idx = len(items) - 1
+
+        # Build lookup path
+        if parent_path in ("map", ""):
+            lookup = f"{list_key}.{idx}"
+        else:
+            lookup = f"{parent_path}.{list_key}.{idx}"
+        if lookup.startswith("map."):
+            lookup = lookup[4:]
+
+        node = self.get_node(lookup)
+        if isinstance(node, TreeNode):
+            return node
+        raise RuntimeError(f"Cannot find added {object_type} node at {lookup}")
+
+    def remove_object(self, path: str) -> None:
+        """Remove an object node from params."""
+        parts = path.split(".")
+        if len(parts) < 1:
+            raise KeyError(f"Cannot remove root or invalid path: {path}")
+
+        # Navigate to the container of the last segment
+        current: Any = self.params
+        for part in parts[:-1]:
+            if isinstance(current, dict):
+                current = current[part]
+            elif isinstance(current, list):
+                current = current[int(part)]
+            else:
+                raise KeyError(f"Cannot traverse path segment '{part}' in {type(current)}")
+
+        target = parts[-1]
+
+        if isinstance(current, dict):
+            if target in current:
+                del current[target]
+            else:
+                raise KeyError(f"Cannot resolve path for removal: {path}")
+        elif isinstance(current, list):
+            idx = int(target)
+            if 0 <= idx < len(current):
+                current.pop(idx)
+            else:
+                raise KeyError(f"Index out of range: {path}")
+        else:
+            raise KeyError(f"Cannot resolve path for removal: {path}")
+
+        self.root = self._build_tree(self.params, "map", "MAP")
+
+    def add_custom_property(
+        self,
+        parent_path: str,
+        key: str,
+        value: Any,
+        prop_type: str,
+        desc: str = "",
+    ) -> None:
+        """Add a custom property stored under _custom."""
+        parent = self._resolve_dict(parent_path)
+        parent.setdefault("_custom", {})[key] = {
+            "value": value,
+            "type": prop_type,
+            "desc": desc,
+        }
+        self.root = self._build_tree(self.params, "map", "MAP")
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Serialization — 7 mandatory transforms
+    # ─────────────────────────────────────────────────────────────────────────
+
+    def to_mappyfile_dict(self) -> dict:
+        """Return a dict ready for mappyfile.dumps()."""
+        first_pass = self._filter_and_expand(self.params)
+        return self._post_transform(first_pass)
+
+    def _filter_and_expand(self, obj: Any) -> Any:
+        """Recursively apply transforms 1–2."""
+        if isinstance(obj, dict):
+            result: dict[str, Any] = {}
+            for k, v in obj.items():
+                if k == "_custom":
+                    for ck, cv in v.items():
+                        result[ck] = self._filter_and_expand(cv["value"])
+                    continue
+                if k == "cache":
+                    continue
+                result[k] = self._filter_and_expand(v)
+            return result
+        if isinstance(obj, list):
+            return [self._filter_and_expand(i) for i in obj]
+        return obj
+
+    def _post_transform(self, obj: Any) -> Any:
+        """Second pass: transforms 3–7."""
+        if isinstance(obj, dict):
+            result: dict[str, Any] = {}
+            for k, v in obj.items():
+                processed = self._post_transform(v)
+                # Transform 3: array wrap for layers/classes/styles/labels
+                if k in _ARRAY_FIELDS and isinstance(processed, dict):
+                    processed = [processed]
+                # Transform 4: enum-bool conversion (status)
+                if k in _ENUM_BOOL_FIELDS and isinstance(processed, bool):
+                    processed = "ON" if processed else "OFF"
+                result[k] = processed
+            return result
+        if isinstance(obj, list):
+            return [self._post_transform(i) for i in obj]
+        return obj
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Path helpers
+    # ─────────────────────────────────────────────────────────────────────────
+
+    def _write_to_params(self, path: str, value: Any) -> None:
+        """Write value back into self.params at the given flat path."""
+        # Normalise path
+        if path.startswith("map."):
+            path = path[4:]
+
+        parts = path.split(".")
+        current: Any = self.params
+
+        for i, part in enumerate(parts[:-1]):
+            if isinstance(current, dict):
+                if part not in current:
+                    # Peek ahead: if next part is numeric, create a list
+                    next_part = parts[i + 1]
+                    if next_part.isdigit():
+                        current[part] = []
+                    else:
+                        current[part] = {}
+                current = current[part]
+            elif isinstance(current, list):
+                idx = int(part)
+                while len(current) <= idx:
+                    current.append({})
+                current = current[idx]
+            else:
+                raise KeyError(f"Cannot traverse path segment '{part}' in {type(current)}")
+
+        key = parts[-1]
+        current[key] = value
+
+    def _resolve_dict(self, path: str) -> dict[str, Any]:
+        """Resolve a flat path to the containing dict in self.params."""
+        if path in ("map", ""):
+            return self.params
+
+        if path.startswith("map."):
+            path = path[4:]
+
+        parts = path.split(".")
+        current: Any = self.params
+
+        for part in parts:
+            if isinstance(current, dict):
+                if part not in current:
+                    # Peek ahead: if next part is numeric, create a list
+                    next_idx = parts.index(part) + 1
+                    if next_idx < len(parts) and parts[next_idx].isdigit():
+                        current[part] = []
+                    else:
+                        current[part] = {}
+                current = current[part]
+            elif isinstance(current, list):
+                idx = int(part)
+                while len(current) <= idx:
+                    current.append({})
+                current = current[idx]
+            else:
+                raise KeyError(
+                    f"Cannot resolve path segment '{part}' in {type(current)}"
+                )
+
+        if not isinstance(current, dict):
+            raise KeyError(f"Path '{path}' does not resolve to a dict")
+        return current
