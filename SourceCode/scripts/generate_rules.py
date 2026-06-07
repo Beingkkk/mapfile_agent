@@ -145,7 +145,7 @@ def is_nested_object(field_schema: dict) -> bool:
         return True
     if field_schema.get("type") == "array":
         items = field_schema.get("items", {})
-        if items.get("properties") or items.get("allOf") or items.get("$ref"):
+        if any(k in items for k in ("properties", "allOf", "$ref")):
             return True
     return False
 
