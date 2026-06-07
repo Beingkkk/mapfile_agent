@@ -1,0 +1,95 @@
+{
+  "mappyfile_version": "1.1.1",
+  "total_tests": 62,
+  "by_category": {
+    "Enum": {
+      "total": 6,
+      "passed": 6,
+      "failed": 0,
+      "exceptions": 0
+    },
+    "Extent": {
+      "total": 4,
+      "passed": 1,
+      "failed": 3,
+      "exceptions": 0
+    },
+    "METADATA": {
+      "total": 5,
+      "passed": 5,
+      "failed": 0,
+      "exceptions": 0
+    },
+    "基本类型": {
+      "total": 8,
+      "passed": 5,
+      "failed": 3,
+      "exceptions": 0
+    },
+    "嵌套对象": {
+      "total": 7,
+      "passed": 6,
+      "failed": 1,
+      "exceptions": 0
+    },
+    "投影": {
+      "total": 4,
+      "passed": 3,
+      "failed": 1,
+      "exceptions": 0
+    },
+    "数组字段": {
+      "total": 6,
+      "passed": 3,
+      "failed": 3,
+      "exceptions": 0
+    },
+    "特殊字段": {
+      "total": 6,
+      "passed": 4,
+      "failed": 2,
+      "exceptions": 0
+    },
+    "缺字段": {
+      "total": 6,
+      "passed": 5,
+      "failed": 1,
+      "exceptions": 0
+    },
+    "自定义字段": {
+      "total": 3,
+      "passed": 0,
+      "failed": 3,
+      "exceptions": 0
+    },
+    "颜色": {
+      "total": 7,
+      "passed": 5,
+      "failed": 2,
+      "exceptions": 0
+    }
+  },
+  "key_findings": {
+    "array_required_fields": [
+      "classes",
+      "projection",
+      "styles",
+      "extent",
+      "layers"
+    ],
+    "case_sensitive_enums": [],
+    "dumps_exceptions": [],
+    "validate_passed_but_suspicious": [
+      "WEB.metadata 键值对",
+      "LAYER.metadata 键值对",
+      "空 metadata {}",
+      "metadata 值是整数",
+      "metadata 含自定义属性",
+      "MAP 缺 name",
+      "LAYER 缺 name",
+      "STYLE 缺必填 (空 style)",
+      "CLASS 缺 name (可选?)",
+      "LABEL 缺 text"
+    ]
+  }
+}

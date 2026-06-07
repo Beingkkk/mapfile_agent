@@ -1,0 +1,808 @@
+[
+  {
+    "case_id": 1,
+    "question": "这个配置能发布 WMS 吗？",
+    "expected_action": "answer",
+    "trials": [
+      {
+        "trial": 1,
+        "parse_ok": true,
+        "action": "answer",
+        "paths": [],
+        "values": [],
+        "parse_result": {
+          "success": true,
+          "data": {
+            "action": "answer",
+            "content": "这个配置**可以发布 WMS**，但只具备了最基本的功能。以下是当前配置中与 WMS 相关的关键点：\n\n**已具备的 WMS 条件：**\n1. ✅ WEB 块中设置了 `wms_enable_request \"*\"`，表示允许所有 WMS 请求（GetCapabilities、GetMap、GetFeatureInfo 等）\n2. ✅ WEB 块中设置了 `wms_title \"My Test Map\"`，作为 WMS 服务的标题\n3. ✅ MAP 级别有 STATUS ON、EXTENT、PROJECTION、IMAGECOLOR 等基本参数\n\n**建议改进的地方（如果需要更完整的 WMS）：**\n1. ⚠️ 建议为每个 LAYER 添加 `METADATA` 块，并设置 `wms_title` 和 `wms_srs`，这样在 GetCapabilities 响应中才能正确描述该图层：\n   ```\n   METADATA\n     wms_title \"Roads\"\n     wms_srs \"EPSG:3857 EPSG:4326\"\n   END\n   ```\n2. ⚠️ 当前 LAYER 名称为 \"roads\"，但类型是 POLYGON（多边形），通常道路是 LINESTRING 类型，请确认是否正确。\n3. ⚠️ LAYER 没有显式设置 `PROJECTION`，虽然会从 MAP 继承，但显式声明更规范。\n4. 💡 如果希望 WMS 支持多个坐标系，建议在 WEB 块添加 `wms_srs` 元数据。\n\n**总结：** 当前最小配置已经可以发布 WMS，但建议补充 LAYER 级的 METADATA 以提供更规范的能力描述。"
+          },
+          "error_type": null,
+          "error_detail": null,
+          "user_friendly_message": null,
+          "raw_preview": "{   \"action\": \"answer\",   \"content\": \"这个配置**可以发布 WMS**，但只具备了最基本的功能。以下是当前配置中与 WMS 相关的关键点：\\n\\n**已具备的 WMS 条件：**\\n1. ✅ WEB 块中设置了 `wms_enable_request \\\"*\\\"`，表示允许所有 WMS 请求（GetCapabilities、GetMap、GetFeatureInfo 等）\\n2. ✅ WEB 块中设置了 `wms_title \\\"My Test Map\\\"`，作为 WMS 服务的标题\\n3. ✅ MAP 级别有 STATUS ON、EXTENT、PROJE",
+          "parse_strategy": "direct_json"
+        },
+        "latency_ms": 20072.653899958823
+      },
+      {
+        "trial": 2,
+        "parse_ok": true,
+        "action": "answer",
+        "paths": [],
+        "values": [],
+        "parse_result": {
+          "success": true,
+          "data": {
+            "action": "answer",
+            "content": "当前配置可以**基本启用** WMS，但还缺少一些关键要素，发布后可能会出现 GetCapabilities 响应异常或客户端无法正确访问的问题。\n\n## 当前已具备的条件 ✅\n1. WEB metadata 中设置了 `wms_enable_request=\"*\"`，已开启所有 WMS 请求（GetCapabilities、GetMap、GetFeatureInfo 等）。\n2. WEB metadata 中设置了 `wms_title=\"My Test Map\"`，服务有标题。\n3. MAP 级别有 `PROJECTION` 定义（EPSG:3857）。\n4. 有 `EXTENT` 和 `STATUS ON`。\n\n## 缺少或不完整的要素 ⚠️\n1. **缺少 `wms_onlineresource`**（最关键）：这是 WMS 服务的访问 URL，GetCapabilities 响应中的 `<OnlineResource>` 必须指向此地址，否则客户端无法拼接请求 URL。\n   示例：`metadata \"wms_onlineresource\" \"http://yourserver/cgi-bin/mapserv?map=/path/to/mapfile&\"`\n2. **缺少 `wms_srs`**：声明 WMS 服务支持的坐标系列表，建议至少包含 EPSG:3857。\n   示例：`metadata \"wms_srs\" \"EPSG:3857 EPSG:4326\"`\n3. **图层缺少 WMS metadata**：每个要发布的 LAYER 应当有自己的 `metadata` 块，至少包含：\n   - `wms_title`：图层显示名称\n   - `wms_srs`：该图层支持的坐标系\n4. **图层缺少 `PROJECTION`**：roads 图层当前没有定义 `PROJECTION`，WMS GetCapabilities 中无法正确声明该图层的 SRS。\n5. **`wms_format` 未设置**：虽然有默认值（image/png 等），但显式声明更稳妥。\n6. **可选改进**：建议增加 `wms_version`、`wms_bbox_extended` 等以增强兼容性。\n\n## 结论\n配置**框架上**已具备发布 WMS 的能力（开启了 wms_enable_request），但**实际发布到生产环境前**，强烈建议补全 `wms_onlineresource` 和各图层的 WMS metadata，否则 GetCapabilities 返回的内容可能不完整或链接错误，导致标准客户端（如 QGIS、OpenLayers）无法正常加载。\n\n如果你希望我帮你补全这些缺失项，请告诉我你的服务访问地址（如 `http://localhost/cgi-bin/mapserv?map=...`），以及 roads 图层的数据坐标系（用于图层的 PROJECTION）。"
+          },
+          "error_type": null,
+          "error_detail": null,
+          "user_friendly_message": null,
+          "raw_preview": "```json {   \"action\": \"answer\",   \"content\": \"当前配置可以**基本启用** WMS，但还缺少一些关键要素，发布后可能会出现 GetCapabilities 响应异常或客户端无法正确访问的问题。\\n\\n## 当前已具备的条件 ✅\\n1. WEB metadata 中设置了 `wms_enable_request=\\\"*\\\"`，已开启所有 WMS 请求（GetCapabilities、GetMap、GetFeatureInfo 等）。\\n2. WEB metadata 中设置了 `wms_title=\\\"My Test Map\\\"`，服务有标题。\\n3",
+          "parse_strategy": "strip_codeblock"
+        },
+        "latency_ms": 38685.29769999441
+      },
+      {
+        "trial": 3,
+        "parse_ok": true,
+        "action": "answer",
+        "paths": [],
+        "values": [],
+        "parse_result": {
+          "success": true,
+          "data": {
+            "action": "answer",
+            "content": "可以，当前配置已具备发布 WMS 的基本条件。\n\n关键要素：\n1. WEB 元数据中已设置 wms_enable_request=\"*\"，表示启用所有 WMS 请求（GetCapabilities、GetMap、GetFeatureInfo 等）。\n2. 已设置 wms_title=\"My Test Map\"，将作为 WMS 服务的标题。\n3. MAP 级别有 EXTENT、PROJECTION、IMAGECOLOR 等基础设置。\n4. 至少有一个可用的 LAYER（roads）。\n\n不过，如果要更规范地发布 WMS，建议补充以下配置：\n- WEB.metadata 添加 wms_onlineresource：指定 WMS 的访问 URL（如 \"http://yourserver/cgi-bin/mapserv?map=...\"）。\n- WEB.metadata 添加 wms_srs：声明服务支持的坐标参考系，如 \"EPSG:3857 EPSG:4326\"。\n- 每个 LAYER 级别添加 wms_title 和 wms_srs 元数据。\n- 如果需要 GetFeatureInfo 功能，需配置 wms_include_items 或 template。\n\n如需我帮你补充这些配置，告诉我即可。"
+          },
+          "error_type": null,
+          "error_detail": null,
+          "user_friendly_message": null,
+          "raw_preview": "{   \"action\": \"answer\",   \"content\": \"可以，当前配置已具备发布 WMS 的基本条件。\\n\\n关键要素：\\n1. WEB 元数据中已设置 wms_enable_request=\\\"*\\\"，表示启用所有 WMS 请求（GetCapabilities、GetMap、GetFeatureInfo 等）。\\n2. 已设置 wms_title=\\\"My Test Map\\\"，将作为 WMS 服务的标题。\\n3. MAP 级别有 EXTENT、PROJECTION、IMAGECOLOR 等基础设置。\\n4. 至少有一个可用的 LAYER（roads）。\\n\\n不过，如果",
+          "parse_strategy": "direct_json"
+        },
+        "latency_ms": 19886.323199956678
+      }
+    ],
+    "parse_success_rate": 1.0,
+    "action_accuracy": 1.0,
+    "path_format_rate": 1.0,
+    "value_type_reasonable": 1.0
+  },
+  {
+    "case_id": 2,
+    "question": "把第一个图层的名称改成 highways",
+    "expected_action": "update",
+    "trials": [
+      {
+        "trial": 1,
+        "parse_ok": true,
+        "action": "update",
+        "paths": [
+          "layers.0.name"
+        ],
+        "values": [
+          "highways"
+        ],
+        "parse_result": {
+          "success": true,
+          "data": {
+            "action": "update",
+            "params_update": [
+              {
+                "path": "layers.0.name",
+                "value": "highways",
+                "reason": "按用户要求将第一个图层的名称从 roads 改为 highways"
+              }
+            ]
+          },
+          "error_type": null,
+          "error_detail": null,
+          "user_friendly_message": null,
+          "raw_preview": "{\"action\":\"update\",\"params_update\":[{\"path\":\"layers.0.name\",\"value\":\"highways\",\"reason\":\"按用户要求将第一个图层的名称从 roads 改为 highways\"}]}",
+          "parse_strategy": "direct_json"
+        },
+        "latency_ms": 3886.220799991861
+      },
+      {
+        "trial": 2,
+        "parse_ok": true,
+        "action": "update",
+        "paths": [
+          "layers.0.name"
+        ],
+        "values": [
+          "highways"
+        ],
+        "parse_result": {
+          "success": true,
+          "data": {
+            "action": "update",
+            "content": "已将第一个图层的名称从 \"roads\" 修改为 \"highways\"。",
+            "params_update": [
+              {
+                "path": "layers.0.name",
+                "value": "highways",
+                "reason": "用户要求将第一个图层名称改为 highways"
+              }
+            ]
+          },
+          "error_type": null,
+          "error_detail": null,
+          "user_friendly_message": null,
+          "raw_preview": "{\"action\":\"update\",\"content\":\"已将第一个图层的名称从 \\\"roads\\\" 修改为 \\\"highways\\\"。\",\"params_update\":[{\"path\":\"layers.0.name\",\"value\":\"highways\",\"reason\":\"用户要求将第一个图层名称改为 highways\"}]}",
+          "parse_strategy": "direct_json"
+        },
+        "latency_ms": 4682.803000032436
+      },
+      {
+        "trial": 3,
+        "parse_ok": true,
+        "action": "update",
+        "paths": [
+          "layers.0.name"
+        ],
+        "values": [
+          "highways"
+        ],
+        "parse_result": {
+          "success": true,
+          "data": {
+            "action": "update",
+            "content": "已将第一个图层的名称从 roads 修改为 highways。",
+            "params_update": [
+              {
+                "path": "layers.0.name",
+                "value": "highways",
+                "reason": "用户要求将第一个图层名称改为 highways"
+              }
+            ]
+          },
+          "error_type": null,
+          "error_detail": null,
+          "user_friendly_message": null,
+          "raw_preview": "{\"action\":\"update\",\"content\":\"已将第一个图层的名称从 roads 修改为 highways。\",\"params_update\":[{\"path\":\"layers.0.name\",\"value\":\"highways\",\"reason\":\"用户要求将第一个图层名称改为 highways\"}]}",
+          "parse_strategy": "direct_json"
+        },
+        "latency_ms": 7103.540600044653
+      }
+    ],
+    "parse_success_rate": 1.0,
+    "action_accuracy": 1.0,
+    "path_format_rate": 1.0,
+    "value_type_reasonable": 1.0
+  },
+  {
+    "case_id": 3,
+    "question": "我想用 PostGIS 作为数据源",
+    "expected_action": "update",
+    "trials": [
+      {
+        "trial": 1,
+        "parse_ok": true,
+        "action": "question",
+        "paths": [],
+        "values": [],
+        "parse_result": {
+          "success": true,
+          "data": {
+            "action": "question",
+            "content": "当前图层 roads 已经配置了 PostGIS 连接，但缺少 DATA 参数。要完成 PostGIS 数据源配置，还需要知道以下信息：\n\n1. **要查询的表名**是什么？\n2. **几何列名**是什么？（例如 the_geom、geom、way 等）\n3. 是否需要 **WHERE 条件过滤**？（例如只查询特定区域或类型）\n4. **数据范围**是哪个 EPSG 坐标系？（需与图层投影一致）\n\n示例格式：\nDATA \"geom_column from table_name using unique=id using srid=4326\"\n\n请提供这些信息，我帮你补全配置。"
+          },
+          "error_type": null,
+          "error_detail": null,
+          "user_friendly_message": null,
+          "raw_preview": "{   \"action\": \"question\",   \"content\": \"当前图层 roads 已经配置了 PostGIS 连接，但缺少 DATA 参数。要完成 PostGIS 数据源配置，还需要知道以下信息：\\n\\n1. **要查询的表名**是什么？\\n2. **几何列名**是什么？（例如 the_geom、geom、way 等）\\n3. 是否需要 **WHERE 条件过滤**？（例如只查询特定区域或类型）\\n4. **数据范围**是哪个 EPSG 坐标系？（需与图层投影一致）\\n\\n示例格式：\\nDATA \\\"geom_column from table_name using uni",
+          "parse_strategy": "direct_json"
+        },
+        "latency_ms": 21472.020300047006
+      },
+      {
+        "trial": 2,
+        "parse_ok": true,
+        "action": "answer",
+        "paths": [],
+        "values": [],
+        "parse_result": {
+          "success": true,
+          "data": {
+            "action": "answer",
+            "content": "您的配置中已经使用了 PostGIS 作为数据源。具体体现在 LAYER[0] (roads) 中：\n\n1. **CONNECTIONTYPE POSTGIS**：指定使用 PostGIS 数据源\n2. **CONNECTION**：PostgreSQL 连接字符串\n   `host=localhost dbname=gis user=postgres`\n\n## PostGIS 数据源的关键配置项\n\n一个完整的 PostGIS 图层通常还需要：\n- **CONNECTION**：数据库连接字符串（已有）\n- **DATA**：SQL 查询语句，例如：\n  `DATA \"geom from roads_table using unique gid using srid=4326\"`\n- **PROCESSING**（可选）：\n  - \"CLOSE_CONNECTION=DEFER\" - 延迟关闭连接\n  - \"FETCH_SIZE=1000\" - 每次取数据量\n\n## 建议改进\n\n您当前的 roads 图层缺少 **DATA** 参数，这是必需的。请添加类似：\n\n```\nDATA \"geom from roads using unique gid using srid=4326\"\n```\n\n如果您想：\n1. **添加新的 PostGIS 图层**，请告诉我图层名称、表名、SRID 等信息\n2. **完善现有图层配置**（如添加 DATA、设置投影等），请确认表结构\n3. **修改连接信息**（如添加密码、修改主机），请告知具体内容"
+          },
+          "error_type": null,
+          "error_detail": null,
+          "user_friendly_message": null,
+          "raw_preview": "{   \"action\": \"answer\",   \"content\": \"您的配置中已经使用了 PostGIS 作为数据源。具体体现在 LAYER[0] (roads) 中：\\n\\n1. **CONNECTIONTYPE POSTGIS**：指定使用 PostGIS 数据源\\n2. **CONNECTION**：PostgreSQL 连接字符串\\n   `host=localhost dbname=gis user=postgres`\\n\\n## PostGIS 数据源的关键配置项\\n\\n一个完整的 PostGIS 图层通常还需要：\\n- **CONNECTION**：数据库连接字符串（已有",
+          "parse_strategy": "direct_json"
+        },
+        "latency_ms": 20014.592799998354
+      },
+      {
+        "trial": 3,
+        "parse_ok": false,
+        "action": null,
+        "paths": [],
+        "values": [],
+        "parse_result": {
+          "success": false,
+          "data": null,
+          "error_type": "json_parse",
+          "error_detail": "所有解析策略均失败（direct/strip_codeblock/brace_extract/json5）",
+          "user_friendly_message": "助手返回的格式无法识别，已转为普通问答模式。",
+          "raw_preview": "{   \"action\": \"question\",   \"content\": \"当前 roads 图层已经配置了 PostGIS 连接方式（connectiontype=POSTGIS），但缺少 DATA 参数（用于指定要查询的表名或 SQL 语句）。\\n\\n请提供以下信息：\\n\\n1. **数据来源**：你想要查询的是哪个 PostGIS 表，或者需要执行什么 SQL 语句？\\n   - 例如：`DATA \"geom FROM roads\"` 表示从 roads 表查询 geom 字段\\n   - 例如：`DATA \"geom FROM (SELECT * FROM roads WHERE ",
+          "parse_strategy": "all_failed"
+        },
+        "latency_ms": 19458.11239996692
+      }
+    ],
+    "parse_success_rate": 0.6666666666666666,
+    "action_accuracy": 0.0,
+    "path_format_rate": 0.6666666666666666,
+    "value_type_reasonable": 0.6666666666666666
+  },
+  {
+    "case_id": 4,
+    "question": "图层的颜色怎么设置？",
+    "expected_action": "answer",
+    "trials": [
+      {
+        "trial": 1,
+        "parse_ok": true,
+        "action": "answer",
+        "paths": [],
+        "values": [],
+        "parse_result": {
+          "success": true,
+          "data": {
+            "action": "answer",
+            "content": "在 MapServer 中，图层的颜色主要通过 CLASS 和 STYLE 节点来设置。以下是常用的颜色参数：\n\n## 1. STYLE 级别（最常用，控制实际渲染颜色）\n\n- **COLOR**：填充颜色（多边形填充或点符号颜色）\n- **OUTLINECOLOR**：轮廓/边框颜色\n- **BACKGROUNDCOLOR**：符号或图案的背景色\n- **OPACITY**：透明度（0-100）\n\n颜色支持三种格式：\n- RGB 整数：`COLOR 255 0 0`\n- 十六进制：`COLOR \"#FF0000\"`\n- 颜色名称：`COLOR \"red\"`\n\n示例：\n```\nSTYLE\n  COLOR 200 200 200\n  OUTLINECOLOR 0 0 0\n  OPACITY 75\nEND\n```\n\n## 2. CLASS 级别\n\n- **COLOR**：默认填充色（可被子 STYLE 覆盖）\n- **OUTLINECOLOR**：默认轮廓色\n- **NAME**：类的显示名称（用于图例）\n\n## 3. LAYER 级别\n\n- **OFFSITE**：指定要设为透明的颜色（用于 PNG 透明背景）\n- **OPACITY**：整个图层的透明度（0-100）\n- **IMAGECOLOR**（MAP 级别）：地图背景色\n\n## 4. 多类显示（按条件分色）\n\n可以根据属性字段分多个 CLASS 实现不同颜色：\n```\nLAYER\n  NAME \"roads\"\n  TYPE LINE\n  CLASSITEM \"type\"\n  CLASS\n    NAME \"高速公路\"\n    EXPRESSION \"1\"\n    STYLE\n      COLOR 255 0 0\n      WIDTH 2\n    END\n  END\n  CLASS\n    NAME \"普通公路\"\n    EXPRESSION \"2\"\n    STYLE\n      COLOR 0 0 255\n      WIDTH 1\n    END\n  END\nEND\n```\n\n**注意**：你当前 roads 图层使用 TYPE POLYGON 但连接的是 PostGIS 道路数据，通常道路用 TYPE LINE 更合适。如果需要更具体的配色方案，请告诉我你的数据特征（如道路类型、字段名等）。"
+          },
+          "error_type": null,
+          "error_detail": null,
+          "user_friendly_message": null,
+          "raw_preview": "```json {   \"action\": \"answer\",   \"content\": \"在 MapServer 中，图层的颜色主要通过 CLASS 和 STYLE 节点来设置。以下是常用的颜色参数：\\n\\n## 1. STYLE 级别（最常用，控制实际渲染颜色）\\n\\n- **COLOR**：填充颜色（多边形填充或点符号颜色）\\n- **OUTLINECOLOR**：轮廓/边框颜色\\n- **BACKGROUNDCOLOR**：符号或图案的背景色\\n- **OPACITY**：透明度（0-100）\\n\\n颜色支持三种格式：\\n- RGB 整数：`COLOR 255 0 0`\\n- 十六进制",
+          "parse_strategy": "strip_codeblock"
+        },
+        "latency_ms": 28848.06359995855
+      },
+      {
+        "trial": 2,
+        "parse_ok": true,
+        "action": "answer",
+        "paths": [],
+        "values": [],
+        "parse_result": {
+          "success": true,
+          "data": {
+            "action": "answer",
+            "content": "在 MapServer 中，颜色可以在多个层级设置，作用不同：\n\n1. **MAP 级别 - IMAGECOLOR**：地图背景色，当没有数据时显示。\n   ```\n   IMAGECOLOR 255 255 255\n   ```\n\n2. **LAYER 级别 - COLOR**：图层的离屏（off-site）颜色，用于标识数据范围外的透明区域。\n   ```\n   LAYER\n     NAME \"roads\"\n     TYPE POLYGON\n     COLOR 0 0 0  # 数据范围外的区域填充此色（通常配合 TRANSPARENCY）\n   END\n   ```\n\n3. **CLASS 级别 - COLOR**：该类多边形或点的填充色（TYPE POINT 时，COLOR 表示点的填充色）。\n   ```\n   CLASS\n     NAME \"default\"\n     COLOR 200 200 200   # 多边形填充色\n   END\n   ```\n\n4. **STYLE 级别 - COLOR 和 OUTLINECOLOR**：\n   - **COLOR**：绘制要素的填充色（多边形）或线条颜色（线）。\n   - **OUTLINECOLOR**：多边形的描边颜色。\n   ```\n   STYLE\n     COLOR 200 200 200        # 填充/线色\n     OUTLINECOLOR 0 0 0       # 描边色\n     WIDTH 1                  # 线宽/描边宽度\n   END\n   ```\n\n**颜色格式**：\n- RGB 三值：`R G B`，每个值 0-255，例如 `255 0 0` 表示红色\n- 十六进制：`#RRGGBB`，例如 `#ff0000`\n- 颜色名：`red`、`blue` 等 X11 标准颜色名\n\n**优先级**：STYLE 中的 COLOR 优先级最高，其次是 CLASS 的 COLOR，最后是 LAYER 的 COLOR。\n\n针对您当前的 roads 图层（多边形），如要修改要素颜色，直接修改 STYLE 的 COLOR 即可；如果想让多边形带描边，调整 OUTLINECOLOR 即可。"
+          },
+          "error_type": null,
+          "error_detail": null,
+          "user_friendly_message": null,
+          "raw_preview": "```json {   \"action\": \"answer\",   \"content\": \"在 MapServer 中，颜色可以在多个层级设置，作用不同：\\n\\n1. **MAP 级别 - IMAGECOLOR**：地图背景色，当没有数据时显示。\\n   ```\\n   IMAGECOLOR 255 255 255\\n   ```\\n\\n2. **LAYER 级别 - COLOR**：图层的离屏（off-site）颜色，用于标识数据范围外的透明区域。\\n   ```\\n   LAYER\\n     NAME \\\"roads\\\"\\n     TYPE POLYGON\\n     COLOR 0 ",
+          "parse_strategy": "strip_codeblock"
+        },
+        "latency_ms": 20341.92759997677
+      },
+      {
+        "trial": 3,
+        "parse_ok": false,
+        "action": null,
+        "paths": [],
+        "values": [],
+        "parse_result": {
+          "success": false,
+          "data": null,
+          "error_type": "json_parse",
+          "error_detail": "所有解析策略均失败（direct/strip_codeblock/brace_extract/json5）",
+          "user_friendly_message": "助手返回的格式无法识别，已转为普通问答模式。",
+          "raw_preview": "{   \"action\": \"answer\",   \"content\": \"在 MapServer 中，图层颜色的设置主要通过 CLASS 下的 STYLE 块来控制。根据要素类型（几何形状），可设置的颜色属性有所不同：\\n\\n1. **填充颜色 (COLOR)** —— 用于多边形 (POLYGON) 的填充：\\n   ```\\n   CLASS\\n     STYLE\\n       COLOR 200 200 200    # 灰色填充（RGB）\\n     END\\n   END\\n   ```\\n\\n2. **边框颜色 (OUTLINECOLOR)** —— 用于多边形边界或线状要素",
+          "parse_strategy": "all_failed"
+        },
+        "latency_ms": 17808.86869999813
+      }
+    ],
+    "parse_success_rate": 0.6666666666666666,
+    "action_accuracy": 0.6666666666666666,
+    "path_format_rate": 0.6666666666666666,
+    "value_type_reasonable": 0.6666666666666666
+  },
+  {
+    "case_id": 5,
+    "question": "帮我添加一个叫 rivers 的图层",
+    "expected_action": "update",
+    "trials": [
+      {
+        "trial": 1,
+        "parse_ok": true,
+        "action": "question",
+        "paths": [],
+        "values": [],
+        "parse_result": {
+          "success": true,
+          "data": {
+            "action": "question",
+            "content": "要添加 rivers 图层，我需要一些关键信息：\n\n1. **图层类型**：河流通常是线要素（LINE），请确认是 LINE 还是其他类型？\n2. **数据源**：是使用和 roads 图层相同的 PostGIS 数据库，还是其他数据源（如 Shapefile 文件路径）？如果是 PostGIS，表名是什么？SQL 查询是怎样的？\n3. **样式**：需要设置什么颜色和宽度？例如蓝色线条？\n4. **是否使用相同的投影（EPSG:3857）**？\n\n请提供这些信息，我会帮你完整配置。"
+          },
+          "error_type": null,
+          "error_detail": null,
+          "user_friendly_message": null,
+          "raw_preview": "{   \"action\": \"question\",   \"content\": \"要添加 rivers 图层，我需要一些关键信息：\\n\\n1. **图层类型**：河流通常是线要素（LINE），请确认是 LINE 还是其他类型？\\n2. **数据源**：是使用和 roads 图层相同的 PostGIS 数据库，还是其他数据源（如 Shapefile 文件路径）？如果是 PostGIS，表名是什么？SQL 查询是怎样的？\\n3. **样式**：需要设置什么颜色和宽度？例如蓝色线条？\\n4. **是否使用相同的投影（EPSG:3857）**？\\n\\n请提供这些信息，我会帮你完整配置。\" }",
+          "parse_strategy": "direct_json"
+        },
+        "latency_ms": 12517.96980004292
+      },
+      {
+        "trial": 2,
+        "parse_ok": true,
+        "action": "question",
+        "paths": [],
+        "values": [],
+        "parse_result": {
+          "success": true,
+          "data": {
+            "action": "question",
+            "content": "好的，我可以帮您添加 rivers 图层。为了确保配置正确，我需要确认以下几点：\n\n1. **图层类型**：河流通常是 LINE（线状河流中心线），但也有可能是 POLYGON（多边形面状水系）。您想用哪种？\n2. **数据源**：是否复用 roads 图层相同的 PostGIS 连接（host=localhost dbname=gis user=postgres）？请提供要查询的表名或 SQL，例如：\n   - 使用表：data=\"geom from rivers\"\n   - 使用 SQL：data=\"geom from (select * from water_lines where type='river') as foo\"\n3. **样式**：河流通常用蓝色线（例如 color=[0, 100, 255]），您希望用什么颜色和线宽？\n4. **范围 / 投影**：是否沿用地图全局设置（-180 -90 180 90，EPSG:3857）？\n\n请告知这些信息后，我会为您生成完整的图层配置。"
+          },
+          "error_type": null,
+          "error_detail": null,
+          "user_friendly_message": null,
+          "raw_preview": "```json {   \"action\": \"question\",   \"content\": \"好的，我可以帮您添加 rivers 图层。为了确保配置正确，我需要确认以下几点：\\n\\n1. **图层类型**：河流通常是 LINE（线状河流中心线），但也有可能是 POLYGON（多边形面状水系）。您想用哪种？\\n2. **数据源**：是否复用 roads 图层相同的 PostGIS 连接（host=localhost dbname=gis user=postgres）？请提供要查询的表名或 SQL，例如：\\n   - 使用表：data=\\\"geom from rivers\\\"\\n   - 使用 ",
+          "parse_strategy": "strip_codeblock"
+        },
+        "latency_ms": 18699.775299988687
+      },
+      {
+        "trial": 3,
+        "parse_ok": true,
+        "action": "question",
+        "paths": [],
+        "values": [],
+        "parse_result": {
+          "success": true,
+          "data": {
+            "action": "question",
+            "content": "好的，我来帮您添加一个名为 rivers 的图层。不过有几个关键信息需要您确认：\n\n1. **数据源**：是使用和 roads 相同的 PostGIS 数据库吗？如果是，请提供表名（例如 `rivers`）和几何字段名（通常默认是 `geom` 或 `the_geom`）。SQL 查询可以写为：`geom from rivers using unique gid using srid=3857`\n\n2. **图层类型**：河流一般是线状要素，建议使用 `LINE` 类型，是否采用？\n\n3. **样式**：希望河流是什么颜色和宽度？例如：颜色 `[0, 0, 255]`（蓝色），宽度 `2`。\n\n4. **CLASS 名称**：默认 `default` 即可吗？\n\n请告诉我这些信息，我就可以为您配置好 rivers 图层。"
+          },
+          "error_type": null,
+          "error_detail": null,
+          "user_friendly_message": null,
+          "raw_preview": "{   \"action\": \"question\",   \"content\": \"好的，我来帮您添加一个名为 rivers 的图层。不过有几个关键信息需要您确认：\\n\\n1. **数据源**：是使用和 roads 相同的 PostGIS 数据库吗？如果是，请提供表名（例如 `rivers`）和几何字段名（通常默认是 `geom` 或 `the_geom`）。SQL 查询可以写为：`geom from rivers using unique gid using srid=3857`\\n\\n2. **图层类型**：河流一般是线状要素，建议使用 `LINE` 类型，是否采用？\\n\\n3. **样式**",
+          "parse_strategy": "direct_json"
+        },
+        "latency_ms": 16575.981899979524
+      }
+    ],
+    "parse_success_rate": 1.0,
+    "action_accuracy": 0.0,
+    "path_format_rate": 1.0,
+    "value_type_reasonable": 1.0
+  },
+  {
+    "case_id": 6,
+    "question": "WMS 的服务标题在哪里设置？",
+    "expected_action": "answer",
+    "trials": [
+      {
+        "trial": 1,
+        "parse_ok": true,
+        "action": "answer",
+        "paths": [],
+        "values": [],
+        "parse_result": {
+          "success": true,
+          "data": {
+            "action": "answer",
+            "content": "WMS 的服务标题通过 WEB 对象中的 METADATA 的 wms_title 键来设置。在您当前的配置中，它已经设置好了：\n\n```\nWEB\n  METADATA\n    \"wms_title\" \"My Test Map\"\n  END\nEND\n```\n\n对应的参数路径是 web.metadata.wms_title，当前值为 \"My Test Map\"。\n\n相关常用 WMS 元数据键还有：\n- wms_enable_request：控制允许的 WMS 请求（如 \"*\" 表示全部启用）\n- wms_onlineresource：WMS 服务的访问 URL\n- wms_srs：WMS 支持的坐标系列表\n- wms_abstract：服务摘要说明\n- wms_keywordlist：关键字列表"
+          },
+          "error_type": null,
+          "error_detail": null,
+          "user_friendly_message": null,
+          "raw_preview": "{\"action\":\"answer\",\"content\":\"WMS 的服务标题通过 WEB 对象中的 METADATA 的 wms_title 键来设置。在您当前的配置中，它已经设置好了：\\n\\n```\\nWEB\\n  METADATA\\n    \\\"wms_title\\\" \\\"My Test Map\\\"\\n  END\\nEND\\n```\\n\\n对应的参数路径是 web.metadata.wms_title，当前值为 \\\"My Test Map\\\"。\\n\\n相关常用 WMS 元数据键还有：\\n- wms_enable_request：控制允许的 WMS 请求（如 \\\"*\\\" 表示全部启用）\\n",
+          "parse_strategy": "direct_json"
+        },
+        "latency_ms": 8816.326900036074
+      },
+      {
+        "trial": 2,
+        "parse_ok": true,
+        "action": "answer",
+        "paths": [],
+        "values": [],
+        "parse_result": {
+          "success": true,
+          "data": {
+            "action": "answer",
+            "content": "WMS 服务标题通过 WEB 对象中的 METADATA 设置，关键字为 wms_title。\n\n在当前配置中：\n- 路径：web.metadata.wms_title\n- 当前值：\"My Test Map\"\n\n配置示例：\nWEB\n  METADATA\n    \"wms_title\" \"My Test Map\"\n    \"wms_enable_request\" \"*\"\n  END\nEND\n\n这个标题会作为 GetCapabilities 响应中 <Service><Title> 元素的值返回给客户端。如果需要修改，告诉我新的标题内容即可。"
+          },
+          "error_type": null,
+          "error_detail": null,
+          "user_friendly_message": null,
+          "raw_preview": "{\"action\":\"answer\",\"content\":\"WMS 服务标题通过 WEB 对象中的 METADATA 设置，关键字为 wms_title。\\n\\n在当前配置中：\\n- 路径：web.metadata.wms_title\\n- 当前值：\\\"My Test Map\\\"\\n\\n配置示例：\\nWEB\\n  METADATA\\n    \\\"wms_title\\\" \\\"My Test Map\\\"\\n    \\\"wms_enable_request\\\" \\\"*\\\"\\n  END\\nEND\\n\\n这个标题会作为 GetCapabilities 响应中 <Service><Title> 元素的值",
+          "parse_strategy": "direct_json"
+        },
+        "latency_ms": 11151.887199957855
+      },
+      {
+        "trial": 3,
+        "parse_ok": true,
+        "action": "answer",
+        "paths": [],
+        "values": [],
+        "parse_result": {
+          "success": true,
+          "data": {
+            "action": "answer",
+            "content": "WMS 的服务标题（Service Title）通过 WEB 块中的 metadata 的 wms_title 键来设置。\n\n在你的当前配置中：\nweb.metadata.wms_title = \"My Test Map\"\n\n这个标题会出现在 WMS 的 GetCapabilities 响应中，作为服务的 <Title> 元素。\n\n相关常用的 WMS 元数据项还有：\n- wms_title：服务标题（必填）\n- wms_abstract：服务摘要描述\n- wms_keywordlist：关键字列表（逗号分隔）\n- wms_onlineresource：服务的在线访问地址（URL）\n- wms_srs：支持的空间参考系统列表\n- wms_enable_request：允许的请求类型（如 \"*\" 表示全部）\n\n你的配置中已经正确设置了 wms_title，无需修改。"
+          },
+          "error_type": null,
+          "error_detail": null,
+          "user_friendly_message": null,
+          "raw_preview": "{   \"action\": \"answer\",   \"content\": \"WMS 的服务标题（Service Title）通过 WEB 块中的 metadata 的 wms_title 键来设置。\\n\\n在你的当前配置中：\\nweb.metadata.wms_title = \\\"My Test Map\\\"\\n\\n这个标题会出现在 WMS 的 GetCapabilities 响应中，作为服务的 <Title> 元素。\\n\\n相关常用的 WMS 元数据项还有：\\n- wms_title：服务标题（必填）\\n- wms_abstract：服务摘要描述\\n- wms_keywordlist：关键字列",
+          "parse_strategy": "direct_json"
+        },
+        "latency_ms": 12099.13890005555
+      }
+    ],
+    "parse_success_rate": 1.0,
+    "action_accuracy": 1.0,
+    "path_format_rate": 1.0,
+    "value_type_reasonable": 1.0
+  },
+  {
+    "case_id": 7,
+    "question": "这个配置有什么明显问题吗？",
+    "expected_action": "answer",
+    "trials": [
+      {
+        "trial": 1,
+        "parse_ok": true,
+        "action": "answer",
+        "paths": [],
+        "values": [],
+        "parse_result": {
+          "success": true,
+          "data": {
+            "action": "answer",
+            "content": "当前配置存在以下几个明显问题：\n\n1. **图层类型与名称不匹配**：图层名为 \"roads\"（道路），但 type 设置为 POLYGON（面）。道路通常是线状要素，应改为 LINE。\n\n2. **缺少 DATA 参数**：对于 PostGIS 连接，必须指定 DATA 参数来定义几何字段和数据来源，例如：\n   `DATA \"the_geom FROM roads USING srid=4326\"`\n   没有 DATA 参数，图层无法渲染任何数据。\n\n3. **缺少 LAYER 级别的 PROJECTION**：未声明数据源的空间参考系（SRS），MapServer 无法正确进行投影转换。需要在 LAYER 内添加 PROJECTION 块指定数据的 SRS。\n\n4. **MAP 范围与 MAP 投影不一致**：EXTENT 为 -180 -90 180 90（这是 EPSG:4326 坐标），但 MAP PROJECTION 设置为 EPSG:3857（Web Mercator，单位为米）。两者坐标系不匹配，需要将 EXTENT 改为 3857 下的全球范围（约 -20037508.34 -20037508.34 20037508.34 20037508.34），或将 MAP PROJECTION 改为 4326。\n\n5. **PostGIS 连接字符串不完整**：缺少 `password=` 参数（也可能需要 `port=`），可能导致数据库连接失败。\n\n6. **样式设置可能不符合预期**：对于道路（LINE 类型），应使用 COLOR 控制线色、OUTLINECOLOR 通常不用于线要素；若确为 POLYGON 面状道路则另当别论。建议先确认几何类型再调整样式。"
+          },
+          "error_type": null,
+          "error_detail": null,
+          "user_friendly_message": null,
+          "raw_preview": "```json {   \"action\": \"answer\",   \"content\": \"当前配置存在以下几个明显问题：\\n\\n1. **图层类型与名称不匹配**：图层名为 \\\"roads\\\"（道路），但 type 设置为 POLYGON（面）。道路通常是线状要素，应改为 LINE。\\n\\n2. **缺少 DATA 参数**：对于 PostGIS 连接，必须指定 DATA 参数来定义几何字段和数据来源，例如：\\n   `DATA \\\"the_geom FROM roads USING srid=4326\\\"`\\n   没有 DATA 参数，图层无法渲染任何数据。\\n\\n3. **缺少 LAY",
+          "parse_strategy": "strip_codeblock"
+        },
+        "latency_ms": 36603.056799969636
+      },
+      {
+        "trial": 2,
+        "parse_ok": true,
+        "action": "answer",
+        "paths": [],
+        "values": [],
+        "parse_result": {
+          "success": true,
+          "data": {
+            "action": "answer",
+            "content": "当前配置存在以下几个明显问题：\n\n1. **图层类型与名称不匹配**：图层名为 \"roads\"（道路），但 type 设置为 POLYGON（多边形）。道路通常是 LINESTRING 类型，应该改为：\n   - `TYPE LINE`\n   - 或者如果是道路面状数据，则图层名应改为更合适的名称。\n\n2. **缺少 DATA 参数**：PostGIS 图层必须定义 DATA 语句来指定要查询的表和几何列，例如：\n   ```\n   DATA \"the_geom FROM roads USING UNIQUE gid\"\n   ```\n   没有 DATA 参数，图层将无法正确渲染。\n\n3. **EXTENT 与投影不匹配**：当前 EXTENT 为 `-180 -90 180 90`（WGS84 地理坐标范围），但地图投影设置为 EPSG:3857（Web Mercator，单位为米）。EXTENT 应当使用输出投影的单位。EPSG:3857 的全球范围大约是：\n   ```\n   EXTENT -20037508.34 -20037508.34 20037508.34 20037508.34\n   ```\n   虽然 MapServer 可以自动重投影，但 EXTENT 应与投影对应，否则可能导致显示范围异常。\n\n4. **缺少 LAYER 级投影定义**：PostGIS 图层应声明数据源投影，以便 MapServer 正确重投影，例如：\n   ```\n   LAYER\n     ...\n     PROJECTION\n       \"init=epsg:4326\"\n     END\n   END\n   ```\n\n5. **使用过时的投影语法**：`\"init=epsg:3857\"\"` 是旧式语法，现代写法为 `\"EPSG:3857\"`，建议更新。\n\n6. **样式与类型不一致**：如果将 roads 改为 LINE 类型，当前 STYLE 中的 color（填充色）需要改用 `color` 作为线色，填充色 `color` 对 LINE 类型无效，应直接使用 `COLOR` 作为线条颜色。\n\n**最关键的问题是**：缺少 DATA 参数，以及类型与名称不匹配。这两个会导致图层完全无法正常显示。\n\n如果需要，我可以帮你修复这些配置问题。"
+          },
+          "error_type": null,
+          "error_detail": null,
+          "user_friendly_message": null,
+          "raw_preview": "{   \"action\": \"answer\",   \"content\": \"当前配置存在以下几个明显问题：\\n\\n1. **图层类型与名称不匹配**：图层名为 \\\"roads\\\"（道路），但 type 设置为 POLYGON（多边形）。道路通常是 LINESTRING 类型，应该改为：\\n   - `TYPE LINE`\\n   - 或者如果是道路面状数据，则图层名应改为更合适的名称。\\n\\n2. **缺少 DATA 参数**：PostGIS 图层必须定义 DATA 语句来指定要查询的表和几何列，例如：\\n   ```\\n   DATA \\\"the_geom FROM roads USING ",
+          "parse_strategy": "direct_json"
+        },
+        "latency_ms": 34725.64359998796
+      },
+      {
+        "trial": 3,
+        "parse_ok": true,
+        "action": "answer",
+        "paths": [],
+        "values": [],
+        "parse_result": {
+          "success": true,
+          "data": {
+            "action": "answer",
+            "content": "当前配置存在以下几个明显问题：\n\n1. **图层类型与名称不匹配**：图层名为 \"roads\"（道路），但 type 设置为 POLYGON。道路应该是 LINE 或 LINESTRING 类型。这是一个语义错误，很可能导致渲染异常。\n\n2. **缺少 DATA 参数**：对于 PostGIS 图层（connectiontype=POSTGIS），必须使用 CONNECTION 和 DATA 参数配合，DATA 用于指定要查询的表/几何列（例如：\"geom FROM roads\" 或 \"geom FROM (SELECT * FROM roads WHERE ...) AS subquery USING unique=id USING SRID=4326\"）。缺少 DATA 图层将无法工作。\n\n3. **缺少 LAYER 级 PROJECTION**：应当在 LAYER 对象中也定义一个 PROJECTION 块，指定数据源（PostGIS 表）所使用的空间参考系。MapServer 需要此信息以便将数据正确投影到地图的输出投影。\n\n4. **EXTENT 与投影不匹配**：OUTPUTFORMAT 投影是 EPSG:3857（Web Mercator，单位为米），但 EXTENT 写的是 -180 -90 180 90（经纬度）。正确做法是要么 EXTENT 使用 Web Mercator 范围（约 -20037508 -20037508 20037508 20037508），要么将 EXTENT 视为地理坐标范围（需要 MAP 级别有明确的地理坐标 PROJECTION）。\n\n5. **PROJ 语法已过时**：\"init=epsg:3857\" 是旧的 proj4 语法，PROJ 6+ 已弃用此写法，应使用新语法 \"EPSG:3857\"。\n\n6. **连接字符串缺少密码**：PostGIS 连接未指定 password= 参数（虽然开发环境有时可以省略，但生产环境应当明确写出，或使用 .pgpass）。\n\n7. **可疑的元数据键**：wms_enable_request=\"*\" 不是 MapServer 标准的 WMS 元数据键。标准的 WMS 元数据包括 wms_title、wms_onlineresource、wms_srs、wms_enable_request（这个键实际上不存在）等，WMS 请求默认就是全部启用的，无需此键。如果你想限制某些 WMS 请求，应使用 wms_disabled_request。\n\n8. **样式定义不完整**：STYLE 中只有 color 和 outlinecolor，对于 POLYGON 来说基本可用，但如果改为 LINE 类型（修正第 1 点后），需要指定 WIDTH（线条宽度）和 SYMBOL 类型。"
+          },
+          "error_type": null,
+          "error_detail": null,
+          "user_friendly_message": null,
+          "raw_preview": "{   \"action\": \"answer\",   \"content\": \"当前配置存在以下几个明显问题：\\n\\n1. **图层类型与名称不匹配**：图层名为 \\\"roads\\\"（道路），但 type 设置为 POLYGON。道路应该是 LINE 或 LINESTRING 类型。这是一个语义错误，很可能导致渲染异常。\\n\\n2. **缺少 DATA 参数**：对于 PostGIS 图层（connectiontype=POSTGIS），必须使用 CONNECTION 和 DATA 参数配合，DATA 用于指定要查询的表/几何列（例如：\\\"geom FROM roads\\\" 或 \\\"geom FR",
+          "parse_strategy": "direct_json"
+        },
+        "latency_ms": 46309.3068000162
+      }
+    ],
+    "parse_success_rate": 1.0,
+    "action_accuracy": 1.0,
+    "path_format_rate": 1.0,
+    "value_type_reasonable": 1.0
+  },
+  {
+    "case_id": 8,
+    "question": "帮我创建一个完整的 Mapfile",
+    "expected_action": "question",
+    "trials": [
+      {
+        "trial": 1,
+        "parse_ok": true,
+        "action": "answer",
+        "paths": [],
+        "values": [],
+        "parse_result": {
+          "success": true,
+          "data": {
+            "action": "answer",
+            "content": "以下是基于当前配置生成的完整 Mapfile，包含常用的关键配置项：\n\n```\nMAP\n  NAME \"test_map\"\n  STATUS ON\n  EXTENT -180 -90 180 90\n  SIZE 800 600\n  IMAGECOLOR 255 255 255\n  IMAGETYPE PNG\n\n  PROJECTION\n    \"init=epsg:3857\"\n  END\n\n  OUTPUTFORMAT\n    NAME \"png\"\n    MIMETYPE \"image/png\"\n    DRIVER \"GD/PNG\"\n    EXTENSION \"png\"\n    IMAGEMODE RGB\n  END\n\n  FONTSET \"fonts.txt\"\n  SYMBOLSET \"symbols.sym\"\n\n  WEB\n    METADATA\n      \"wms_title\"    \"My Test Map\"\n      \"wms_enable_request\" \"*\"\n      \"wms_srs\"       \"EPSG:3857 EPSG:4326\"\n      \"wms_onlineresource\" \"http://example.com/wms?\"\n      \"wms_version\"   \"1.3.0\"\n    END\n  END\n\n  LEGEND\n    STATUS ON\n    IMAGECOLOR 255 255 255\n    KEYSIZE 20 10\n    LABEL\n      TYPE BITMAP\n      SIZE MEDIUM\n    END\n  END\n\n  REFERENCE\n    STATUS ON\n    IMAGE \"images/keymap.png\"\n    SIZE 100 75\n  END\n\n  SCALEBAR\n    STATUS ON\n    IMAGECOLOR 255 255 255\n    TRANSPARENT ON\n  END\n\n  LAYER\n    NAME \"roads\"\n    TYPE POLYGON\n    STATUS ON\n    CONNECTIONTYPE POSTGIS\n    CONNECTION \"host=localhost dbname=gis user=postgres\"\n    DATA \"geom FROM roads\"\n    LABELITEM \"name\"\n    CLASSITEM \"type\"\n    METADATA\n      \"wms_title\" \"Roads\"\n      \"gml_include_items\" \"all\"\n    END\n    PROJECTION\n      \"init=epsg:4326\"\n    END\n    CLASS\n      NAME \"default\"\n      STYLE\n        COLOR 200 200 200\n        OUTLINECOLOR 0 0 0\n      END\n    END\n  END\nEND\n```\n\n相比当前配置，新增/完善了以下内容：\n1. **SIZE 800 600** - 显式设置输出图像大小（MapServer 默认 256x256）\n2. **IMAGETYPE PNG** + **OUTPUTFORMAT** - 定义输出图像格式\n3. **FONTSET / SYMBOLSET** - 字体和符号集引用\n4. **WEB METADATA** 补充了 WMS 标准元数据（wms_srs、wms_onlineresource、wms_version），否则 WMS 服务可能无法正常识别\n5. **LEGEND / REFERENCE / SCALEBAR** - 图例、缩略图、比例尺\n6. **LAYER** 中补充了 `DATA`（PostGIS 必须）、`LABELITEM`、`CLASSITEM`、`METADATA`、图层级 `PROJECTION`（数据源坐标系，应与 MAP 投影区分）\n\n如果你希望我用 update 动作把这些改进写入当前配置，请告诉我。"
+          },
+          "error_type": null,
+          "error_detail": null,
+          "user_friendly_message": null,
+          "raw_preview": "```json {   \"action\": \"answer\",   \"content\": \"以下是基于当前配置生成的完整 Mapfile，包含常用的关键配置项：\\n\\n```\\nMAP\\n  NAME \\\"test_map\\\"\\n  STATUS ON\\n  EXTENT -180 -90 180 90\\n  SIZE 800 600\\n  IMAGECOLOR 255 255 255\\n  IMAGETYPE PNG\\n\\n  PROJECTION\\n    \\\"init=epsg:3857\\\"\\n  END\\n\\n  OUTPUTFORMAT\\n    NAME \\\"png\\\"\\n    ",
+          "parse_strategy": "strip_codeblock"
+        },
+        "latency_ms": 40195.96570008434
+      },
+      {
+        "trial": 2,
+        "parse_ok": true,
+        "action": "question",
+        "paths": [],
+        "values": [],
+        "parse_result": {
+          "success": true,
+          "data": {
+            "action": "question",
+            "content": "您当前的 Mapfile 已经有基本结构（地图、1 个 roads 图层、WMS 元数据）。为了帮您创建一个'完整的' Mapfile，我需要确认您想要补充哪些部分。请选择：\n\n1. **添加地图显示元素**：图例（LEGEND）、比例尺（SCALEBAR）、参考图（REFERENCE MAP）\n2. **添加输出格式配置**：OUTPUTFORMAT、IMAGETYPE（如 PNG、PDF）\n3. **添加更多图层**：例如点图层（城市/POI）、线图层（道路/河流）\n4. **完善 WMS/WFS 服务配置**：添加更多元数据（如 wms_srs、wms_enable_request 详细配置）\n5. **以上全部**（创建一个功能完整的 Mapfile 模板）\n\n另外还需要确认：\n- 您需要展示什么类型的地理数据？（道路、建筑物、边界、点位等）\n- 数据源是什么？（PostGIS、Shapefile、GeoJSON 等）\n- 目标投影坐标系是？"
+          },
+          "error_type": null,
+          "error_detail": null,
+          "user_friendly_message": null,
+          "raw_preview": "{   \"action\": \"question\",   \"content\": \"您当前的 Mapfile 已经有基本结构（地图、1 个 roads 图层、WMS 元数据）。为了帮您创建一个'完整的' Mapfile，我需要确认您想要补充哪些部分。请选择：\\n\\n1. **添加地图显示元素**：图例（LEGEND）、比例尺（SCALEBAR）、参考图（REFERENCE MAP）\\n2. **添加输出格式配置**：OUTPUTFORMAT、IMAGETYPE（如 PNG、PDF）\\n3. **添加更多图层**：例如点图层（城市/POI）、线图层（道路/河流）\\n4. **完善 WMS/WFS 服",
+          "parse_strategy": "direct_json"
+        },
+        "latency_ms": 25268.462200067006
+      },
+      {
+        "trial": 3,
+        "parse_ok": true,
+        "action": "question",
+        "paths": [],
+        "values": [],
+        "parse_result": {
+          "success": true,
+          "data": {
+            "action": "question",
+            "content": "您当前的 Mapfile 已经有基础结构（地图范围、投影、背景色、1 个 PostGIS 道路图层、WMS 元数据）。要使其更加'完整'，可以补充多个方面，请您明确需求方向：\n\n1. **输出与渲染参数**：是否需要添加 SIZE（默认 256x256，建议设为 400x300 等）、MAXSIZE、RESOLUTION、DEFRESOLUTION？\n2. **符号/字体/模板引用**：是否需要添加 SYMBOLSET、FONTSET、TEMPLATE、OUTPUTFORMAT（如 PNG/JPEG）？\n3. **多图层**：是否需要增加额外的图层（如底图、行政区划、标注图层）？每层用何种数据源？\n4. **WMS/WFS 能力**：是否需要补充更多 wms_* 元数据（wms_onlineresource、wms_srs、wms_enable_request 分项）、wfs_* 元数据？\n5. **参考/比例尺**：是否需要添加 SCALEDENOM、MINSCALEDENOM、MAXSCALEDENOM、UNITS、TRANSPARENT？\n6. **图例/比例尺对象**：是否需要添加 LEGEND、SCALEBAR、REFERENCE 块？\n7. **当前 roads 图层增强**：是否需要为该图层补充 LABEL、CLASSITEM、STYLE 细节（width、symbol 等）？\n\n请告诉我您希望重点完善哪些部分，并提供必要的信息（如数据源路径、要展示的字段、配色方案、坐标系等），我才能给出精确的 params_update。"
+          },
+          "error_type": null,
+          "error_detail": null,
+          "user_friendly_message": null,
+          "raw_preview": "```json {   \"action\": \"question\",   \"content\": \"您当前的 Mapfile 已经有基础结构（地图范围、投影、背景色、1 个 PostGIS 道路图层、WMS 元数据）。要使其更加'完整'，可以补充多个方面，请您明确需求方向：\\n\\n1. **输出与渲染参数**：是否需要添加 SIZE（默认 256x256，建议设为 400x300 等）、MAXSIZE、RESOLUTION、DEFRESOLUTION？\\n2. **符号/字体/模板引用**：是否需要添加 SYMBOLSET、FONTSET、TEMPLATE、OUTPUTFORMAT（如 PNG/J",
+          "parse_strategy": "strip_codeblock"
+        },
+        "latency_ms": 38653.75299996231
+      }
+    ],
+    "parse_success_rate": 1.0,
+    "action_accuracy": 0.6666666666666666,
+    "path_format_rate": 1.0,
+    "value_type_reasonable": 1.0
+  },
+  {
+    "case_id": 9,
+    "question": "把图层的投影改成 EPSG:4326",
+    "expected_action": "update",
+    "trials": [
+      {
+        "trial": 1,
+        "parse_ok": true,
+        "action": "update",
+        "paths": [
+          "layers.0.projection"
+        ],
+        "values": [
+          [
+            "init=epsg:4326"
+          ]
+        ],
+        "parse_result": {
+          "success": true,
+          "data": {
+            "action": "update",
+            "content": "已在 LAYER[0] 中添加投影 EPSG:4326。",
+            "params_update": [
+              {
+                "path": "layers.0.projection",
+                "value": [
+                  "init=epsg:4326"
+                ],
+                "reason": "为图层设置投影为 EPSG:4326，使该图层在请求/渲染时使用此坐标系（MAP 级别的投影仍为 EPSG:3857，图层投影将与之配合使用，MapServer 会自动进行坐标转换）"
+              }
+            ]
+          },
+          "error_type": null,
+          "error_detail": null,
+          "user_friendly_message": null,
+          "raw_preview": "{\"action\":\"update\",\"content\":\"已在 LAYER[0] 中添加投影 EPSG:4326。\",\"params_update\":[{\"path\":\"layers.0.projection\",\"value\":[\"init=epsg:4326\"],\"reason\":\"为图层设置投影为 EPSG:4326，使该图层在请求/渲染时使用此坐标系（MAP 级别的投影仍为 EPSG:3857，图层投影将与之配合使用，MapServer 会自动进行坐标转换）\"}]}",
+          "parse_strategy": "direct_json"
+        },
+        "latency_ms": 12949.73300001584
+      },
+      {
+        "trial": 2,
+        "parse_ok": true,
+        "action": "update",
+        "paths": [
+          "layers.0.projection"
+        ],
+        "values": [
+          [
+            "init=epsg:4326"
+          ]
+        ],
+        "parse_result": {
+          "success": true,
+          "data": {
+            "action": "update",
+            "params_update": [
+              {
+                "path": "layers.0.projection",
+                "value": [
+                  "init=epsg:4326"
+                ],
+                "reason": "将 roads 图层的投影设置为 EPSG:4326"
+              }
+            ]
+          },
+          "error_type": null,
+          "error_detail": null,
+          "user_friendly_message": null,
+          "raw_preview": "{\"action\":\"update\",\"params_update\":[{\"path\":\"layers.0.projection\",\"value\":[\"init=epsg:4326\"],\"reason\":\"将 roads 图层的投影设置为 EPSG:4326\"}]}",
+          "parse_strategy": "direct_json"
+        },
+        "latency_ms": 8997.650100034662
+      },
+      {
+        "trial": 3,
+        "parse_ok": true,
+        "action": "update",
+        "paths": [
+          "layers.0.projection"
+        ],
+        "values": [
+          "init=epsg:4326"
+        ],
+        "parse_result": {
+          "success": true,
+          "data": {
+            "action": "update",
+            "content": "已为 roads 图层添加 EPSG:4326 投影配置。",
+            "params_update": [
+              {
+                "path": "layers.0.projection",
+                "value": "init=epsg:4326",
+                "reason": "用户要求将图层的投影设置为 EPSG:4326"
+              }
+            ]
+          },
+          "error_type": null,
+          "error_detail": null,
+          "user_friendly_message": null,
+          "raw_preview": "{   \"action\": \"update\",   \"content\": \"已为 roads 图层添加 EPSG:4326 投影配置。\",   \"params_update\": [     {       \"path\": \"layers.0.projection\",       \"value\": \"init=epsg:4326\",       \"reason\": \"用户要求将图层的投影设置为 EPSG:4326\"     }   ] }",
+          "parse_strategy": "direct_json"
+        },
+        "latency_ms": 6219.237700104713
+      }
+    ],
+    "parse_success_rate": 1.0,
+    "action_accuracy": 1.0,
+    "path_format_rate": 1.0,
+    "value_type_reasonable": 1.0
+  },
+  {
+    "case_id": 10,
+    "question": "把地图状态改成关闭",
+    "expected_action": "update",
+    "trials": [
+      {
+        "trial": 1,
+        "parse_ok": true,
+        "action": "update",
+        "paths": [
+          "status"
+        ],
+        "values": [
+          false
+        ],
+        "parse_result": {
+          "success": true,
+          "data": {
+            "action": "update",
+            "params_update": [
+              {
+                "path": "status",
+                "value": false,
+                "reason": "用户要求将地图状态设置为关闭"
+              }
+            ]
+          },
+          "error_type": null,
+          "error_detail": null,
+          "user_friendly_message": null,
+          "raw_preview": "{\"action\":\"update\",\"params_update\":[{\"path\":\"status\",\"value\":false,\"reason\":\"用户要求将地图状态设置为关闭\"}]}",
+          "parse_strategy": "direct_json"
+        },
+        "latency_ms": 9428.88840008527
+      },
+      {
+        "trial": 2,
+        "parse_ok": true,
+        "action": "update",
+        "paths": [
+          "status"
+        ],
+        "values": [
+          "OFF"
+        ],
+        "parse_result": {
+          "success": true,
+          "data": {
+            "action": "update",
+            "params_update": [
+              {
+                "path": "status",
+                "value": "OFF",
+                "reason": "用户要求将地图状态关闭"
+              }
+            ]
+          },
+          "error_type": null,
+          "error_detail": null,
+          "user_friendly_message": null,
+          "raw_preview": "{\"action\":\"update\",\"params_update\":[{\"path\":\"status\",\"value\":\"OFF\",\"reason\":\"用户要求将地图状态关闭\"}]}",
+          "parse_strategy": "direct_json"
+        },
+        "latency_ms": 4099.618899985217
+      },
+      {
+        "trial": 3,
+        "parse_ok": true,
+        "action": "update",
+        "paths": [
+          "status"
+        ],
+        "values": [
+          "OFF"
+        ],
+        "parse_result": {
+          "success": true,
+          "data": {
+            "action": "update",
+            "params_update": [
+              {
+                "path": "status",
+                "value": "OFF",
+                "reason": "用户要求将地图状态从 ON 改为 OFF，以关闭地图"
+              }
+            ]
+          },
+          "error_type": null,
+          "error_detail": null,
+          "user_friendly_message": null,
+          "raw_preview": "{\"action\":\"update\",\"params_update\":[{\"path\":\"status\",\"value\":\"OFF\",\"reason\":\"用户要求将地图状态从 ON 改为 OFF，以关闭地图\"}]}",
+          "parse_strategy": "direct_json"
+        },
+        "latency_ms": 5685.32170006074
+      }
+    ],
+    "parse_success_rate": 1.0,
+    "action_accuracy": 1.0,
+    "path_format_rate": 1.0,
+    "value_type_reasonable": 1.0
+  }
+]

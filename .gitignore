@@ -12,3 +12,12 @@ config.json
 
 # 介绍视频（暂不开放）
 Introduce/
+
+# Node.js 依赖和构建产物
+node_modules/
+dist/
+package-lock.json
+
+# Python 缓存
+__pycache__/
+*.pyc

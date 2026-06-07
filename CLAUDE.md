@@ -8,9 +8,30 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Design constraints**: single-person project, minimal scope, no over-engineering. The MVP targets one flow: **PostGIS/Shapefile → WMS/WFS/WCS → optional MapCache disk cache (WMTS/TMS)**, locked to **MapServer 8.4**.
 
-**⚠️ README.md is outdated** — it describes an older phase-state-machine architecture that has been abandoned. The current design is documented in this file and in `Document/技术细节.md`. Do not rely on README.md for architecture decisions.
+**⚠️ README.md vs CLAUDE.md 分工**: README.md 面向快速上手（技术栈、启动命令、项目结构）；CLAUDE.md 面向开发决策（架构约束、关键规则、实现细节）。两者互补，但架构决策以本文档和 `Document/技术细节.md` 为准。
 
-**⚠️ Current implementation state**: The project is at the pre-coding research phase. Only `generate_rules.py` and JSON data templates exist. The `backend/`, `frontend/`, `electron/`, and `tests/` directories are planned but not yet scaffolded. See "Current Code" below for what actually exists, and "Design Blueprint" for what will be built.
+**⚠️ Current implementation state**: `generate_rules.py` 和 `data/templates/*.json` 是主要已交付代码。`spike/` 目录存放预开发可行性验证脚本：
+
+- **V1**（mappyfile 行为摸底，62 个用例，结论见 `spike/v1_result.md`）✅
+- **V2**（LLM Prompt 稳定性，30 次 API 调用，结论见 `spike/v2_result.md`）✅
+- **V3**（ConfigTree 前端递归渲染，280 节点、4 层嵌套、7 种控件映射，结论见 `spike/v3_result.md`）✅
+
+三个验证全部通过 → **Go 决策**（`spike/feasibility_report.md`）。`backend/`, `frontend/`, `electron/`, `tests/` 目录待脚手架搭建。
+
+**V2 关键结论**（影响 LLMOutput / PromptBuilder 实现）：
+- JSON 可解析率 **93.3%**（≥90% 通过）；`action=update`（参数修改）场景 **100%** 稳定
+- LLM 输出需经 **4 层容错解析**：`direct_json → strip_codeblock → brace_extract → json5_tolerant → fallback`
+- `strip_codeblock` 挽救了 **23%** 的调用——即使 prompt 禁止，LLM 仍经常输出 ` ```json {...} ``` `
+- `action=answer`（长文本解释）有 content 超长导致 JSON 截断的风险，prompt 中需限制 `content≤300` 字
+- LLM 值类型常见错误：`projection` 有时输出字符串而非数组；`status` 有时输出 JSON 布尔而非 `"ON"`/`"OFF"`
+
+详细结论记录在 [`design/llm-integration.md`](Document/design/llm-integration.md) §附录 V2。
+
+**V3 关键结论**（影响前端组件实现）：
+- 自定义递归组件（ObjectCard + FieldEditor）验证通过，280 节点、4 层嵌套无卡顿
+- `FieldEditor` 内部分发 7 种 `value_type` 到对应 Naive UI 控件，无需拆分为独立原子编辑器
+- STYLE/LABEL 作为独立 ObjectCard 节点渲染（非内联），验证中表现更清晰
+- 详细结论记录在 [`design/data-structures.md`](Document/design/data-structures.md) §4.2 和 [`spike/v3_result.md`](SourceCode/spike/v3_result.md)
 
 ## Current Code
 
@@ -60,9 +81,12 @@ cd SourceCode
 
 # Verify output (check field counts and structure)
 "/c/Users/PC/.conda/envs/gis-agent/python" -c "import json; r=json.load(open('SourceCode/data/mapguide_rules.json')); print(f'Objects: {len(r[\"object_types\"])}, Fields: {sum(len(o[\"fields\"]) for o in r[\"object_types\"].values())}')"
+
+# Run V1 validation spike
+"/c/Users/PC/.conda/envs/gis-agent/python" SourceCode/spike/v1_mappyfile_validate.py
 ```
 
-**Note**: pytest, uvicorn, npm, and PyInstaller commands are listed in the Design Blueprint section but cannot be run yet — the corresponding directories do not exist.
+Commands for pytest, uvicorn, npm, and PyInstaller are in the Planned Commands section below.
 
 ## Python Environment
 
@@ -75,6 +99,28 @@ All Python work **must** use the `gis-agent` conda environment. `conda activate`
 # Package installer (when needed)
 "/c/Users/PC/.conda/envs/gis-agent/python" -m pip install <pkg>
 ```
+
+## CodeGraph
+
+This project has a CodeGraph MCP server (`codegraph_*` tools) configured. Use it for **structural** questions — what calls what, what would break, where is X defined, what is X's signature. Use native grep/read only for **literal text** queries (string contents, comments, log messages) or after you already have a specific file open.
+
+| Question | Tool |
+|---|---|
+| "Where is X defined?" / "Find symbol named X" | `codegraph_search` |
+| "What calls function Y?" | `codegraph_callers` |
+| "What does Y call?" | `codegraph_callees` |
+| "How does X reach/become Y?" | `codegraph_trace` |
+| "What would changing this break?" | `codegraph_impact` |
+| "Show me Y's source / signature" | `codegraph_node` |
+| "Give me focused context for a task" | `codegraph_context` |
+| "See several related symbols at once" | `codegraph_explore` |
+| "What's in directory X?" | `codegraph_files` |
+
+**Rules of thumb**:
+- Answer architecture questions **directly** with 2-3 codegraph calls instead of delegating to file-reading sub-agents.
+- Don't chain `codegraph_search + codegraph_node` when you just want context — `codegraph_context` is one call.
+- Don't loop `codegraph_node` over many symbols — one `codegraph_explore` returns several symbols' source grouped.
+- Index lags ~500ms behind writes; don't re-query immediately after editing a file in the same turn.
 
 ## Design Blueprint
 
@@ -97,7 +143,7 @@ Python Backend (FastAPI + uvicorn, gis-agent conda env)
   │     │
   │     ├──▶ ConfigSession holds params (mappyfile dict) + ConfigTree + DialogueHistory + service_types
   │     │
-  │     ├──▶ ConfigTree: business view over params, computes line numbers, supports custom props,
+  │     ├──▶ ConfigTree: business view over params, supports custom props,
   │     │              filters METADATA/LAYER fields by service_types (WMS/WFS/WCS)
   │     │
   │     ├──▶ TemplateMapper loads mapguide_rules.json (aliases, types, required, defaults, deps, service_metadata)
@@ -163,9 +209,27 @@ qa_result WS message → frontend
 - **Flat path addressing**: LLM updates use stable paths (e.g. `layers.0.connectiontype`), not line numbers. No line_map or rebuild_line_map needed.
 - **Focus change clears QA**: Switching focus parameter resets the QA message history (but preserves initial intent). Round counter shown in UI resets to 0.
 
-## Planned Development Commands
+## Available Commands
 
-These commands reference directories and files that do not yet exist. They will become available after scaffolding.
+### Now (generate_rules + spikes)
+
+```bash
+cd SourceCode
+
+# Generate rules (run whenever templates change)
+"/c/Users/PC/.conda/envs/gis-agent/python" scripts/generate_rules.py
+
+# Verify output
+"/c/Users/PC/.conda/envs/gis-agent/python" -c "import json; r=json.load(open('data/mapguide_rules.json')); print(f'Objects: {len(r[\"object_types\"])}, Fields: {sum(len(o[\"fields\"]) for o in r[\"object_types\"].values())}')"
+
+# Run V1 validation spike
+"/c/Users/PC/.conda/envs/gis-agent/python" spike/v1_mappyfile_validate.py
+
+# Run V2 LLM stability spike (requires config/config.json with API key)
+"/c/Users/PC/.conda/envs/gis-agent/python" spike/v2_llm_prompt_stability.py
+```
+
+### After scaffolding (backend/frontend/electron)
 
 ### Backend (Python)
 
@@ -243,7 +307,7 @@ Supported object types: MAP, LAYER, CLASS, STYLE, **LABEL**, WEB, METADATA, CACH
 - `chat()` for structured JSON output (`temperature=0.1`, exponential backoff retry 3×).
 - **Single Prompt**: `PromptBuilder` assembles one Jinja2 template (`_framework.j2`) + runtime session context.
 - Token budget: ~1500 tokens total (L0-L5), recent QA history capped at 4-6 rounds.
-- **LLM boundary**: The LLM only understands natural language and outputs raw parameter values or `line`-based updates. All alias conversion, type conversion, validation, and default-filling is handled by backend code.
+- **LLM boundary**: The LLM only understands natural language and outputs raw parameter values or flat path-based updates (e.g. `layers.0.connectiontype`). All alias conversion, type conversion, validation, and default-filling is handled by backend code.
 - **Provider lock**: Only Anthropic Claude is supported. LLMClient encapsulates the SDK; no raw API exposure to upper layers.
 
 ### Validation Pipeline
@@ -277,6 +341,26 @@ output = mappyfile.dumps(mf)
 ```
 
 **Constraints**: `version` must be `float` (`8.4`), not `str`. `PROJECTION` must be an array `["init=epsg:3857"]`, not a string.
+
+### ConfigTree.to_mappyfile_dict() — Serialization Rules
+
+`ConfigTree.to_mappyfile_dict()` performs 7 mandatory transforms before handing data to mappyfile. These rules come from V1 validation (`spike/v1_result.md`) against `mappyfile==1.1.1`:
+
+| # | Transform | Trigger | Why |
+|---|-----------|---------|-----|
+| 1 | `_custom` expansion | `"_custom" in dict` | mappyfile rejects unknown keys; custom props must be hoisted |
+| 2 | `cache` strip | `key == "cache"` | `cache` is not a Mapfile object; MapCache XML generated separately |
+| 3 | Array wrap | `key in {layers,classes,styles,labels}` and `isinstance(v, dict)` | mappyfile requires these to be lists |
+| 4 | Enum-bool conversion | `field_key in {"status"}` and `isinstance(v, bool)` | string-enum fields (e.g. `status`) reject Python bool; boolean-type fields (e.g. `LABEL.antialias`) accept it |
+| 5 | PROJECTION array guard | `key == "projection"` | must remain a list |
+| 6 | Extent array guard | `key == "extent"` | must remain a 4-element list |
+| 7 | Color RGB array guard | `value_type == "color"` | must remain `[R, G, B]` |
+
+**Critical V1 findings**:
+- mappyfile `dumps()` never throws (62/62 test cases); `validate()` is the strict gate
+- `validate()` **does NOT check** `MAP.name` or `LAYER.name` as required → must rely on L3 semantic validation
+- `validate()` rejects **any** schema-external field with `does not match any of the regexes` → L4 must filter these false positives (custom props + `object-fields.json` fields)
+- Enum values are **case-insensitive** (`postgis`/`POSTGIS` both pass)
 
 ### ConfigTree Design
 
@@ -318,10 +402,25 @@ The v2 UI design is specified in `Document/技术细节.md` §4/§11/§12 and vi
 | File | Purpose |
 |------|---------|
 | `Document/需求输入.md` | High-level requirements: MVP scope, UX layout, interaction scenarios, validation/export rules |
-| `Document/技术细节.md` | **Primary technical design**: template resources, class design, ConfigTree, QAService, ValidationPipeline, interaction flows, WebSocket contracts, tech stack, conventions |
-| `Document/模板说明.md` | Template resource reference for GIS professionals: how to modify `data/templates/*.json`, parameter lists verified against MapServer 8.6.3 source code |
-| `Document/UX/ui-prototype-interactive-v2.html` | Interactive v2 UI prototype — open in browser to see target design |
-| `Document/design/architecture.html` | Module architecture diagram with 6 views (runtime, class relations, component tree, data flows, dependencies, decision cheat-sheet) |
+| `Document/技术细节.md` | **总览索引**（已拆分）。设计前提 + 模块文档索引 |
+| `Document/design/template-system.md` | Template resources, generate_rules.py merge logic, TemplateMapper, FieldDescriptor |
+| `Document/design/data-structures.md` | ConfigSession, ConfigTree, TreeNode/TreeLeaf, flat path addressing |
+| `Document/design/validation.md` | 4-layer validation strategy, mappyfile false-positive filtering |
+| `Document/design/core-services.md` | Architecture overview, ValidationPipeline, ExportService, ImportService, class directory |
+| `Document/design/llm-integration.md` | DialogueHistory, Prompt L0-L5 context, QAService, LLMClient, LLMOutput parsing, **V2 spike conclusions** |
+| `Document/design/interaction-flows.md` | 6 interaction scenario data flows |
+| `Document/design/frontend-backend-contract.md` | WebSocket message types, communication constraints |
+| `Document/design/conventions.md` | Tech stack, directory structure, dev commands, code constraints, debugging |
+| `Document/模板说明.md` | Template resource reference for GIS professionals: how to modify `data/templates/*.json` |
+| `Document/UX/ui-prototype-interactive-v2.html` | Interactive v2 UI prototype |
+| `Document/design/architecture.html` | Module architecture diagram (6 views) |
+| `Document/design/dataflow-6-scenes.html` | Interactive data flow diagrams |
+| `Document/核心难点验证计划.md` | Pre-development feasibility spikes (V1/V2/V3) |
+| `spike/v1_result.md` | V1 conclusions: mappyfile validate() behavior, to_mappyfile_dict() 7 mandatory transforms |
+| `spike/v2_result.md` | V2 conclusions: LLM JSON output stability, graceful degradation patterns |
+| `spike/v3_result.md` | V3 conclusions: ConfigTree recursive rendering, 280-node perf, 7 value_type controls |
+| `spike/feasibility_report.md` | Go/No-go decision: all 3 spikes passed |
+| `Document/design/implementation-progress.md` | Remaining modules, difficulty heatmap, time estimate (5-6 weeks) |
 
 ## Conventions
 
