@@ -301,7 +301,7 @@
 <body>
 
 <h1>🔄 MapGuide 7 大交互场景数据流图</h1>
-<p class="subtitle">版本 v2.2 | 对应文档：需求输入.md §3 / 技术细节.md §11–§12</p>
+<p class="subtitle">对应文档：需求输入.md §3 / 技术细节.md §11–§12</p>
 
 <!-- Legend -->
 <div class="legend-bar">
@@ -364,18 +364,10 @@
     </div>
 
     <div class="step">
-      <div class="step-avatar backend">📐</div>
-      <div class="step-body backend">
-        <div class="step-label backend">Python 后端</div>
-        <div class="step-text"><span class="highlight">ConfigTree.rebuild_line_map()</span> — 行号重新分配</div>
-      </div>
-    </div>
-
-    <div class="step">
       <div class="step-avatar ws">📡</div>
       <div class="step-body ws">
         <div class="step-label ws">WebSocket → 前端</div>
-        <div class="step-text"><code class="method">tree_state</code> <code>{ params_snapshot, validation_state, errors, line_map, service_types, mapcache_enabled }</code></div>
+        <div class="step-text"><code class="method">tree_state</code> <code>{ params_snapshot, validation_state, errors, service_types, mapcache_enabled }</code></div>
       </div>
     </div>
 
@@ -401,7 +393,7 @@
     <div class="scene-icon" style="background:var(--frontend-bg)">🔧</div>
     <div>
       <div class="scene-title">场景 1：用户编辑参数（失焦触发）</div>
-      <div class="scene-desc">字段失焦 → 实时校验（L1-L3）→ 行号重建 → 前端同步</div>
+      <div class="scene-desc">字段失焦 → 实时校验（L1-L3）→ 前端同步</div>
     </div>
   </div>
 
@@ -443,18 +435,10 @@
     </div>
 
     <div class="step">
-      <div class="step-avatar backend">📐</div>
-      <div class="step-body backend">
-        <div class="step-label backend">Python 后端</div>
-        <div class="step-text"><span class="highlight">ConfigTree.rebuild_line_map()</span> — 按 Mapfile 输出顺序重新分配行号</div>
-      </div>
-    </div>
-
-    <div class="step">
       <div class="step-avatar ws">📡</div>
       <div class="step-body ws">
         <div class="step-label ws">WebSocket → 前端</div>
-        <div class="step-text"><code class="method">tree_state</code> <code>{ params_snapshot, validation_state, validation_errors, line_map, can_export }</code></div>
+        <div class="step-text"><code class="method">tree_state</code> <code>{ params_snapshot, validation_state, validation_errors, can_export }</code></div>
       </div>
     </div>
 
@@ -480,7 +464,7 @@
     <div class="scene-icon" style="background:var(--frontend-bg)">👆</div>
     <div>
       <div class="scene-title">场景 2：用户切换关注点</div>
-      <div class="scene-desc">点击树节点/属性 → 计算 focus_lines → 清空历史 → 同步前端</div>
+      <div class="scene-desc">点击树节点/属性 → 更新 focus_param → 清空历史 → 同步前端</div>
     </div>
   </div>
 
@@ -506,9 +490,8 @@
       <div class="step-body backend">
         <div class="step-label backend">Python 后端</div>
         <div class="step-text"><span class="highlight">session.set_focus(path)</span>
-          <br>├─ 计算 <code>focus_lines</code>（如 "L9-L23"）
           <br>├─ 若 <code>focus_param</code> 改变 → <span class="highlight">清空 messages</span>（保留 intent_message）
-          <br>└─ 更新 session.focus_param / focus_lines
+          <br>└─ 更新 session.focus_param
         </div>
       </div>
     </div>
@@ -517,7 +500,7 @@
       <div class="step-avatar ws">📡</div>
       <div class="step-body ws">
         <div class="step-label ws">WebSocket → 前端</div>
-        <div class="step-text"><code class="method">focus_state</code> <code>{ focus_param: "layers.0.connectiontype", focus_lines: "L9-L23" }</code></div>
+        <div class="step-text"><code class="method">focus_state</code> <code>{ focus_param: "layers.0.connectiontype" }</code></div>
       </div>
     </div>
 
@@ -580,7 +563,7 @@
           <br>├─ L0 系统角色（_framework.j2 ~200 tokens）
           <br>├─ L1 用户意图 + 当前 map 结构快照
           <br>├─ L2 关注点参数摘要
-          <br>├─ L3 focus_param + focus_lines
+          <br>├─ L3 focus_param（关注点路径）
           <br>├─ L4 当前校验错误（如有）
           <br>└─ L5 最近 4-6 轮对话
         </div>
@@ -599,7 +582,7 @@
       <div class="step-avatar backend">🔧</div>
       <div class="step-body backend">
         <div class="step-label backend">Python 后端</div>
-        <div class="step-text"><span class="highlight">LLMOutput.parse(raw_json)</span> → <span class="highlight">UpdateResolver.resolve(line)</span> → path
+        <div class="step-text"><span class="highlight">LLMOutput.parse(raw_json)</span> → <span class="highlight">UpdateResolver.resolve(update)</span> → path
           <br>├─ 若返回 <code>params_update</code> → <span class="highlight">ConfigTree.update_value()</span>
           <br>└─ 若 JSON 解析失败 → <strong>降级为纯文本回答</strong>（不更新参数）
         </div>
@@ -610,7 +593,7 @@
       <div class="step-avatar backend">🔍</div>
       <div class="step-body backend">
         <div class="step-label backend">Python 后端</div>
-        <div class="step-text"><span class="highlight">ValidationPipeline.validate_tree(service_types)</span> — 四层完整校验 + <span class="highlight">rebuild_line_map()</span></div>
+        <div class="step-text"><span class="highlight">ValidationPipeline.validate_tree(service_types)</span> — 四层完整校验</div>
       </div>
     </div>
 
@@ -626,7 +609,7 @@
       <div class="step-avatar ws">📡</div>
       <div class="step-body ws">
         <div class="step-label ws">WebSocket → 前端</div>
-        <div class="step-text"><code class="method">qa_result</code> <code>{ bot_message, params_update, validation_state, errors, can_export, line_map }</code></div>
+        <div class="step-text"><code class="method">qa_result</code> <code>{ bot_message, params_update, validation_state, errors, can_export }</code></div>
       </div>
     </div>
 
@@ -640,7 +623,7 @@
   </div>
 
   <div class="note">
-    <strong>关键约束：</strong>LLM 输出不稳定时采用宽容降级——JSON 解析失败只展示纯文本；行号无法解析静默忽略该项。所有规则后端处理，LLM 不感知 schema。
+    <strong>关键约束：</strong>LLM 输出不稳定时采用宽容降级——JSON 解析失败只展示纯文本；路径不存在静默忽略该项。所有规则后端处理，LLM 不感知 schema。
   </div>
 </div>
 
@@ -688,7 +671,7 @@
       <div class="step-avatar backend">📐</div>
       <div class="step-body backend">
         <div class="step-label backend">Python 后端</div>
-        <div class="step-text">去重错误 → 计算 <code>validation_state</code>（pass / fail）→ <span class="highlight">rebuild_line_map()</span></div>
+        <div class="step-text">去重错误 → 计算 <code>validation_state</code>（pass / fail）</div>
       </div>
     </div>
 
@@ -879,7 +862,7 @@
       <div class="step-avatar backend">📐</div>
       <div class="step-body backend">
         <div class="step-label backend">Python 后端</div>
-        <div class="step-text"><span class="highlight">ConfigTree.rebuild_line_map()</span> + 清空历史（保留 intent_message），focus_param 置空</div>
+        <div class="step-text">清空历史（保留 intent_message），focus_param 置空</div>
       </div>
     </div>
 
@@ -888,7 +871,7 @@
       <div class="step-body ws">
         <div class="step-label ws">WebSocket → 前端</div>
         <div class="step-text"><code class="method">import_result</code> <code>{ success: true }</code>
-          <br>→ 紧接着 <code class="method">tree_state</code> <code>{ params_snapshot, validation_state, errors, line_map, can_export }</code>
+          <br>→ 紧接着 <code class="method">tree_state</code> <code>{ params_snapshot, validation_state, errors, can_export }</code>
         </div>
       </div>
     </div>

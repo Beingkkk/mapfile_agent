@@ -398,7 +398,7 @@
 <body>
 
 <h1>MapGuide 模块架构图</h1>
-<p class="subtitle">版本 v2 | 设计日期：2026-06-05 | 对应文档：需求输入.md + 技术细节.md</p>
+<p class="subtitle">设计日期：2026-06-07 | 对应文档：需求输入.md + 技术细节.md</p>
 
 <!-- ═══════════════════════════════════════ -->
 <!-- 1. 运行时架构 -->
@@ -551,7 +551,6 @@
       <h4>ConfigTree</h4>
       <ul>
         <li>_build_tree() — mappyfile dict → TreeNode/TreeLeaf</li>
-        <li>rebuild_line_map() — preview_mapfile() 预生成行号</li>
         <li>update_value() — 失焦更新 + 写回 params</li>
         <li>add_object() / remove_object()</li>
         <li>add_custom_property()</li>
@@ -561,8 +560,8 @@
     <div class="class-card core">
       <h4>TreeNode / TreeLeaf</h4>
       <ul>
-        <li>TreeNode: id, path, object_type, children[], line_start/end</li>
-        <li>TreeLeaf: id, path, key, descriptor, value, user_modified, errors[], line</li>
+        <li>TreeNode: id, path, object_type, children[]</li>
+        <li>TreeLeaf: id, path, key, descriptor, value, user_modified, errors[]</li>
         <li>叶子对应 mappyfile 的一个 key-value</li>
         <li>对象层级: MAP → LAYER → CLASS → (STYLE | LABEL)</li>
       </ul>
@@ -613,7 +612,7 @@
         <li>组装 L0-L5 Prompt → LLMClient.chat()</li>
         <li>LLMOutput.parse() → UpdateResolver</li>
         <li>apply updates → validate_tree()</li>
-        <li>rebuild_line_map() → 返回 qa_result</li>
+        <li>返回 qa_result</li>
       </ul>
     </div>
     <div class="class-card core">
@@ -639,7 +638,7 @@
       <h4>PromptBuilder</h4>
       <ul>
         <li>_framework.j2 单模板</li>
-        <li>render(L0系统 + L1意图 + L2摘要 + L3行号 + L4错误 + L5历史)</li>
+        <li>render(L0系统 + L1意图 + L2摘要 + L3关注点路径 + L4错误 + L5历史)</li>
         <li>~1500 tokens 总量控制</li>
       </ul>
     </div>
@@ -658,8 +657,8 @@
       <ul>
         <li>parse(raw_json) → structured</li>
         <li>容错：非 JSON → 降级纯文本</li>
-        <li>resolve(line) → path（±2 tolerance）</li>
-        <li>无法解析 → 静默忽略</li>
+        <li>resolve(update) → path（直接返回 update["path"]）</li>
+        <li>路径不存在 → 静默忽略</li>
       </ul>
     </div>
     <div class="class-card cache">
@@ -783,7 +782,7 @@
         <div class="step ws"><span class="step-num">2</span>WS: set_service_types {services, mapcache_enabled}</div>
         <div class="step backend"><span class="step-num">3</span>更新 session.service_types / mapcache_enabled</div>
         <div class="step backend"><span class="step-num">4</span>ConfigTree._build_tree(service_types) 重建</div>
-        <div class="step ws"><span class="step-num">5</span>WS: tree_state {params, errors, line_map, service_types}</div>
+        <div class="step ws"><span class="step-num">5</span>WS: tree_state {params, errors, service_types}</div>
         <div class="step frontend"><span class="step-num">6</span>树按新服务类型重新渲染</div>
       </div>
     </div>
@@ -795,9 +794,8 @@
         <div class="step ws"><span class="step-num">2</span>WS: tree_update {updates: [{path, value}]}</div>
         <div class="step backend"><span class="step-num">3</span>ConfigTree.update_value() 遍历应用</div>
         <div class="step backend"><span class="step-num">4</span>ValidationPipeline.validate_field(service_types) (L1-L3)</div>
-        <div class="step backend"><span class="step-num">5</span>ConfigTree.rebuild_line_map()</div>
-        <div class="step ws"><span class="step-num">6</span>WS: tree_state {params, errors, line_map}</div>
-        <div class="step frontend"><span class="step-num">7</span>更新树 + 错误标记 + 导出按钮状态</div>
+        <div class="step ws"><span class="step-num">5</span>WS: tree_state {params, errors, can_export}</div>
+        <div class="step frontend"><span class="step-num">6</span>更新树 + 错误标记 + 导出按钮状态</div>
       </div>
     </div>
 
@@ -807,8 +805,8 @@
         <div class="step frontend"><span class="step-num">1</span>用户点击树节点/属性</div>
         <div class="step ws"><span class="step-num">2</span>WS: focus_change {path}</div>
         <div class="step backend"><span class="step-num">3</span>session.set_focus(path)</div>
-        <div class="step backend"><span class="step-num">4</span>计算 focus_lines + 历史清理</div>
-        <div class="step ws"><span class="step-num">5</span>WS: focus_state {focus_param, focus_lines}</div>
+        <div class="step backend"><span class="step-num">4</span>历史清理（切换关注点时清空 messages）</div>
+        <div class="step ws"><span class="step-num">5</span>WS: focus_state {focus_param}</div>
         <div class="step frontend"><span class="step-num">6</span>右侧面板显示关注点</div>
       </div>
     </div>
@@ -821,8 +819,8 @@
         <div class="step backend"><span class="step-num">3</span>QAService.answer(session, text)</div>
         <div class="step backend"><span class="step-num">4</span>PromptBuilder.render(L0-L5) → LLMClient.chat()</div>
         <div class="step backend"><span class="step-num">5</span>LLMOutput.parse() → UpdateResolver</div>
-        <div class="step backend"><span class="step-num">6</span>apply updates → validate_tree(service_types) → rebuild_line_map()</div>
-        <div class="step ws"><span class="step-num">7</span>WS: qa_result {bot_msg, updates, errors, line_map}</div>
+        <div class="step backend"><span class="step-num">6</span>apply updates → validate_tree(service_types)</div>
+        <div class="step ws"><span class="step-num">7</span>WS: qa_result {bot_msg, updates, errors, can_export}</div>
         <div class="step frontend"><span class="step-num">8</span>追加对话 + 更新树 + 显示校验结果</div>
       </div>
     </div>
@@ -1015,9 +1013,9 @@
         <td style="padding:8px 12px;">技术细节 §4.2 TreeNode.expanded</td>
       </tr>
       <tr style="border-bottom:1px solid var(--border);">
-        <td style="padding:8px 12px;color:var(--text)"><strong>行号策略</strong></td>
-        <td style="padding:8px 12px;">preview_mapfile() 预生成统一行号；内部维护，前端不显示；界面用扁平路径</td>
-        <td style="padding:8px 12px;">技术细节 §4.3 / §8</td>
+        <td style="padding:8px 12px;color:var(--text)"><strong>寻址策略</strong></td>
+        <td style="padding:8px 12px;">LLM 参数更新使用扁平路径（如 layers.0.connectiontype），不使用行号；路径是稳定标识符</td>
+        <td style="padding:8px 12px;">技术细节 §4.3</td>
       </tr>
       <tr style="border-bottom:1px solid var(--border);">
         <td style="padding:8px 12px;color:var(--text)"><strong>属性状态标记</strong></td>
@@ -1076,7 +1074,7 @@
       </tr>
       <tr style="border-bottom:1px solid var(--border);">
         <td style="padding:8px 12px;color:var(--text)"><strong>LLM 输出</strong></td>
-        <td style="padding:8px 12px;">JSON 解析失败降级为纯文本；行号无法解析静默忽略；错误提示封装语气</td>
+        <td style="padding:8px 12px;">JSON 解析失败降级为纯文本；路径不存在静默忽略；错误提示封装语气</td>
         <td style="padding:8px 12px;">需求输入 §4.4 / 技术细节 §15.2</td>
       </tr>
       <tr style="border-bottom:1px solid var(--border);">
