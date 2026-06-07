@@ -7,7 +7,7 @@ description: 会话历史策略、Prompt 上下文分级、QAService、PromptBui
 
 ### 5.1 不保留全部历史
 
-v2 的会话历史不是无限的。设计原则：
+会话历史不是无限的。设计原则：
 
 - **主题意图消息**（进入任务开始时用户发送的第一条消息）**永远保留**
 - **关注点切换后**，可以选择性清空该关注点之前的问答记录
@@ -148,7 +148,7 @@ LAYER 对象参数摘要：
 
 ---
 
-## 附录：V2 验证结论（LLM Prompt 输出稳定性）
+## 附录：LLM 验证结论（V2 spike — Prompt 输出稳定性）
 
 > 验证时间：2026-06-06 | 模型：M3 (minimaxi) | 30 次 API 调用
 
@@ -196,7 +196,7 @@ V2 发现 LLM 在值类型上有两种常见错误，需 `UpdateResolver` 或 L2
 | `projection` | 字符串 `"init=epsg:4326"` | 数组 `["init=epsg:4326"]` | `isinstance(v, str) → [v]` |
 | `status` | JSON 布尔 `false` | 字符串 `"OFF"` | `isinstance(v, bool) → "ON"/"OFF"` |
 
-这与 V1 发现的 mappyfile enum-boolean 混用问题一致。
+这与 mappyfile 验证（V1 spike）发现的 enum-boolean 混用问题一致。
 
 ### V2.5 PromptBuilder 设计修正
 

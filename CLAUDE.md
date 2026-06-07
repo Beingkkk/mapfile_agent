@@ -25,7 +25,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `action=answer`（长文本解释）有 content 超长导致 JSON 截断的风险，prompt 中需限制 `content≤300` 字
 - LLM 值类型常见错误：`projection` 有时输出字符串而非数组；`status` 有时输出 JSON 布尔而非 `"ON"`/`"OFF"`
 
-详细结论记录在 [`design/llm-integration.md`](Document/design/llm-integration.md) §附录 V2。
+详细结论记录在 [`design/llm-integration.md`](Document/design/llm-integration.md) §附录。
 
 **V3 关键结论**（影响前端组件实现）：
 - 自定义递归组件（ObjectCard + FieldEditor）验证通过，280 节点、4 层嵌套无卡顿
@@ -356,7 +356,7 @@ output = mappyfile.dumps(mf)
 | 6 | Extent array guard | `key == "extent"` | must remain a 4-element list |
 | 7 | Color RGB array guard | `value_type == "color"` | must remain `[R, G, B]` |
 
-**Critical V1 findings**:
+**Critical validation findings**:
 - mappyfile `dumps()` never throws (62/62 test cases); `validate()` is the strict gate
 - `validate()` **does NOT check** `MAP.name` or `LAYER.name` as required → must rely on L3 semantic validation
 - `validate()` rejects **any** schema-external field with `does not match any of the regexes` → L4 must filter these false positives (custom props + `object-fields.json` fields)
@@ -383,7 +383,7 @@ Directly calling `mappyfile.dumps(session.params)` will fail because mappyfile d
 
 ### Frontend UI Specification
 
-The v2 UI design is specified in `Document/技术细节.md` §4/§11/§12 and visualized in `Document/UX/ui-prototype-interactive-v2.html`. Key constraints:
+The UI design is specified in `Document/技术细节.md` §4/§11/§12 and visualized in `Document/UX/ui-prototype-interactive-v2.html`. Key constraints:
 
 - **Two-column layout**: left `ConfigTree` (55%), right `QAPanel` (45%)
 - **Inline editing**: each leaf uses a control mapped from `FieldDescriptor.value_type`
@@ -407,12 +407,12 @@ The v2 UI design is specified in `Document/技术细节.md` §4/§11/§12 and vi
 | `Document/design/data-structures.md` | ConfigSession, ConfigTree, TreeNode/TreeLeaf, flat path addressing |
 | `Document/design/validation.md` | 4-layer validation strategy, mappyfile false-positive filtering |
 | `Document/design/core-services.md` | Architecture overview, ValidationPipeline, ExportService, ImportService, class directory |
-| `Document/design/llm-integration.md` | DialogueHistory, Prompt L0-L5 context, QAService, LLMClient, LLMOutput parsing, **V2 spike conclusions** |
+| `Document/design/llm-integration.md` | DialogueHistory, Prompt L0-L5 context, QAService, LLMClient, LLMOutput parsing, **LLM validation conclusions** |
 | `Document/design/interaction-flows.md` | 6 interaction scenario data flows |
 | `Document/design/frontend-backend-contract.md` | WebSocket message types, communication constraints |
 | `Document/design/conventions.md` | Tech stack, directory structure, dev commands, code constraints, debugging |
 | `Document/模板说明.md` | Template resource reference for GIS professionals: how to modify `data/templates/*.json` |
-| `Document/UX/ui-prototype-interactive-v2.html` | Interactive v2 UI prototype |
+| `Document/UX/ui-prototype-interactive-v2.html` | Interactive UI prototype |
 | `Document/design/architecture.html` | Module architecture diagram (6 views) |
 | `Document/design/dataflow-6-scenes.html` | Interactive data flow diagrams |
 | `Document/核心难点验证计划.md` | Pre-development feasibility spikes (V1/V2/V3) |

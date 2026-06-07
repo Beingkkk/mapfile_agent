@@ -29,14 +29,14 @@
 | **ConfigSession** | `core/session.py` | ~150 | 低 | ConfigTree | 会话状态容器，`__post_init__` 初始化空 MAP |
 | **ConfigTree** | `core/config_tree.py` | ~300 | 中 | TemplateMapper | `_build_tree` 递归构建、`update_value`、扁平路径查找、`to_mappyfile_dict` 7 条变换 |
 | **ValidationPipeline L1-L3** | `core/validation.py` | ~200 | 中 | ConfigTree | 别名解析、类型检查（Pydantic）、语义检查（dependencies.json） |
-| **ValidationPipeline L4** | `core/validation.py` | ~100 | 中高 | ConfigTree | mappyfile 语法校验 + false positive 过滤。V1 已摸清边界，但过滤逻辑需仔细 |
+| **ValidationPipeline L4** | `core/validation.py` | ~100 | 中高 | ConfigTree | mappyfile 语法校验 + false positive 过滤。验证阶段已摸清边界，但过滤逻辑需编码实现 |
 | **DialogueHistory** | `core/history.py` | ~100 | 低 | 无 | 精简历史，按 focus_param 分组，最多 6 轮 |
 | **QAService** | `core/qa_service.py` | ~150 | 中 | PromptBuilder, LLMClient, ValidationPipeline | 问答主流程，6 步流水线 |
 | **ExportService** | `core/export_service.py` | ~100 | 低 | ConfigTree | mappyfile.dumps() + MapCache XML 生成 |
 | **ImportService** | `core/import_service.py` | ~100 | 低 | ConfigTree, ValidationPipeline | mappyfile.loads() → ConfigSession |
 | **PromptBuilder** | `llm/prompt_builder.py` | ~100 | 中 | Jinja2 | L0-L5 上下文组装，~1500 token 预算控制 |
 | **LLMClient** | `llm/llm_client.py` | ~150 | 低 | anthropic SDK | temperature=0.1，指数退避 3 次重试 |
-| **LLMOutput** | `llm/llm_output.py` | ~200 | 中 | 无 | 4 层容错解析：`direct_json → strip_codeblock → brace_extract → json5_tolerant → fallback`。V2 已验证策略 |
+| **LLMOutput** | `llm/llm_output.py` | ~200 | 中 | 无 | 4 层容错解析：`direct_json → strip_codeblock → brace_extract → json5_tolerant → fallback`。验证阶段已确认策略有效 |
 | **UpdateResolver** | `llm/update_resolver.py` | ~100 | 低 | 无 | 路径解析，宽容格式转换（`layers[0]` → `layers.0`） |
 | **MapCacheGenerator** | `mapcache/generator.py` | ~150 | 中 | Jinja2 | `mapcache.xml.j2` + session params 渲染 |
 | **MapCacheValidator** | `mapcache/validator.py` | ~150 | 中 | 无 | 自定义 XML 规则校验，无需 MapCache 安装 |
@@ -98,8 +98,8 @@
 
 | 原风险 | 验证后状态 | 剩余风险 |
 |--------|-----------|---------|
-| mappyfile 行为不确定 | V1 ✅ 摸清 62 个用例 | L4 false positive 过滤需编码实现 |
-| LLM 输出不稳定 | V2 ✅ 93.3% 可解析 | 只需按既定策略编码容错层 |
+| mappyfile 行为不确定 | ✅ 验证阶段摸清 62 个用例 | L4 false positive 过滤需编码实现 |
+| LLM 输出不稳定 | ✅ 验证阶段 93.3% 可解析 | 只需按既定策略编码容错层 |
 | 前端递归渲染性能 | V3 ✅ 280 节点验证通过 | 真实数据规模可能更大，预留虚拟滚动方案 |
 
 ---

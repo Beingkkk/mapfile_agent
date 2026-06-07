@@ -7,7 +7,7 @@ description: 后端架构总览、ConfigSession、ValidationPipeline、ExportSer
 
 ### 7.1 架构总览
 
-v2 从"主动引导式对话"切换为"配置树为主、LLM 被动应答"。核心类分成三层：
+架构采用"配置树为主、LLM 被动应答"模式。核心类分成三层：
 
 ```
 ┌─────────────────────────────────────────────────────┐
@@ -90,7 +90,7 @@ class ConfigSession:
 
 ### 7.3 QAService：LLM 问答服务
 
-v2 不再有主动引导，因此用 `QAService` 替代原来的 `GuideEngine`。
+`QAService` 处理用户主动提问，不主动引导用户填参。
 
 ```python
 @dataclass
@@ -401,7 +401,7 @@ class ImportService:
 | `FieldDescriptor` | `backend/core/template_mapper.py` | 统一字段描述 |
 | `ValidationPipeline` | `backend/core/validation.py` | 四层校验 |
 | `DialogueHistory` | `backend/core/history.py` | 精简会话历史 |
-| `QAService` | `backend/core/qa_service.py` | LLM 问答服务（替代 GuideEngine） |
+| `QAService` | `backend/core/qa_service.py` | LLM 问答服务 |
 | `PromptBuilder` | `backend/llm/prompt_builder.py` | Prompt 组装 |
 | `LLMClient` | `backend/llm/llm_client.py` | LLM 调用 |
 | `LLMOutput` | `backend/llm/llm_output.py` | 响应解析 |
