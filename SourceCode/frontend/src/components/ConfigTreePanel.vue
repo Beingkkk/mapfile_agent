@@ -78,12 +78,20 @@
           :class="{ active: uiStore.showMode === 'required' }"
           @click="uiStore.setShowMode('required')"
         >
+          建议填
+        </button>
+        <button
+          class="showmode-btn"
+          :class="{ active: uiStore.showMode === 'strict' }"
+          @click="uiStore.setShowMode('strict')"
+        >
           仅必填
         </button>
       </div>
       <div class="legend-items">
         <span class="legend-item"><span class="req-dot required">*</span>必填</span>
-        <span class="legend-item"><span class="req-dot default">D</span>默认值</span>
+        <span class="legend-item"><span class="req-dot required-when">◆</span>条件</span>
+        <span class="legend-item"><span class="req-dot default">D</span>默认</span>
         <span class="legend-item"><span class="req-dot optional">○</span>可选</span>
         <span class="legend-item"><span class="req-dot derived">→</span>推导</span>
         <span class="legend-item"><span class="req-dot custom">✎</span>自定义</span>
@@ -356,6 +364,7 @@ function toggleMapcache(enabled: boolean) {
   flex-shrink: 0;
 }
 .req-dot.required { color: #de350b; font-size: 13px; }
+.req-dot.required-when { color: #ea580c; font-size: 12px; }
 .req-dot.default { color: #7b8794; font-size: 10px; background: #f0f2f5; }
 .req-dot.optional { color: #9aa5b1; font-size: 11px; }
 .req-dot.derived { color: #7b8794; font-size: 11px; }

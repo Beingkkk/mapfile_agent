@@ -97,9 +97,14 @@ class ConfigTree:
                 desc = FieldDescriptor(key=field, value_type="string")
             # Always render schema fields so the user sees what can be edited.
             # Value = actual if set, otherwise default from rules, else None.
+            # Also write defaults back into params so validation passes.
             if field in obj:
+                if obj[field] is None and desc.default is not None:
+                    obj[field] = desc.default
                 value = obj[field]
             else:
+                if desc.default is not None:
+                    obj[field] = desc.default
                 value = desc.default if desc.default is not None else None
             leaf = TreeLeaf(
                 id=self._make_id(f"{path}.{field}"),
@@ -250,6 +255,7 @@ class ConfigTree:
             "value_type": desc.value_type,
             "phase": desc.phase,
             "required": desc.required,
+            "required_when": desc.required_when,
             "derived": desc.derived,
             "default": desc.default,
             "enum": desc.enum,
@@ -448,6 +454,8 @@ class ConfigTree:
         if isinstance(obj, dict):
             result: dict[str, Any] = {}
             for k, v in obj.items():
+                if v is None:
+                    continue  # Transform: skip unset optional fields
                 if k == "_custom":
                     for ck, cv in v.items():
                         result[ck] = self._filter_and_expand(cv["value"])

@@ -14,6 +14,7 @@ export interface TreeLeaf {
   value_type: 'string' | 'enum' | 'integer' | 'float' | 'boolean' | 'color' | 'array' | 'expression';
   phase: 'datasource' | 'style' | 'service' | 'cache';
   required: boolean;
+  required_when?: string;
   derived: boolean;
   default?: any;
   enum?: any[];

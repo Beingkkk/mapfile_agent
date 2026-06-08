@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import type { QAMessage } from '@/types/tree'
 
 interface UIState {
-  showMode: 'all' | 'required';
+  showMode: 'all' | 'required' | 'strict';
   expandedNodes: Set<string>;
   qaMessages: QAMessage[];
   qaRoundCount: number;
@@ -18,7 +18,7 @@ export const useUIStore = defineStore('ui', {
     qaFocusParam: null,
   }),
   actions: {
-    setShowMode(mode: 'all' | 'required') {
+    setShowMode(mode: 'all' | 'required' | 'strict') {
       this.showMode = mode
     },
     toggleNode(id: string) {

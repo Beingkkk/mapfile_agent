@@ -1,8 +1,8 @@
 {
-  "_description": "必填规则。required = 绝对必填；required_when = 条件必填（支持 parent.type / parent.connectiontype 等上下文变量）。",
+  "_description": "必填规则。required = 语法绝对必填（不填则 MapServer 解析报错）；business_required = 业务建议必填（无默认值且必须用户显式填写）；required_when = 条件必填（支持 parent.type / parent.connectiontype / session.service_types 等上下文变量）。",
   "MAP": {
-    "required": ["name"],
-    "business_required": ["imagetype", "status"],
+    "required": [],
+    "business_required": [],
     "required_when": {}
   },
   "WEB": {
@@ -12,26 +12,26 @@
   },
   "METADATA": {
     "required": [],
-    "business_required": ["ows_title", "ows_onlineresource", "ows_enable_request"],
+    "business_required": [],
     "required_when": {
+      "ows_title": "len(session.service_types) > 0",
+      "ows_onlineresource": "len(session.service_types) > 0",
       "wms_title": "'wms' in session.service_types and not map.web.metadata.get('ows_title')",
       "wfs_title": "'wfs' in session.service_types and not map.web.metadata.get('ows_title')",
       "wcs_title": "'wcs' in session.service_types and not map.web.metadata.get('ows_title')",
-      "wms_srs": "'wms' in session.service_types",
-      "wfs_srs": "'wfs' in session.service_types",
-      "wcs_srs": "'wcs' in session.service_types",
-      "wms_onlineresource": "'wms' in session.service_types and not map.web.metadata.get('ows_onlineresource')",
-      "wfs_onlineresource": "'wfs' in session.service_types and not map.web.metadata.get('ows_onlineresource')",
-      "wcs_onlineresource": "'wcs' in session.service_types and not map.web.metadata.get('ows_onlineresource')",
+      "wms_srs": "'wms' in session.service_types and not map.get('projection')",
+      "wfs_srs": "'wfs' in session.service_types and not map.get('projection')",
+      "wcs_srs": "'wcs' in session.service_types and not map.get('projection')",
       "wcs_extent": "'wcs' in session.service_types"
     }
   },
   "LAYER": {
-    "required": ["name", "type"],
-    "business_required": ["connectiontype", "projection", "status"],
+    "required": ["type"],
+    "business_required": [],
     "required_when": {
       "connection": "connectiontype in ['postgis', 'ogr', 'wms']",
-      "data": "connectiontype != 'wms'"
+      "data": "connectiontype == 'local'",
+      "name": "len(session.service_types) > 0"
     }
   },
   "CLASS": {
@@ -41,7 +41,7 @@
   },
   "STYLE": {
     "required": [],
-    "business_required": ["color"],
+    "business_required": [],
     "required_when": {
       "symbol": "parent.type == 'point'",
       "size": "parent.type == 'point'",
@@ -50,11 +50,9 @@
     }
   },
   "LABEL": {
-    "required": ["text"],
-    "business_required": ["font", "size", "color"],
-    "required_when": {
-      "position": "parent.type in ['point', 'polygon']"
-    }
+    "required": [],
+    "business_required": [],
+    "required_when": {}
   },
   "CACHE": {
     "required": ["type"],

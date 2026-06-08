@@ -209,6 +209,10 @@ def build_object_type_rules(
 
     expanded = EXPANDED_NESTED_FIELDS.get(object_type, set())
 
+    # 应用 required 规则（提前加载，字段定义中需要引用 required_when）
+    required_cfg = overrides.get("required", {}).get(object_type, {})
+    required_fields = set(required_cfg.get("required", []))
+
     for field, field_schema in all_fields.items():
         # 跳过 mappyfile 内部元字段
         if field.startswith("__"):
@@ -241,10 +245,9 @@ def build_object_type_rules(
             "phase": info["phase"],
             "derived": False,
             "editable": info.get("editable", True),
+            "required": field in required_fields,
+            "required_when": required_cfg.get("required_when", {}).get(field),
         }
-
-    # 应用 required 规则
-    required_cfg = overrides.get("required", {}).get(object_type, {})
 
     return {
         "fields": fields,

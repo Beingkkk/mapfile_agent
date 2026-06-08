@@ -117,13 +117,19 @@ const visibleChildren = computed(() => {
   if (uiStore.showMode === 'all') {
     return children
   }
-  // required mode: hide non-required leaves, always show nodes
+  // 'required': show syntax-required + conditionally-required fields
+  // 'strict': show only syntax-required fields (required === true && no required_when)
   return children.filter((child: TreeNode | TreeLeaf) => {
     if ('children' in child) {
       return true // TreeNode always visible
     }
-    // TreeLeaf: show only if required
-    return (child as TreeLeaf).required === true
+    const leaf = child as TreeLeaf
+    if (uiStore.showMode === 'required') {
+      // Show syntax-required or conditionally-required fields
+      return leaf.required === true || (leaf.required_when && leaf.required_when.length > 0)
+    }
+    // strict mode: show only syntax-required (absolute required)
+    return leaf.required === true && !leaf.required_when
   })
 })
 

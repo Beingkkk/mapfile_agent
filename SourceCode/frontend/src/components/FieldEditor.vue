@@ -106,7 +106,8 @@ watch(() => props.leaf.value, (newVal) => {
 
 // ── Indicator ──
 const indicator = computed(() => {
-  if (props.leaf.required) return '*'
+  if (props.leaf.required && !props.leaf.required_when) return '*'
+  if (props.leaf.required_when) return '◆'
   if (props.leaf.derived) return '→'
   if (props.leaf.custom) return '✎'
   if (props.leaf.default !== undefined) return 'D'
@@ -114,7 +115,8 @@ const indicator = computed(() => {
 })
 
 const indicatorTitle = computed(() => {
-  if (props.leaf.required) return '必填字段'
+  if (props.leaf.required && !props.leaf.required_when) return '语法必填（不填则 MapServer 解析报错）'
+  if (props.leaf.required_when) return '条件必填（满足条件时必须填写）'
   if (props.leaf.derived) return '推导字段'
   if (props.leaf.custom) return '自定义属性'
   if (props.leaf.default !== undefined) return '有默认值'
@@ -122,7 +124,8 @@ const indicatorTitle = computed(() => {
 })
 
 const indicatorClass = computed(() => {
-  if (props.leaf.required) return 'required'
+  if (props.leaf.required && !props.leaf.required_when) return 'required'
+  if (props.leaf.required_when) return 'required-when'
   if (props.leaf.derived) return 'derived'
   if (props.leaf.custom) return 'custom'
   if (props.leaf.default !== undefined) return 'default'
@@ -338,6 +341,7 @@ function askHelp() {
   cursor: help;
 }
 .req-indicator.required { color: #de350b; }
+.req-indicator.required-when { color: #ea580c; }
 .req-indicator.derived { color: #7b8794; }
 .req-indicator.custom { color: #486581; }
 .req-indicator.default { color: #7b8794; }

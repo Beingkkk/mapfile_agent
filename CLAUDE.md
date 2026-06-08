@@ -33,13 +33,13 @@ This project uses **Specification-Driven Development (SDD)**. All plans are lock
 
 ## Current Implementation State
 
-**All 5 phases complete** — backend Python ~2,700 lines, frontend Vue/TS ~1,000 lines, Electron ~300 lines, **330 Python tests + 73 frontend tests passing**.
+**All 5 phases complete** — backend Python ~2,700 lines, frontend Vue/TS ~1,000 lines, Electron ~300 lines, **313 Python tests + 73 frontend tests passing**.
 
 | Module | Files | Tests | Proposal |
 |--------|-------|-------|----------|
 | `generate_rules.py` | `scripts/generate_rules.py` | `tests/unit/test_generate_rules.py` (53), `tests/integration/test_rules_output.py` (17) | #0002 |
 | `TemplateMapper` + `FieldDescriptor` | `backend/core/template_mapper.py` | `tests/unit/test_template_mapper.py` (33) | #0003 |
-| `ConfigSession` + `ConfigTree` | `backend/core/session.py`, `backend/core/config_tree.py`, `backend/core/history.py` | `tests/unit/test_session.py` (12), `tests/unit/test_config_tree.py` (56) | #0004 |
+| `ConfigSession` + `ConfigTree` | `backend/core/session.py`, `backend/core/config_tree.py`, `backend/core/history.py` | `tests/unit/test_session.py` (12), `tests/unit/test_config_tree.py` (52) | #0004 |
 | `ValidationPipeline` (L1-L4) | `backend/core/validation.py` | `tests/unit/test_validation.py` (45) | #0005 |
 | `LLMClient` + `LLMOutput` + `UpdateResolver` | `backend/llm/llm_client.py`, `llm_output.py`, `update_resolver.py` | `tests/unit/test_llm_client.py` (6), `test_llm_output.py` (17), `test_update_resolver.py` (5) | #0006 |
 | `PromptBuilder` + `QAService` + `ImportService` + `ExportService` | `backend/llm/prompt_builder.py`, `core/qa_service.py`, `core/import_service.py`, `core/export_service.py` | `tests/unit/test_prompt_builder.py` (5), `test_qa_service.py` (9), `test_import_service.py` (7), `test_export_service.py` (8) | #0007 |
@@ -48,7 +48,8 @@ This project uses **Specification-Driven Development (SDD)**. All plans are lock
 | WebSocket routing | `backend/main.py` | `tests/unit/test_main.py` (12) | #0004, #0007 |
 | UI 差距修复 | `frontend/src/components/ConfigTreePanel.vue`, `ObjectCard.vue`, `FieldEditor.vue` | — | #0010 |
 | 块提问 UX 修复 | `frontend/src/components/ObjectCard.vue`, `QAPanel.vue` | QAPanel 11 | #0011 |
-| QA loading 占位气泡 | `frontend/src/types/tree.ts`, `stores/ui.ts`, `services/ws.ts`, `components/QAPanel.vue` | ui 4, QAPanel 4 | #0012 |
+| QA loading 占位气泡 | `frontend/src/types/tree.ts`, `stores/ui.ts`, `services/ws.ts`, `components/QAPanel.vue` | ui 4, QAPanel 4, ws 4 | #0012 |
+| 必填项语义分层 + UI 三档筛选 | `data/templates/required.json`, `generate_rules.py`, `template_mapper.py`, `config_tree.py`, `ObjectCard.vue`, `FieldEditor.vue`, `ConfigTreePanel.vue` | backend 56 + frontend 11 | #0013 |
 
 **Spikes** (pre-development validation, not production code):
 
@@ -440,7 +441,7 @@ output = mappyfile.dumps(mf)
 
 ### ConfigTree.to_mappyfile_dict() — Serialization Rules
 
-`ConfigTree.to_mappyfile_dict()` performs 7 mandatory transforms before handing data to mappyfile. These rules come from V1 validation (`spike/v1_result.md`) against `mappyfile==1.1.1`:
+`ConfigTree.to_mappyfile_dict()` performs 8 mandatory transforms before handing data to mappyfile. These rules come from V1 validation (`spike/v1_result.md`) against `mappyfile==1.1.1`, plus proposal-0013 Amendment:
 
 | # | Transform | Trigger | Why |
 |---|-----------|---------|-----|
@@ -451,6 +452,9 @@ output = mappyfile.dumps(mf)
 | 5 | PROJECTION array guard | `key == "projection"` | must remain a list |
 | 6 | Extent array guard | `key == "extent"` | must remain a 4-element list |
 | 7 | Color RGB array guard | `value_type == "color"` | must remain `[R, G, B]` |
+| 8 | **None filter** | `v is None` | Unset optional fields must not appear in Mapfile; mappyfile treats `None` as invalid |
+
+**ValidationPipeline L2 behavior**: Non-required fields with `None` values are skipped in `_check_type()` (no type error). Only `required=True` fields (e.g. `LAYER.type`) report type errors for `None`. This pairs with transform 8 to ensure unset optional fields neither fail validation nor pollute export.
 
 **Critical validation findings**:
 - mappyfile `dumps()` never throws (62/62 test cases); `validate()` is the strict gate
@@ -464,6 +468,13 @@ output = mappyfile.dumps(mf)
 - `ConfigTree` wraps it with `TreeNode`/`TreeLeaf` for UI rendering and custom properties.
 - Custom properties are stored under `_custom` per object and expanded during serialization.
 - LLM updates use **flat path addressing** (`layers.0.connectiontype`) — stable identifiers that do not change when tree structure changes.
+
+**Default value backfill**: `ConfigTree._build_tree()` writes `desc.default` back into `params` when a field is absent or explicitly `None`. This ensures fields marked with `D` in the UI actually hold their default value and pass validation.
+
+**Required field semantics (3 layers)**:
+- `required` (red `*`): Syntax-absolute required — `mappyfile.loadXXX()` fails if missing. Only `LAYER.type` and `CACHE.type` qualify.
+- `required_when` (orange `◆`): Conditionally required based on runtime context (parent field values, service types). E.g. `LAYER.connection` when `connectiontype in ['postgis','ogr','wms']`.
+- `business_required`: Cleared — all previously listed fields had defaults and are now handled by automatic backfill.
 
 **Service type filtering in ConfigTree**: ConfigTree receives `service_types: list[str]` at construction time. METADATA field visibility follows prefix rules:
 - `ows_*` — always visible (general prefix shared by all OGC services)
@@ -491,9 +502,9 @@ The UI design is specified in `Document/技术细节.md` §4/§11/§12 and visua
 - **Inline editing**: each leaf uses a control mapped from `FieldDescriptor.value_type`
 - **Focus mechanism**: clicking a tree node sets `focus_param` (flat path like `layers.0.name`), injected into the LLM prompt
 - **Phase color badges**: datasource=blue `#2563eb`, style=orange `#ea580c`, service=green `#16a34a`, cache=purple `#9333ea`
-- **Show-mode toggle**: "全部 / 仅必填" filters optional/default fields
+- **Show-mode toggle**: Three modes — `all` (全部), `required` (建议填, shows `required=True` OR `required_when` present), `strict` (仅必填, shows only `required=True` without `required_when`)
 - **Custom properties**: modal dialog for key + description + type; rendered with `✎` indicator
-- **Legend bar**: top of ConfigTree shows `📋 图例：* 必填 · D 默认值 · ○ 可选 · → 推导 · ✎ 自定义`
+- **Legend bar**: top of ConfigTree shows `📋 图例：* 必填 · ◆ 条件 · D 默认值 · ○ 可选 · → 推导 · ✎ 自定义`
 - **QA round counter**: displayed in QAPanel header; resets to 0 on focus change
 - **Reset / New Task** button: confirm dialog, then full session reset
 - **No history persistence**: in-memory only

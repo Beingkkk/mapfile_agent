@@ -25,6 +25,7 @@ class FieldDescriptor:
     max: Any = None
     phase: str = "service"  # datasource | style | service | cache
     required: bool = False
+    required_when: str | None = None  # condition expression for conditional required
     derived: bool = False
     editable: bool = True
     custom: bool = False
@@ -73,6 +74,7 @@ class TemplateMapper:
             max=field_def.get("max"),
             phase=field_def.get("phase", "service"),
             required=field in required_fields,
+            required_when=field_def.get("required_when"),
             derived=field_def.get("derived", False),
             editable=field_def.get("editable", True),
         )

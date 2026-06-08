@@ -157,7 +157,8 @@ class TestHandleMessage:
         await main_module.handle_message(ws, {"type": "reset_session"}, "session-6")
 
         session = main_module.sessions["session-6"]
-        assert session.params.get("name") is None
+        # Reset restores defaults; name gets its default value back ("MS"), not None
+        assert session.params.get("name") != "old"
 
     @pytest.mark.anyio
     async def test_export_blocks_when_not_validated(self):

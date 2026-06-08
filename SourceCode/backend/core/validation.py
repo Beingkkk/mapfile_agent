@@ -167,10 +167,18 @@ class ValidationPipeline:
     # ─────────────────────────────────────────────────────────────────────────
 
     def _check_type(self, leaf: TreeLeaf) -> list[dict]:
-        """Return errors for value_type violations."""
+        """Return errors for value_type violations.
+
+        None on non-required fields is treated as "not set yet" and skipped.
+        Only syntax-required fields (required=True) are checked for None.
+        """
         vt = leaf.descriptor.value_type
         value = leaf.value
         path = leaf.path
+
+        # Skip type check for None on non-required fields
+        if value is None and not leaf.descriptor.required:
+            return []
 
         checkers = {
             "enum": self._check_enum,
