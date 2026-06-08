@@ -33,17 +33,19 @@ This project uses **Specification-Driven Development (SDD)**. All plans are lock
 
 ## Current Implementation State
 
-**Completed modules** (have real code + tests):
+**All 5 phases complete** — backend Python ~2,700 lines, frontend Vue/TS ~800 lines, Electron ~300 lines, **329 Python tests passing**.
 
 | Module | Files | Tests | Proposal |
 |--------|-------|-------|----------|
 | `generate_rules.py` | `scripts/generate_rules.py` | `tests/unit/test_generate_rules.py` (53), `tests/integration/test_rules_output.py` (17) | #0002 |
 | `TemplateMapper` + `FieldDescriptor` | `backend/core/template_mapper.py` | `tests/unit/test_template_mapper.py` (33) | #0003 |
 | `ConfigSession` + `ConfigTree` | `backend/core/session.py`, `backend/core/config_tree.py`, `backend/core/history.py` | `tests/unit/test_session.py` (12), `tests/unit/test_config_tree.py` (56) | #0004 |
-
-**Scaffolded but empty** (placeholder `pass` only):
-
-`backend/core/{validation,qa_service,export_service,import_service,result_types}.py`, `backend/llm/*.py`, `backend/mapcache/*.py`, `frontend/src/`, `electron/`
+| `ValidationPipeline` (L1-L4) | `backend/core/validation.py` | `tests/unit/test_validation.py` (45) | #0005 |
+| `LLMClient` + `LLMOutput` + `UpdateResolver` | `backend/llm/llm_client.py`, `llm_output.py`, `update_resolver.py` | `tests/unit/test_llm_client.py` (6), `test_llm_output.py` (17), `test_update_resolver.py` (5) | #0006 |
+| `PromptBuilder` + `QAService` + `ImportService` + `ExportService` | `backend/llm/prompt_builder.py`, `core/qa_service.py`, `core/import_service.py`, `core/export_service.py` | `tests/unit/test_prompt_builder.py` (5), `test_qa_service.py` (9), `test_import_service.py` (7), `test_export_service.py` (8) | #0007 |
+| `MapCacheGenerator` + `MapCacheValidator` | `backend/mapcache/generator.py`, `mapcache/validator.py` | `tests/unit/test_mapcache_generator.py` (8), `test_mapcache_validator.py` (8) | #0008 |
+| `CustomPropModal` + Electron config | `frontend/src/components/CustomPropModal.vue`, `electron/main.js`, `electron/preload.js`, `SourceCode/package.json` | — (manual) | #0009 |
+| WebSocket routing | `backend/main.py` | `tests/unit/test_main.py` (11) | #0004, #0007 |
 
 **Spikes** (pre-development validation, not production code):
 
@@ -171,12 +173,15 @@ cd SourceCode
 # Single test file
 "/c/Users/PC/.conda/envs/gis-agent/python" -m pytest tests/unit/test_template_mapper.py -v
 "/c/Users/PC/.conda/envs/gis-agent/python" -m pytest tests/unit/test_config_tree.py -v
-"/c/Users/PC/.conda/envs/gis-agent/python" -m pytest tests/unit/test_session.py -v
+"/c/Users/PC/.conda/envs/gis-agent/python" -m pytest tests/unit/test_validation.py -v
+"/c/Users/PC/.conda/envs/gis-agent/python" -m pytest tests/unit/test_mapcache_generator.py -v
+"/c/Users/PC/.conda/envs/gis-agent/python" -m pytest tests/unit/test_main.py -v
 
 # Single test class or method
 "/c/Users/PC/.conda/envs/gis-agent/python" -m pytest tests/unit/test_template_mapper.py::TestResolveAlias -v
 "/c/Users/PC/.conda/envs/gis-agent/python" -m pytest tests/unit/test_generate_rules.py::TestInferValueType::test_enum_present_returns_enum -v
 "/c/Users/PC/.conda/envs/gis-agent/python" -m pytest tests/unit/test_config_tree.py::TestConfigTreeSerialize::test_transform_1_custom_expansion -v
+"/c/Users/PC/.conda/envs/gis-agent/python" -m pytest tests/unit/test_validation.py::TestValidationPipelineIntegration -v
 ```
 
 ### Rules Generation
@@ -223,13 +228,19 @@ npm run build
 ```bash
 cd SourceCode
 
-# Dev mode (requires backend on 8765 + frontend dev server)
+# Dev mode (auto-starts Python backend from gis-agent conda env)
 npm run electron:dev
 
 # Production build
 npm run electron:build
 # Output: dist/MapGuide-Setup-x.x.x.exe
 ```
+
+**Electron backend path behavior** (`electron/main.js`):
+- **Development**: Uses `C:\Users\PC\.conda\envs\gis-agent\python.exe` (overridable via `PYTHON_PATH` env var) to run `uvicorn backend.main:app --port 8765`. Waits for port 8765 to be ready before loading the window.
+- **Production**: Uses `resources\backend\MapGuideBackend.exe` (PyInstaller output). The exe is included via `build.extraResources` in `SourceCode/package.json`.
+- **Process cleanup**: `window-all-closed` / `before-quit` sends SIGTERM, force-kills with SIGKILL after 3s if still running.
+- **IPC**: `save:exportFiles` opens a directory dialog and writes exported files (`.map`, `.xml`) to disk.
 
 ### Production Packaging
 
