@@ -1,7 +1,7 @@
 <template>
   <div class="title-bar" @dblclick="toggleMaximize">
     <div class="title-bar-drag">
-      <span class="title-bar-icon">🗺️</span>
+      <img :src="iconImg" class="title-bar-icon-img" alt="MapGuide" />
       <span class="title-bar-text">MapGuide</span>
       <span class="title-bar-sub">MapServer 8.4 配置编辑器</span>
     </div>
@@ -32,6 +32,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
+import iconImg from '@/assets/icon.png'
 
 const isMaximized = ref(false)
 
@@ -95,8 +96,11 @@ onUnmounted(() => {
   height: 100%;
 }
 
-.title-bar-icon {
-  font-size: 16px;
+.title-bar-icon-img {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  object-fit: contain;
 }
 
 .title-bar-text {

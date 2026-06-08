@@ -135,7 +135,7 @@ const canDelete = computed(() => nodeType.value !== 'MAP')
 const CHILD_TYPES_MAP: Record<string, string[]> = {
   MAP: ['LAYER', 'WEB'],
   LAYER: ['CLASS', 'METADATA'],
-  CLASS: ['STYLE'],
+  CLASS: ['STYLE', 'METADATA'],
   WEB: ['METADATA'],
 }
 

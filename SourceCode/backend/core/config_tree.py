@@ -166,6 +166,12 @@ class ConfigTree:
                         self._build_tree(cls, f"{parent_path}.classes.{i}", "CLASS")
                     )
         elif parent_type == "CLASS":
+            if "metadata" in obj:
+                children.append(
+                    self._build_tree(
+                        obj["metadata"], f"{parent_path}.metadata", "METADATA"
+                    )
+                )
             styles = obj.get("styles", [])
             if isinstance(styles, dict):
                 styles = [styles]
@@ -461,8 +467,13 @@ class ConfigTree:
             for k, v in obj.items():
                 processed = self._post_transform(v)
                 # Transform 3: array wrap for layers/classes/styles/labels
-                if k in _ARRAY_FIELDS and isinstance(processed, dict):
-                    processed = [processed]
+                if k in _ARRAY_FIELDS:
+                    if isinstance(processed, dict):
+                        processed = [processed]
+                    elif isinstance(processed, list):
+                        # Defensive: filter out non-dict elements that would
+                        # crash mappyfile.validate (string indices error)
+                        processed = [item for item in processed if isinstance(item, dict)]
                 # Transform 4: enum-bool conversion (status)
                 if k in _ENUM_BOOL_FIELDS and isinstance(processed, bool):
                     processed = "ON" if processed else "OFF"

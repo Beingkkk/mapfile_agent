@@ -1,6 +1,6 @@
 <template>
   <div class="tree-prop" :class="{ 'has-error': leaf.errors.length > 0, focused: isFocused }" @click="handleClick">
-    <span class="req-indicator" :title="indicatorTitle">{{ indicator }}</span>
+    <span class="req-indicator" :class="indicatorClass" :title="indicatorTitle">{{ indicator }}</span>
     <span class="tree-prop-key" :title="leaf.path">{{ leaf.key }}:</span>
     <span class="tree-prop-value">
       <!-- string / expression -->
@@ -36,25 +36,32 @@
       <input v-else-if="leaf.value_type === 'boolean'" v-model="value" type="checkbox" @change="handleBlur" />
       <!-- color -->
       <span v-else-if="leaf.value_type === 'color'" class="color-editor">
-        <span class="color-preview" :style="colorStyle" @click.stop="toggleColorEdit">
+        <span class="color-preview" :style="colorStyle" @click.stop="openColorPicker">
           {{ colorString }}
         </span>
-        <span v-if="showColorEdit" class="color-inputs" @click.stop>
-          <input
-            v-for="(ch, idx) in ['R', 'G', 'B']"
-            :key="ch"
-            v-model.number="rgbValues[idx]"
-            type="number"
-            min="0"
-            max="255"
-            :placeholder="ch"
-            class="rgb-input"
-            @blur="commitColor"
-            @keydown.enter="commitColor"
-          />
-        </span>
+        <input
+          ref="colorInputRef"
+          type="color"
+          :value="colorHex"
+          style="position: absolute; opacity: 0; pointer-events: none; width: 0; height: 0;"
+          @input="onColorPick"
+        />
       </span>
-      <!-- array -->
+      <!-- array: structured (extent / size) -->
+      <span v-else-if="leaf.value_type === 'array' && isStructuredArray" class="structured-array-editor">
+        <input
+          v-for="(label, idx) in structuredLabels"
+          :key="label"
+          v-model.number="structuredValues[idx]"
+          type="number"
+          :step="leaf.key === 'size' ? 1 : 0.01"
+          :placeholder="label"
+          class="structured-input"
+          @blur="commitStructuredArray"
+          @keydown.enter="commitStructuredArray"
+        />
+      </span>
+      <!-- array: free-form -->
       <span v-else-if="leaf.value_type === 'array'" class="array-editor">
         <span v-if="!showArrayEdit" class="array-display" @click.stop="toggleArrayEdit">
           {{ arrayDisplay }}
@@ -114,6 +121,14 @@ const indicatorTitle = computed(() => {
   return '可选字段'
 })
 
+const indicatorClass = computed(() => {
+  if (props.leaf.required) return 'required'
+  if (props.leaf.derived) return 'derived'
+  if (props.leaf.custom) return 'custom'
+  if (props.leaf.default !== undefined) return 'default'
+  return 'optional'
+})
+
 // ── Focus tracking ──
 const isFocused = computed(() => {
   // Simple heuristic: leaf.path ends with focus_param
@@ -131,15 +146,26 @@ const placeholder = computed(() => {
   return ''
 })
 
-// ── Color editor ──
-const showColorEdit = ref(false)
+// ── Color editor (native color input) ──
+const colorInputRef = ref<HTMLInputElement | null>(null)
 
-const rgbValues = ref([0, 0, 0])
-watch(() => props.leaf.value, (v) => {
-  if (props.leaf.value_type === 'color' && Array.isArray(v) && v.length >= 3) {
-    rgbValues.value = [v[0] ?? 0, v[1] ?? 0, v[2] ?? 0]
+function rgbToHex(r: number, g: number, b: number): string {
+  const toHex = (n: number) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, '0')
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`
+}
+
+function hexToRgb(hex: string): [number, number, number] {
+  const m = hex.match(/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i)
+  if (!m) return [0, 0, 0]
+  return [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)]
+}
+
+const colorHex = computed(() => {
+  if (props.leaf.value_type === 'color' && Array.isArray(value.value) && value.value.length >= 3) {
+    return rgbToHex(value.value[0] ?? 0, value.value[1] ?? 0, value.value[2] ?? 0)
   }
-}, { immediate: true })
+  return '#808080'
+})
 
 const colorStyle = computed(() => {
   if (props.leaf.value_type === 'color' && Array.isArray(value.value)) {
@@ -156,18 +182,53 @@ const colorString = computed(() => {
   return String(value.value)
 })
 
-function toggleColorEdit() {
-  showColorEdit.value = !showColorEdit.value
+function openColorPicker() {
+  colorInputRef.value?.click()
 }
 
-function commitColor() {
-  // Clamp 0-255
-  const clamped = rgbValues.value.map(v => Math.max(0, Math.min(255, Math.round(Number(v) || 0))))
-  value.value = clamped
-  showColorEdit.value = false
+function onColorPick(event: Event) {
+  const hex = (event.target as HTMLInputElement).value
+  const rgb = hexToRgb(hex)
+  value.value = rgb
   ws.send({
     type: 'tree_update',
-    updates: [{ path: props.leaf.path, value: clamped }],
+    updates: [{ path: props.leaf.path, value: rgb }],
+  })
+}
+
+// ── Structured array editor (extent / size) ──
+const STRUCTURED_ARRAYS: Record<string, string[]> = {
+  extent: ['minx', 'miny', 'maxx', 'maxy'],
+  size: ['width', 'height'],
+}
+
+const isStructuredArray = computed(() => {
+  return props.leaf.value_type === 'array' && props.leaf.key in STRUCTURED_ARRAYS
+})
+
+const structuredLabels = computed(() => {
+  return STRUCTURED_ARRAYS[props.leaf.key] || []
+})
+
+const structuredValues = ref<number[]>([0, 0, 0, 0])
+
+watch(() => props.leaf.value, (v) => {
+  if (props.leaf.value_type === 'array' && Array.isArray(v)) {
+    const labels = structuredLabels.value
+    const nums = labels.map((_, i) => {
+      const n = Number(v[i])
+      return Number.isFinite(n) ? n : 0
+    })
+    structuredValues.value = nums
+  }
+}, { immediate: true })
+
+function commitStructuredArray() {
+  const result = structuredValues.value.map(v => Number(v) || 0)
+  value.value = result
+  ws.send({
+    type: 'tree_update',
+    updates: [{ path: props.leaf.path, value: result }],
   })
 }
 
@@ -237,6 +298,9 @@ function handleClick() {
 // ── Ask LLM for help on this field ──
 function askHelp() {
   const leaf = props.leaf
+  // Ensure focus is set to this field so the QA context matches
+  ws.send({ type: 'focus_change', path: leaf.path })
+
   let question = `参数 \`${leaf.path}\`（${leaf.key}）怎么填？`
   if (leaf.value_type === 'enum' && leaf.enum && leaf.enum.length > 0) {
     question += ` 可选值：${leaf.enum.join('、')}，分别是什么意思？`
@@ -273,6 +337,11 @@ function askHelp() {
   font-size: 13px;
   cursor: help;
 }
+.req-indicator.required { color: #de350b; }
+.req-indicator.derived { color: #7b8794; }
+.req-indicator.custom { color: #486581; }
+.req-indicator.default { color: #7b8794; }
+.req-indicator.optional { color: #9aa5b1; }
 .tree-prop-key {
   font-family: monospace;
   font-size: 14px;
@@ -346,27 +415,36 @@ function askHelp() {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  position: relative;
 }
 .color-preview {
   display: inline-block;
-  width: 60px;
-  height: 20px;
+  width: 80px;
+  height: 22px;
   border: 1px solid #ccc;
   border-radius: 4px;
   font-size: 11px;
+  font-family: monospace;
   text-align: center;
-  line-height: 20px;
+  line-height: 22px;
   cursor: pointer;
   user-select: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.color-inputs {
+
+/* Structured array editor */
+.structured-array-editor {
   display: inline-flex;
+  align-items: center;
   gap: 4px;
 }
-.rgb-input {
-  width: 44px !important;
+.structured-input {
+  width: 70px !important;
   text-align: center;
-  padding: 2px 4px !important;
+  padding: 4px 6px !important;
+  font-size: 13px !important;
 }
 
 /* Array editor */

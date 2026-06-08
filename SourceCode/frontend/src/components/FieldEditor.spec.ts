@@ -186,4 +186,79 @@ describe('FieldEditor', () => {
     const wrapper = mount(FieldEditor, { props: { leaf } })
     expect(wrapper.text()).toContain('○')
   })
+
+  it('applies required class to indicator for required fields', () => {
+    const leaf = makeLeaf({ required: true, key: 'name' })
+    const wrapper = mount(FieldEditor, { props: { leaf } })
+    const indicator = wrapper.find('.req-indicator')
+    expect(indicator.classes()).toContain('required')
+  })
+
+  it('renders native color input for color type', () => {
+    const leaf = makeLeaf({ value_type: 'color', value: [255, 0, 128], key: 'color' })
+    const wrapper = mount(FieldEditor, { props: { leaf } })
+    const colorInput = wrapper.find('input[type="color"]')
+    expect(colorInput.exists()).toBe(true)
+    // Color preview should be clickable
+    const preview = wrapper.find('.color-preview')
+    expect(preview.exists()).toBe(true)
+  })
+
+  it('sends focus_change before question when help button is clicked', async () => {
+    const leaf = makeLeaf({ path: 'map.extent', key: 'extent', errors: ['bad value'] })
+    const wrapper = mount(FieldEditor, { props: { leaf } })
+    const helpBtn = wrapper.find('.help-btn')
+    await helpBtn.trigger('click')
+    // Should send focus_change first, then question
+    expect(mockSend).toHaveBeenCalledWith({
+      type: 'focus_change',
+      path: 'map.extent',
+    })
+    expect(mockSend).toHaveBeenCalledWith({
+      type: 'question',
+      text: expect.stringContaining('extent'),
+    })
+  })
+
+  it('renders structured inputs for extent array', () => {
+    const leaf = makeLeaf({
+      value_type: 'array',
+      value: [-180, -90, 180, 90],
+      key: 'extent',
+    })
+    const wrapper = mount(FieldEditor, { props: { leaf } })
+    const inputs = wrapper.findAll('.structured-input')
+    expect(inputs).toHaveLength(4)
+    // Check placeholders
+    expect(inputs[0].attributes('placeholder')).toBe('minx')
+    expect(inputs[1].attributes('placeholder')).toBe('miny')
+    expect(inputs[2].attributes('placeholder')).toBe('maxx')
+    expect(inputs[3].attributes('placeholder')).toBe('maxy')
+  })
+
+  it('renders structured inputs for size array', () => {
+    const leaf = makeLeaf({
+      value_type: 'array',
+      value: [800, 600],
+      key: 'size',
+    })
+    const wrapper = mount(FieldEditor, { props: { leaf } })
+    const inputs = wrapper.findAll('.structured-input')
+    expect(inputs).toHaveLength(2)
+    expect(inputs[0].attributes('placeholder')).toBe('width')
+    expect(inputs[1].attributes('placeholder')).toBe('height')
+  })
+
+  it('still renders free-form array for non-structured keys', () => {
+    const leaf = makeLeaf({
+      value_type: 'array',
+      value: ['init=epsg:3857'],
+      key: 'projection',
+    })
+    const wrapper = mount(FieldEditor, { props: { leaf } })
+    const structuredInputs = wrapper.findAll('.structured-input')
+    expect(structuredInputs).toHaveLength(0)
+    const display = wrapper.find('.array-display')
+    expect(display.exists()).toBe(true)
+  })
 })

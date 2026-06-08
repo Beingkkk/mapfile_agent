@@ -7,14 +7,18 @@
         <span class="panel-header-sub">MapServer 8.4</span>
       </div>
       <div class="panel-header-actions">
-        <button class="btn-icon validate" title="校验" @click="validate">🔍</button>
+        <button class="btn-pill validate" title="校验" @click="validate">
+          <span class="btn-pill-icon">✅</span>
+          <span class="btn-pill-text">校验</span>
+        </button>
         <button
-          class="btn-icon export"
+          class="btn-pill export"
           title="导出"
           :disabled="!sessionStore.can_export"
           @click="exportMapfile"
         >
-          📥
+          <span class="btn-pill-icon">📥</span>
+          <span class="btn-pill-text">导出</span>
         </button>
       </div>
     </div>
@@ -198,31 +202,39 @@ function toggleMapcache(enabled: boolean) {
   gap: 6px;
 }
 
-/* Icon buttons */
-.btn-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+/* Pill buttons */
+.btn-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 6px;
   border: 1px solid #d1d5db;
   background: #fff;
-  color: #616e7c;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  color: #4b5563;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 13px;
+  font-weight: 500;
   transition: all 0.15s;
+  white-space: nowrap;
 }
-.btn-icon:hover {
+.btn-pill:hover {
   background: #f7f8fa;
   border-color: #9aa5b1;
-  color: #3e4c59;
+  color: #1f2937;
 }
-.btn-icon.validate:hover { color: #2563eb; border-color: #2563eb; }
-.btn-icon.export:hover { color: #16a34a; border-color: #16a34a; }
-.btn-icon:disabled {
+.btn-pill.validate:hover { color: #2563eb; border-color: #2563eb; }
+.btn-pill.export:hover { color: #16a34a; border-color: #16a34a; }
+.btn-pill:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+.btn-pill-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+.btn-pill-text {
+  line-height: 1;
 }
 
 /* ── Service Type Bar ── */

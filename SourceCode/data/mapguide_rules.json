@@ -7044,6 +7044,21 @@
       "editable": true,
       "path": "layers.N.metadata.ows_title"
     },
+    "layers.N.classes.M.metadata.ows_title": {
+      "key": "ows_title",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "OGC 通用服务/图层标题（wms_title / wfs_title / wcs_title 的 fallback）",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.ows_title"
+    },
     "map.web.metadata.ows_abstract": {
       "key": "ows_abstract",
       "value_type": "string",
@@ -7073,6 +7088,21 @@
       "derived": false,
       "editable": true,
       "path": "layers.N.metadata.ows_abstract"
+    },
+    "layers.N.classes.M.metadata.ows_abstract": {
+      "key": "ows_abstract",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "OGC 通用服务/图层摘要",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.ows_abstract"
     },
     "map.web.metadata.ows_onlineresource": {
       "key": "ows_onlineresource",
@@ -7104,6 +7134,21 @@
       "editable": true,
       "path": "layers.N.metadata.ows_onlineresource"
     },
+    "layers.N.classes.M.metadata.ows_onlineresource": {
+      "key": "ows_onlineresource",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "OGC 通用在线资源地址",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.ows_onlineresource"
+    },
     "map.web.metadata.ows_enable_request": {
       "key": "ows_enable_request",
       "value_type": "string",
@@ -7133,6 +7178,21 @@
       "derived": false,
       "editable": true,
       "path": "layers.N.metadata.ows_enable_request"
+    },
+    "layers.N.classes.M.metadata.ows_enable_request": {
+      "key": "ows_enable_request",
+      "value_type": "string",
+      "enum": null,
+      "default": "*",
+      "description": "OGC 通用请求开关",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.ows_enable_request"
     },
     "map.web.metadata.ows_srs": {
       "key": "ows_srs",
@@ -7164,6 +7224,21 @@
       "editable": true,
       "path": "layers.N.metadata.ows_srs"
     },
+    "layers.N.classes.M.metadata.ows_srs": {
+      "key": "ows_srs",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "OGC 通用坐标系列表",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.ows_srs"
+    },
     "map.web.metadata.ows_fees": {
       "key": "ows_fees",
       "value_type": "string",
@@ -7193,6 +7268,21 @@
       "derived": false,
       "editable": true,
       "path": "layers.N.metadata.ows_fees"
+    },
+    "layers.N.classes.M.metadata.ows_fees": {
+      "key": "ows_fees",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "服务费用信息",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.ows_fees"
     },
     "map.web.metadata.ows_accessconstraints": {
       "key": "ows_accessconstraints",
@@ -7224,6 +7314,21 @@
       "editable": true,
       "path": "layers.N.metadata.ows_accessconstraints"
     },
+    "layers.N.classes.M.metadata.ows_accessconstraints": {
+      "key": "ows_accessconstraints",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "访问约束说明",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.ows_accessconstraints"
+    },
     "map.web.metadata.wms_title": {
       "key": "wms_title",
       "value_type": "string",
@@ -7253,6 +7358,21 @@
       "derived": false,
       "editable": true,
       "path": "layers.N.metadata.wms_title"
+    },
+    "layers.N.classes.M.metadata.wms_title": {
+      "key": "wms_title",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WMS 服务标题（服务级）或图层标题（图层级）",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wms_title"
     },
     "map.web.metadata.wms_abstract": {
       "key": "wms_abstract",
@@ -7284,6 +7404,21 @@
       "editable": true,
       "path": "layers.N.metadata.wms_abstract"
     },
+    "layers.N.classes.M.metadata.wms_abstract": {
+      "key": "wms_abstract",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WMS 服务或图层的摘要描述",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wms_abstract"
+    },
     "map.web.metadata.wms_onlineresource": {
       "key": "wms_onlineresource",
       "value_type": "string",
@@ -7313,6 +7448,21 @@
       "derived": true,
       "editable": true,
       "path": "layers.N.metadata.wms_onlineresource"
+    },
+    "layers.N.classes.M.metadata.wms_onlineresource": {
+      "key": "wms_onlineresource",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WMS 在线资源地址（自动从 map.name 推导）",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": true,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wms_onlineresource"
     },
     "map.web.metadata.wms_enable_request": {
       "key": "wms_enable_request",
@@ -7344,6 +7494,21 @@
       "editable": true,
       "path": "layers.N.metadata.wms_enable_request"
     },
+    "layers.N.classes.M.metadata.wms_enable_request": {
+      "key": "wms_enable_request",
+      "value_type": "string",
+      "enum": null,
+      "default": "*",
+      "description": "允许的 WMS 请求类型",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wms_enable_request"
+    },
     "map.web.metadata.wms_srs": {
       "key": "wms_srs",
       "value_type": "string",
@@ -7373,6 +7538,21 @@
       "derived": false,
       "editable": true,
       "path": "layers.N.metadata.wms_srs"
+    },
+    "layers.N.classes.M.metadata.wms_srs": {
+      "key": "wms_srs",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WMS 支持的坐标系列表，如 \"EPSG:3857 EPSG:4326\"",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wms_srs"
     },
     "map.web.metadata.wms_extent": {
       "key": "wms_extent",
@@ -7404,6 +7584,21 @@
       "editable": true,
       "path": "layers.N.metadata.wms_extent"
     },
+    "layers.N.classes.M.metadata.wms_extent": {
+      "key": "wms_extent",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WMS 服务/图层空间范围，格式：minx miny maxx maxy",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wms_extent"
+    },
     "map.web.metadata.wms_keywordlist": {
       "key": "wms_keywordlist",
       "value_type": "string",
@@ -7433,6 +7628,21 @@
       "derived": false,
       "editable": true,
       "path": "layers.N.metadata.wms_keywordlist"
+    },
+    "layers.N.classes.M.metadata.wms_keywordlist": {
+      "key": "wms_keywordlist",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WMS 服务关键字列表，逗号分隔",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wms_keywordlist"
     },
     "map.web.metadata.wms_fees": {
       "key": "wms_fees",
@@ -7464,6 +7674,21 @@
       "editable": true,
       "path": "layers.N.metadata.wms_fees"
     },
+    "layers.N.classes.M.metadata.wms_fees": {
+      "key": "wms_fees",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WMS 服务费用信息",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wms_fees"
+    },
     "map.web.metadata.wms_accessconstraints": {
       "key": "wms_accessconstraints",
       "value_type": "string",
@@ -7493,6 +7718,21 @@
       "derived": false,
       "editable": true,
       "path": "layers.N.metadata.wms_accessconstraints"
+    },
+    "layers.N.classes.M.metadata.wms_accessconstraints": {
+      "key": "wms_accessconstraints",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WMS 访问约束说明",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wms_accessconstraints"
     },
     "map.web.metadata.wms_rootlayer_name": {
       "key": "wms_rootlayer_name",
@@ -7524,6 +7764,21 @@
       "editable": true,
       "path": "layers.N.metadata.wms_rootlayer_name"
     },
+    "layers.N.classes.M.metadata.wms_rootlayer_name": {
+      "key": "wms_rootlayer_name",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WMS GetCapabilities 根图层名称",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wms_rootlayer_name"
+    },
     "map.web.metadata.wms_rootlayer_title": {
       "key": "wms_rootlayer_title",
       "value_type": "string",
@@ -7553,6 +7808,21 @@
       "derived": false,
       "editable": true,
       "path": "layers.N.metadata.wms_rootlayer_title"
+    },
+    "layers.N.classes.M.metadata.wms_rootlayer_title": {
+      "key": "wms_rootlayer_title",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WMS GetCapabilities 根图层标题",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wms_rootlayer_title"
     },
     "map.web.metadata.wms_rootlayer_abstract": {
       "key": "wms_rootlayer_abstract",
@@ -7584,6 +7854,21 @@
       "editable": true,
       "path": "layers.N.metadata.wms_rootlayer_abstract"
     },
+    "layers.N.classes.M.metadata.wms_rootlayer_abstract": {
+      "key": "wms_rootlayer_abstract",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WMS GetCapabilities 根图层摘要",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wms_rootlayer_abstract"
+    },
     "map.web.metadata.wms_layerlimit": {
       "key": "wms_layerlimit",
       "value_type": "integer",
@@ -7613,6 +7898,21 @@
       "derived": false,
       "editable": true,
       "path": "layers.N.metadata.wms_layerlimit"
+    },
+    "layers.N.classes.M.metadata.wms_layerlimit": {
+      "key": "wms_layerlimit",
+      "value_type": "integer",
+      "enum": null,
+      "default": null,
+      "description": "WMS 服务允许的最大图层数",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wms_layerlimit"
     },
     "map.web.metadata.wms_updatesequence": {
       "key": "wms_updatesequence",
@@ -7644,6 +7944,21 @@
       "editable": true,
       "path": "layers.N.metadata.wms_updatesequence"
     },
+    "layers.N.classes.M.metadata.wms_updatesequence": {
+      "key": "wms_updatesequence",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WMS 服务更新序列号（用于缓存控制）",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wms_updatesequence"
+    },
     "map.web.metadata.wms_sld_enabled": {
       "key": "wms_sld_enabled",
       "value_type": "boolean",
@@ -7673,6 +7988,21 @@
       "derived": false,
       "editable": true,
       "path": "layers.N.metadata.wms_sld_enabled"
+    },
+    "layers.N.classes.M.metadata.wms_sld_enabled": {
+      "key": "wms_sld_enabled",
+      "value_type": "boolean",
+      "enum": null,
+      "default": null,
+      "description": "是否启用 SLD（Styled Layer Descriptor）支持",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wms_sld_enabled"
     },
     "map.web.metadata.wms_style_name": {
       "key": "wms_style_name",
@@ -7704,6 +8034,21 @@
       "editable": true,
       "path": "layers.N.metadata.wms_style_name"
     },
+    "layers.N.classes.M.metadata.wms_style_name": {
+      "key": "wms_style_name",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WMS 全局样式名称",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wms_style_name"
+    },
     "map.web.metadata.wms_style_title": {
       "key": "wms_style_title",
       "value_type": "string",
@@ -7733,6 +8078,21 @@
       "derived": false,
       "editable": true,
       "path": "layers.N.metadata.wms_style_title"
+    },
+    "layers.N.classes.M.metadata.wms_style_title": {
+      "key": "wms_style_title",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WMS 全局样式标题",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wms_style_title"
     },
     "map.web.metadata.wms_getmap_formatlist": {
       "key": "wms_getmap_formatlist",
@@ -7764,6 +8124,21 @@
       "editable": true,
       "path": "layers.N.metadata.wms_getmap_formatlist"
     },
+    "layers.N.classes.M.metadata.wms_getmap_formatlist": {
+      "key": "wms_getmap_formatlist",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "GetMap 支持的格式列表，如 \"png,jpeg,tiff\"",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wms_getmap_formatlist"
+    },
     "map.web.metadata.wms_getfeatureinfo_formatlist": {
       "key": "wms_getfeatureinfo_formatlist",
       "value_type": "string",
@@ -7793,6 +8168,21 @@
       "derived": false,
       "editable": true,
       "path": "layers.N.metadata.wms_getfeatureinfo_formatlist"
+    },
+    "layers.N.classes.M.metadata.wms_getfeatureinfo_formatlist": {
+      "key": "wms_getfeatureinfo_formatlist",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "GetFeatureInfo 支持的格式列表",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wms_getfeatureinfo_formatlist"
     },
     "map.web.metadata.wms_getlegendgraphic_formatlist": {
       "key": "wms_getlegendgraphic_formatlist",
@@ -7824,6 +8214,21 @@
       "editable": true,
       "path": "layers.N.metadata.wms_getlegendgraphic_formatlist"
     },
+    "layers.N.classes.M.metadata.wms_getlegendgraphic_formatlist": {
+      "key": "wms_getlegendgraphic_formatlist",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "GetLegendGraphic 支持的格式列表",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wms_getlegendgraphic_formatlist"
+    },
     "map.web.metadata.wms_dataurl_href": {
       "key": "wms_dataurl_href",
       "value_type": "string",
@@ -7853,6 +8258,21 @@
       "derived": false,
       "editable": true,
       "path": "layers.N.metadata.wms_dataurl_href"
+    },
+    "layers.N.classes.M.metadata.wms_dataurl_href": {
+      "key": "wms_dataurl_href",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "图层数据链接地址",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wms_dataurl_href"
     },
     "map.web.metadata.wms_metadataurl_href": {
       "key": "wms_metadataurl_href",
@@ -7884,6 +8304,21 @@
       "editable": true,
       "path": "layers.N.metadata.wms_metadataurl_href"
     },
+    "layers.N.classes.M.metadata.wms_metadataurl_href": {
+      "key": "wms_metadataurl_href",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "图层元数据链接地址",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wms_metadataurl_href"
+    },
     "map.web.metadata.wms_metadataurl_list": {
       "key": "wms_metadataurl_list",
       "value_type": "string",
@@ -7913,6 +8348,21 @@
       "derived": false,
       "editable": true,
       "path": "layers.N.metadata.wms_metadataurl_list"
+    },
+    "layers.N.classes.M.metadata.wms_metadataurl_list": {
+      "key": "wms_metadataurl_list",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "图层元数据链接列表",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wms_metadataurl_list"
     },
     "map.web.metadata.wms_attribution_title": {
       "key": "wms_attribution_title",
@@ -7944,6 +8394,21 @@
       "editable": true,
       "path": "layers.N.metadata.wms_attribution_title"
     },
+    "layers.N.classes.M.metadata.wms_attribution_title": {
+      "key": "wms_attribution_title",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "归属信息标题，显示在地图角落的数据来源说明",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wms_attribution_title"
+    },
     "map.web.metadata.wms_attribution_onlineresource": {
       "key": "wms_attribution_onlineresource",
       "value_type": "string",
@@ -7973,6 +8438,21 @@
       "derived": false,
       "editable": true,
       "path": "layers.N.metadata.wms_attribution_onlineresource"
+    },
+    "layers.N.classes.M.metadata.wms_attribution_onlineresource": {
+      "key": "wms_attribution_onlineresource",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "归属信息链接地址",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wms_attribution_onlineresource"
     },
     "map.web.metadata.wms_attribution_logourl": {
       "key": "wms_attribution_logourl",
@@ -8004,6 +8484,21 @@
       "editable": true,
       "path": "layers.N.metadata.wms_attribution_logourl"
     },
+    "layers.N.classes.M.metadata.wms_attribution_logourl": {
+      "key": "wms_attribution_logourl",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "归属 Logo URL",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wms_attribution_logourl"
+    },
     "map.web.metadata.wms_include_items": {
       "key": "wms_include_items",
       "value_type": "string",
@@ -8033,6 +8528,21 @@
       "derived": false,
       "editable": true,
       "path": "layers.N.metadata.wms_include_items"
+    },
+    "layers.N.classes.M.metadata.wms_include_items": {
+      "key": "wms_include_items",
+      "value_type": "string",
+      "enum": null,
+      "default": "all",
+      "description": "GetFeatureInfo 响应中需要包含的属性字段；\"all\" 表示全部",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wms_include_items"
     },
     "map.web.metadata.wms_exclude_items": {
       "key": "wms_exclude_items",
@@ -8064,6 +8574,21 @@
       "editable": true,
       "path": "layers.N.metadata.wms_exclude_items"
     },
+    "layers.N.classes.M.metadata.wms_exclude_items": {
+      "key": "wms_exclude_items",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "GetFeatureInfo 响应中需要排除的属性字段",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wms_exclude_items"
+    },
     "map.web.metadata.wms_http_max_age": {
       "key": "wms_http_max_age",
       "value_type": "integer",
@@ -8093,6 +8618,21 @@
       "derived": false,
       "editable": true,
       "path": "layers.N.metadata.wms_http_max_age"
+    },
+    "layers.N.classes.M.metadata.wms_http_max_age": {
+      "key": "wms_http_max_age",
+      "value_type": "integer",
+      "enum": null,
+      "default": null,
+      "description": "HTTP Cache-Control max-age（秒）",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wms_http_max_age"
     },
     "map.web.metadata.wms_inspire_capabilities": {
       "key": "wms_inspire_capabilities",
@@ -8124,6 +8664,21 @@
       "editable": true,
       "path": "layers.N.metadata.wms_inspire_capabilities"
     },
+    "layers.N.classes.M.metadata.wms_inspire_capabilities": {
+      "key": "wms_inspire_capabilities",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "INSPIRE 扩展能力文档路径",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wms_inspire_capabilities"
+    },
     "map.web.metadata.wfs_title": {
       "key": "wfs_title",
       "value_type": "string",
@@ -8153,6 +8708,21 @@
       "derived": false,
       "editable": true,
       "path": "layers.N.metadata.wfs_title"
+    },
+    "layers.N.classes.M.metadata.wfs_title": {
+      "key": "wfs_title",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WFS 服务标题（服务级）或图层标题（图层级）",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wfs_title"
     },
     "map.web.metadata.wfs_abstract": {
       "key": "wfs_abstract",
@@ -8184,6 +8754,21 @@
       "editable": true,
       "path": "layers.N.metadata.wfs_abstract"
     },
+    "layers.N.classes.M.metadata.wfs_abstract": {
+      "key": "wfs_abstract",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WFS 服务或图层的摘要描述",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wfs_abstract"
+    },
     "map.web.metadata.wfs_onlineresource": {
       "key": "wfs_onlineresource",
       "value_type": "string",
@@ -8213,6 +8798,21 @@
       "derived": false,
       "editable": true,
       "path": "layers.N.metadata.wfs_onlineresource"
+    },
+    "layers.N.classes.M.metadata.wfs_onlineresource": {
+      "key": "wfs_onlineresource",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WFS 在线资源地址",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wfs_onlineresource"
     },
     "map.web.metadata.wfs_enable_request": {
       "key": "wfs_enable_request",
@@ -8244,6 +8844,21 @@
       "editable": true,
       "path": "layers.N.metadata.wfs_enable_request"
     },
+    "layers.N.classes.M.metadata.wfs_enable_request": {
+      "key": "wfs_enable_request",
+      "value_type": "string",
+      "enum": null,
+      "default": "*",
+      "description": "允许的 WFS 请求类型",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wfs_enable_request"
+    },
     "map.web.metadata.wfs_srs": {
       "key": "wfs_srs",
       "value_type": "string",
@@ -8273,6 +8888,21 @@
       "derived": false,
       "editable": true,
       "path": "layers.N.metadata.wfs_srs"
+    },
+    "layers.N.classes.M.metadata.wfs_srs": {
+      "key": "wfs_srs",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WFS 支持的坐标系列表，如 \"EPSG:4326\"",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wfs_srs"
     },
     "map.web.metadata.wfs_extent": {
       "key": "wfs_extent",
@@ -8304,6 +8934,21 @@
       "editable": true,
       "path": "layers.N.metadata.wfs_extent"
     },
+    "layers.N.classes.M.metadata.wfs_extent": {
+      "key": "wfs_extent",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WFS 服务/图层空间范围",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wfs_extent"
+    },
     "map.web.metadata.wfs_namespace_uri": {
       "key": "wfs_namespace_uri",
       "value_type": "string",
@@ -8333,6 +8978,21 @@
       "derived": false,
       "editable": true,
       "path": "layers.N.metadata.wfs_namespace_uri"
+    },
+    "layers.N.classes.M.metadata.wfs_namespace_uri": {
+      "key": "wfs_namespace_uri",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WFS 命名空间 URI",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wfs_namespace_uri"
     },
     "map.web.metadata.wfs_namespace_prefix": {
       "key": "wfs_namespace_prefix",
@@ -8364,6 +9024,21 @@
       "editable": true,
       "path": "layers.N.metadata.wfs_namespace_prefix"
     },
+    "layers.N.classes.M.metadata.wfs_namespace_prefix": {
+      "key": "wfs_namespace_prefix",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WFS 命名空间前缀",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wfs_namespace_prefix"
+    },
     "map.web.metadata.wfs_maxfeatures": {
       "key": "wfs_maxfeatures",
       "value_type": "integer",
@@ -8393,6 +9068,21 @@
       "derived": false,
       "editable": true,
       "path": "layers.N.metadata.wfs_maxfeatures"
+    },
+    "layers.N.classes.M.metadata.wfs_maxfeatures": {
+      "key": "wfs_maxfeatures",
+      "value_type": "integer",
+      "enum": null,
+      "default": null,
+      "description": "GetFeature 返回的最大要素数",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wfs_maxfeatures"
     },
     "map.web.metadata.wfs_updatesequence": {
       "key": "wfs_updatesequence",
@@ -8424,6 +9114,21 @@
       "editable": true,
       "path": "layers.N.metadata.wfs_updatesequence"
     },
+    "layers.N.classes.M.metadata.wfs_updatesequence": {
+      "key": "wfs_updatesequence",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WFS 服务更新序列号",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wfs_updatesequence"
+    },
     "map.web.metadata.wfs_getfeature_formatlist": {
       "key": "wfs_getfeature_formatlist",
       "value_type": "string",
@@ -8453,6 +9158,21 @@
       "derived": false,
       "editable": true,
       "path": "layers.N.metadata.wfs_getfeature_formatlist"
+    },
+    "layers.N.classes.M.metadata.wfs_getfeature_formatlist": {
+      "key": "wfs_getfeature_formatlist",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "GetFeature 响应格式列表，如 \"gml,geojson\"",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wfs_getfeature_formatlist"
     },
     "map.web.metadata.wfs_metadataurl_href": {
       "key": "wfs_metadataurl_href",
@@ -8484,6 +9204,21 @@
       "editable": true,
       "path": "layers.N.metadata.wfs_metadataurl_href"
     },
+    "layers.N.classes.M.metadata.wfs_metadataurl_href": {
+      "key": "wfs_metadataurl_href",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WFS 元数据链接地址",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wfs_metadataurl_href"
+    },
     "map.web.metadata.wfs_metadataurl_list": {
       "key": "wfs_metadataurl_list",
       "value_type": "string",
@@ -8513,6 +9248,21 @@
       "derived": false,
       "editable": true,
       "path": "layers.N.metadata.wfs_metadataurl_list"
+    },
+    "layers.N.classes.M.metadata.wfs_metadataurl_list": {
+      "key": "wfs_metadataurl_list",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WFS 元数据链接列表",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wfs_metadataurl_list"
     },
     "map.web.metadata.wfs_layer_type": {
       "key": "wfs_layer_type",
@@ -8544,6 +9294,21 @@
       "editable": true,
       "path": "layers.N.metadata.wfs_layer_type"
     },
+    "layers.N.classes.M.metadata.wfs_layer_type": {
+      "key": "wfs_layer_type",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WFS 图层类型覆盖",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wfs_layer_type"
+    },
     "map.web.metadata.wfs_feature_collection": {
       "key": "wfs_feature_collection",
       "value_type": "string",
@@ -8573,6 +9338,21 @@
       "derived": false,
       "editable": true,
       "path": "layers.N.metadata.wfs_feature_collection"
+    },
+    "layers.N.classes.M.metadata.wfs_feature_collection": {
+      "key": "wfs_feature_collection",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WFS 要素集合包装元素名称",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wfs_feature_collection"
     },
     "map.web.metadata.wfs_validate_xml": {
       "key": "wfs_validate_xml",
@@ -8604,6 +9384,21 @@
       "editable": true,
       "path": "layers.N.metadata.wfs_validate_xml"
     },
+    "layers.N.classes.M.metadata.wfs_validate_xml": {
+      "key": "wfs_validate_xml",
+      "value_type": "boolean",
+      "enum": null,
+      "default": null,
+      "description": "是否对 WFS 输出进行 XML 验证",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wfs_validate_xml"
+    },
     "map.web.metadata.wfs_return_srs_as_urn": {
       "key": "wfs_return_srs_as_urn",
       "value_type": "boolean",
@@ -8633,6 +9428,21 @@
       "derived": false,
       "editable": true,
       "path": "layers.N.metadata.wfs_return_srs_as_urn"
+    },
+    "layers.N.classes.M.metadata.wfs_return_srs_as_urn": {
+      "key": "wfs_return_srs_as_urn",
+      "value_type": "boolean",
+      "enum": null,
+      "default": null,
+      "description": "是否将 SRS 返回为 URN 格式",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wfs_return_srs_as_urn"
     },
     "map.web.metadata.wfs_storedqueries": {
       "key": "wfs_storedqueries",
@@ -8664,6 +9474,21 @@
       "editable": true,
       "path": "layers.N.metadata.wfs_storedqueries"
     },
+    "layers.N.classes.M.metadata.wfs_storedqueries": {
+      "key": "wfs_storedqueries",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WFS 2.0 存储查询定义",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wfs_storedqueries"
+    },
     "map.web.metadata.wfs_inspire_capabilities": {
       "key": "wfs_inspire_capabilities",
       "value_type": "string",
@@ -8693,6 +9518,21 @@
       "derived": false,
       "editable": true,
       "path": "layers.N.metadata.wfs_inspire_capabilities"
+    },
+    "layers.N.classes.M.metadata.wfs_inspire_capabilities": {
+      "key": "wfs_inspire_capabilities",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "INSPIRE 扩展能力文档路径",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wfs_inspire_capabilities"
     },
     "map.web.metadata.wfs_inspire_dsid_code": {
       "key": "wfs_inspire_dsid_code",
@@ -8724,6 +9564,21 @@
       "editable": true,
       "path": "layers.N.metadata.wfs_inspire_dsid_code"
     },
+    "layers.N.classes.M.metadata.wfs_inspire_dsid_code": {
+      "key": "wfs_inspire_dsid_code",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "INSPIRE 数据集标识符代码",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wfs_inspire_dsid_code"
+    },
     "map.web.metadata.wfs_inspire_dsid_ns": {
       "key": "wfs_inspire_dsid_ns",
       "value_type": "string",
@@ -8753,6 +9608,21 @@
       "derived": false,
       "editable": true,
       "path": "layers.N.metadata.wfs_inspire_dsid_ns"
+    },
+    "layers.N.classes.M.metadata.wfs_inspire_dsid_ns": {
+      "key": "wfs_inspire_dsid_ns",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "INSPIRE 数据集标识符命名空间",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wfs_inspire_dsid_ns"
     },
     "map.web.metadata.wcs_title": {
       "key": "wcs_title",
@@ -8784,6 +9654,21 @@
       "editable": true,
       "path": "layers.N.metadata.wcs_title"
     },
+    "layers.N.classes.M.metadata.wcs_title": {
+      "key": "wcs_title",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WCS 服务标题（服务级）或图层标题（图层级）",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wcs_title"
+    },
     "map.web.metadata.wcs_abstract": {
       "key": "wcs_abstract",
       "value_type": "string",
@@ -8813,6 +9698,21 @@
       "derived": false,
       "editable": true,
       "path": "layers.N.metadata.wcs_abstract"
+    },
+    "layers.N.classes.M.metadata.wcs_abstract": {
+      "key": "wcs_abstract",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WCS 服务或图层的摘要描述",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wcs_abstract"
     },
     "map.web.metadata.wcs_onlineresource": {
       "key": "wcs_onlineresource",
@@ -8844,6 +9744,21 @@
       "editable": true,
       "path": "layers.N.metadata.wcs_onlineresource"
     },
+    "layers.N.classes.M.metadata.wcs_onlineresource": {
+      "key": "wcs_onlineresource",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WCS 在线资源地址",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wcs_onlineresource"
+    },
     "map.web.metadata.wcs_enable_request": {
       "key": "wcs_enable_request",
       "value_type": "string",
@@ -8873,6 +9788,21 @@
       "derived": false,
       "editable": true,
       "path": "layers.N.metadata.wcs_enable_request"
+    },
+    "layers.N.classes.M.metadata.wcs_enable_request": {
+      "key": "wcs_enable_request",
+      "value_type": "string",
+      "enum": null,
+      "default": "*",
+      "description": "允许的 WCS 请求类型",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wcs_enable_request"
     },
     "map.web.metadata.wcs_srs": {
       "key": "wcs_srs",
@@ -8904,6 +9834,21 @@
       "editable": true,
       "path": "layers.N.metadata.wcs_srs"
     },
+    "layers.N.classes.M.metadata.wcs_srs": {
+      "key": "wcs_srs",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WCS 支持的坐标系列表",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wcs_srs"
+    },
     "map.web.metadata.wcs_extent": {
       "key": "wcs_extent",
       "value_type": "string",
@@ -8933,6 +9878,21 @@
       "derived": false,
       "editable": true,
       "path": "layers.N.metadata.wcs_extent"
+    },
+    "layers.N.classes.M.metadata.wcs_extent": {
+      "key": "wcs_extent",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WCS 服务/图层空间范围",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wcs_extent"
     },
     "map.web.metadata.wcs_formats": {
       "key": "wcs_formats",
@@ -8964,6 +9924,21 @@
       "editable": true,
       "path": "layers.N.metadata.wcs_formats"
     },
+    "layers.N.classes.M.metadata.wcs_formats": {
+      "key": "wcs_formats",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WCS 输出格式列表，如 \"tiff,png,jpeg\"",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wcs_formats"
+    },
     "map.web.metadata.wcs_size": {
       "key": "wcs_size",
       "value_type": "string",
@@ -8993,6 +9968,21 @@
       "derived": false,
       "editable": true,
       "path": "layers.N.metadata.wcs_size"
+    },
+    "layers.N.classes.M.metadata.wcs_size": {
+      "key": "wcs_size",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WCS 输出图像大小（宽 高）",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wcs_size"
     },
     "map.web.metadata.wcs_resolution": {
       "key": "wcs_resolution",
@@ -9024,6 +10014,21 @@
       "editable": true,
       "path": "layers.N.metadata.wcs_resolution"
     },
+    "layers.N.classes.M.metadata.wcs_resolution": {
+      "key": "wcs_resolution",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WCS 输出分辨率",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wcs_resolution"
+    },
     "map.web.metadata.wcs_imagemode": {
       "key": "wcs_imagemode",
       "value_type": "string",
@@ -9053,6 +10058,21 @@
       "derived": false,
       "editable": true,
       "path": "layers.N.metadata.wcs_imagemode"
+    },
+    "layers.N.classes.M.metadata.wcs_imagemode": {
+      "key": "wcs_imagemode",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WCS 图像模式（如 BYTE、INT16、FLOAT32）",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wcs_imagemode"
     },
     "map.web.metadata.wcs_bandcount": {
       "key": "wcs_bandcount",
@@ -9084,6 +10104,21 @@
       "editable": true,
       "path": "layers.N.metadata.wcs_bandcount"
     },
+    "layers.N.classes.M.metadata.wcs_bandcount": {
+      "key": "wcs_bandcount",
+      "value_type": "integer",
+      "enum": null,
+      "default": null,
+      "description": "栅格图层波段数量",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wcs_bandcount"
+    },
     "map.web.metadata.wcs_bands_name": {
       "key": "wcs_bands_name",
       "value_type": "string",
@@ -9113,6 +10148,21 @@
       "derived": false,
       "editable": true,
       "path": "layers.N.metadata.wcs_bands_name"
+    },
+    "layers.N.classes.M.metadata.wcs_bands_name": {
+      "key": "wcs_bands_name",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WCS 波段名称",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wcs_bands_name"
     },
     "map.web.metadata.wcs_bands_label": {
       "key": "wcs_bands_label",
@@ -9144,6 +10194,21 @@
       "editable": true,
       "path": "layers.N.metadata.wcs_bands_label"
     },
+    "layers.N.classes.M.metadata.wcs_bands_label": {
+      "key": "wcs_bands_label",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WCS 波段标签",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wcs_bands_label"
+    },
     "map.web.metadata.wcs_bands_rangeitem": {
       "key": "wcs_bands_rangeitem",
       "value_type": "string",
@@ -9173,6 +10238,21 @@
       "derived": false,
       "editable": true,
       "path": "layers.N.metadata.wcs_bands_rangeitem"
+    },
+    "layers.N.classes.M.metadata.wcs_bands_rangeitem": {
+      "key": "wcs_bands_rangeitem",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WCS 波段范围项",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wcs_bands_rangeitem"
     },
     "map.web.metadata.wcs_rangeset_name": {
       "key": "wcs_rangeset_name",
@@ -9204,6 +10284,21 @@
       "editable": true,
       "path": "layers.N.metadata.wcs_rangeset_name"
     },
+    "layers.N.classes.M.metadata.wcs_rangeset_name": {
+      "key": "wcs_rangeset_name",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WCS 范围集名称",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wcs_rangeset_name"
+    },
     "map.web.metadata.wcs_rangeset_label": {
       "key": "wcs_rangeset_label",
       "value_type": "string",
@@ -9233,6 +10328,21 @@
       "derived": false,
       "editable": true,
       "path": "layers.N.metadata.wcs_rangeset_label"
+    },
+    "layers.N.classes.M.metadata.wcs_rangeset_label": {
+      "key": "wcs_rangeset_label",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WCS 范围集标签",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wcs_rangeset_label"
     },
     "map.web.metadata.wcs_rangeset_axes": {
       "key": "wcs_rangeset_axes",
@@ -9264,6 +10374,21 @@
       "editable": true,
       "path": "layers.N.metadata.wcs_rangeset_axes"
     },
+    "layers.N.classes.M.metadata.wcs_rangeset_axes": {
+      "key": "wcs_rangeset_axes",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WCS 范围集轴定义",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wcs_rangeset_axes"
+    },
     "map.web.metadata.wcs_metadatalink_href": {
       "key": "wcs_metadatalink_href",
       "value_type": "string",
@@ -9293,6 +10418,21 @@
       "derived": false,
       "editable": true,
       "path": "layers.N.metadata.wcs_metadatalink_href"
+    },
+    "layers.N.classes.M.metadata.wcs_metadatalink_href": {
+      "key": "wcs_metadatalink_href",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WCS 元数据链接地址",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wcs_metadatalink_href"
     },
     "map.web.metadata.wcs_metadatalink_list": {
       "key": "wcs_metadatalink_list",
@@ -9324,6 +10464,21 @@
       "editable": true,
       "path": "layers.N.metadata.wcs_metadatalink_list"
     },
+    "layers.N.classes.M.metadata.wcs_metadatalink_list": {
+      "key": "wcs_metadatalink_list",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WCS 元数据链接列表",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wcs_metadatalink_list"
+    },
     "map.web.metadata.wcs_timeitem": {
       "key": "wcs_timeitem",
       "value_type": "string",
@@ -9353,6 +10508,21 @@
       "derived": false,
       "editable": true,
       "path": "layers.N.metadata.wcs_timeitem"
+    },
+    "layers.N.classes.M.metadata.wcs_timeitem": {
+      "key": "wcs_timeitem",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WCS 时间字段名",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wcs_timeitem"
     },
     "map.web.metadata.wcs_timeperiod": {
       "key": "wcs_timeperiod",
@@ -9384,6 +10554,21 @@
       "editable": true,
       "path": "layers.N.metadata.wcs_timeperiod"
     },
+    "layers.N.classes.M.metadata.wcs_timeperiod": {
+      "key": "wcs_timeperiod",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WCS 时间段",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wcs_timeperiod"
+    },
     "map.web.metadata.wcs_timeposition": {
       "key": "wcs_timeposition",
       "value_type": "string",
@@ -9413,6 +10598,21 @@
       "derived": false,
       "editable": true,
       "path": "layers.N.metadata.wcs_timeposition"
+    },
+    "layers.N.classes.M.metadata.wcs_timeposition": {
+      "key": "wcs_timeposition",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WCS 时间位置",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wcs_timeposition"
     },
     "map.web.metadata.wcs_updatesequence": {
       "key": "wcs_updatesequence",
@@ -9444,6 +10644,21 @@
       "editable": true,
       "path": "layers.N.metadata.wcs_updatesequence"
     },
+    "layers.N.classes.M.metadata.wcs_updatesequence": {
+      "key": "wcs_updatesequence",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WCS 服务更新序列号",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wcs_updatesequence"
+    },
     "map.web.metadata.wcs_validate_xml": {
       "key": "wcs_validate_xml",
       "value_type": "boolean",
@@ -9473,6 +10688,21 @@
       "derived": false,
       "editable": true,
       "path": "layers.N.metadata.wcs_validate_xml"
+    },
+    "layers.N.classes.M.metadata.wcs_validate_xml": {
+      "key": "wcs_validate_xml",
+      "value_type": "boolean",
+      "enum": null,
+      "default": null,
+      "description": "是否对 WCS 输出进行 XML 验证",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wcs_validate_xml"
     },
     "map.web.metadata.wcs_schemas_dir": {
       "key": "wcs_schemas_dir",
@@ -9504,6 +10734,21 @@
       "editable": true,
       "path": "layers.N.metadata.wcs_schemas_dir"
     },
+    "layers.N.classes.M.metadata.wcs_schemas_dir": {
+      "key": "wcs_schemas_dir",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "WCS XML Schema 目录路径",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wcs_schemas_dir"
+    },
     "map.web.metadata.wcs_inspire_capabilities": {
       "key": "wcs_inspire_capabilities",
       "value_type": "string",
@@ -9533,6 +10778,21 @@
       "derived": false,
       "editable": true,
       "path": "layers.N.metadata.wcs_inspire_capabilities"
+    },
+    "layers.N.classes.M.metadata.wcs_inspire_capabilities": {
+      "key": "wcs_inspire_capabilities",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "INSPIRE 扩展能力文档路径",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wcs_inspire_capabilities"
     },
     "map.web.metadata.wcs_inspire_dsid_code": {
       "key": "wcs_inspire_dsid_code",
@@ -9564,6 +10824,21 @@
       "editable": true,
       "path": "layers.N.metadata.wcs_inspire_dsid_code"
     },
+    "layers.N.classes.M.metadata.wcs_inspire_dsid_code": {
+      "key": "wcs_inspire_dsid_code",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "INSPIRE 数据集标识符代码",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wcs_inspire_dsid_code"
+    },
     "map.web.metadata.wcs_inspire_dsid_ns": {
       "key": "wcs_inspire_dsid_ns",
       "value_type": "string",
@@ -9593,6 +10868,21 @@
       "derived": false,
       "editable": true,
       "path": "layers.N.metadata.wcs_inspire_dsid_ns"
+    },
+    "layers.N.classes.M.metadata.wcs_inspire_dsid_ns": {
+      "key": "wcs_inspire_dsid_ns",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "INSPIRE 数据集标识符命名空间",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.wcs_inspire_dsid_ns"
     },
     "map.web.metadata.gml_include_items": {
       "key": "gml_include_items",
@@ -9624,6 +10914,21 @@
       "editable": true,
       "path": "layers.N.metadata.gml_include_items"
     },
+    "layers.N.classes.M.metadata.gml_include_items": {
+      "key": "gml_include_items",
+      "value_type": "string",
+      "enum": null,
+      "default": "all",
+      "description": "GML 输出中包含的属性字段；\"all\" 表示全部",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.gml_include_items"
+    },
     "map.web.metadata.gml_featureid": {
       "key": "gml_featureid",
       "value_type": "string",
@@ -9653,6 +10958,21 @@
       "derived": false,
       "editable": true,
       "path": "layers.N.metadata.gml_featureid"
+    },
+    "layers.N.classes.M.metadata.gml_featureid": {
+      "key": "gml_featureid",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "GML 输出中用作要素 ID 的字段名",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.gml_featureid"
     },
     "map.web.metadata.gml_geometries": {
       "key": "gml_geometries",
@@ -9684,6 +11004,21 @@
       "editable": true,
       "path": "layers.N.metadata.gml_geometries"
     },
+    "layers.N.classes.M.metadata.gml_geometries": {
+      "key": "gml_geometries",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "GML 输出中几何字段的名称列表，逗号分隔",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.gml_geometries"
+    },
     "map.web.metadata.gml_geomtype": {
       "key": "gml_geomtype",
       "value_type": "string",
@@ -9714,6 +11049,21 @@
       "editable": true,
       "path": "layers.N.metadata.gml_geomtype"
     },
+    "layers.N.classes.M.metadata.gml_geomtype": {
+      "key": "gml_geomtype",
+      "value_type": "string",
+      "enum": null,
+      "default": null,
+      "description": "GML 几何类型，如 point/line/polygon/multipoint；支持 25d 后缀表示 3D",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.gml_geomtype"
+    },
     "map.web.metadata.gml_geometry_precision": {
       "key": "gml_geometry_precision",
       "value_type": "integer",
@@ -9743,6 +11093,21 @@
       "derived": false,
       "editable": true,
       "path": "layers.N.metadata.gml_geometry_precision"
+    },
+    "layers.N.classes.M.metadata.gml_geometry_precision": {
+      "key": "gml_geometry_precision",
+      "value_type": "integer",
+      "enum": null,
+      "default": null,
+      "description": "GML 几何坐标输出精度（小数位数）",
+      "min": null,
+      "max": null,
+      "min_items": null,
+      "max_items": null,
+      "phase": "service",
+      "derived": false,
+      "editable": true,
+      "path": "layers.N.classes.M.metadata.gml_geometry_precision"
     },
     "cache.type": {
       "key": "type",

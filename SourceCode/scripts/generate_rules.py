@@ -283,6 +283,8 @@ def build_flat_params(object_types: dict[str, dict]) -> dict[str, dict]:
         flat[f"map.web.metadata.{field}"] = {**info, "path": f"map.web.metadata.{field}"}
         # LAYER 级别 metadata 共享同一套字段定义
         flat[f"layers.N.metadata.{field}"] = {**info, "path": f"layers.N.metadata.{field}"}
+        # CLASS 级别 metadata 同样共享同一套字段定义
+        flat[f"layers.N.classes.M.metadata.{field}"] = {**info, "path": f"layers.N.classes.M.metadata.{field}"}
 
     # CACHE
     for field, info in object_types.get("CACHE", {}).get("fields", {}).items():

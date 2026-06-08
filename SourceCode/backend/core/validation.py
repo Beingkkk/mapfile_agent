@@ -103,8 +103,9 @@ class ValidationPipeline:
                 seen.add(key)
                 deduped.append(e)
 
-        # Attach errors to leaf for UI
-        node.errors = [e["message"] for e in deduped]
+        # Attach errors to leaf for UI — only those matching this leaf's path
+        # so the user sees errors on the field they actually edited.
+        node.errors = [e["message"] for e in deduped if e.get("path") == path]
         return deduped
 
     def validate_tree(
@@ -560,8 +561,19 @@ class ValidationPipeline:
         except ImportError:
             return []
 
-        mf_dict = tree.to_mappyfile_dict()
-        raw = mappyfile.validate(mf_dict, version=8.4)
+        try:
+            mf_dict = tree.to_mappyfile_dict()
+            raw = mappyfile.validate(mf_dict, version=8.4)
+        except Exception as exc:
+            # Defensive: mappyfile.validate may throw on malformed dicts
+            # (e.g. string element in an object-array like layers/classes)
+            return [
+                {
+                    "path": "",
+                    "message": f"Mapfile syntax validation failed: {exc}",
+                    "level": "error",
+                }
+            ]
 
         # Defensive: mappyfile.validate may return a non-list in edge cases
         errors: list[Any] = raw if isinstance(raw, list) else []
