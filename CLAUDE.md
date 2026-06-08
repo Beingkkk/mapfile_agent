@@ -91,7 +91,7 @@ Python Backend (FastAPI + uvicorn, gis-agent conda env)
   │     │
   │     └──▶ QAService.answer(question) ──▶ PromptBuilder + LLMClient + UpdateResolver
   │
-  ├─ Mapfile generator: mappyfile.create() → fill → validate → dumps()
+  ├─ Mapfile generator: to_mappyfile_dict() → mappyfile.validate() → mappyfile.dumps()
   │   (one .map supports WMS + WFS + WCS simultaneously)
   └─ MapCache generator: backend/mapcache/ (Jinja2 template + MapCacheValidator, WMTS/TMS)
 ```
@@ -452,17 +452,16 @@ Layers 1-3 run on every field blur. Layer 4 only runs on add/remove node, manual
 Use mappyfile's native object flow:
 
 ```python
-mf = mappyfile.create("map")
-# fill from session.params
-errors = mappyfile.validate(mf, version=8.4)  # pass float, not str
-output = mappyfile.dumps(mf)
+mf_dict = tree.to_mappyfile_dict()  # applies 9 transforms including __type__ tags
+errors = mappyfile.validate(mf_dict, version=8.4)  # pass float, not str
+output = mappyfile.dumps(mf_dict)
 ```
 
 **Constraints**: `version` must be `float` (`8.4`), not `str`. `PROJECTION` must be an array `["init=epsg:3857"]`, not a string.
 
 ### ConfigTree.to_mappyfile_dict() — Serialization Rules
 
-`ConfigTree.to_mappyfile_dict()` performs 8 mandatory transforms before handing data to mappyfile. These rules come from V1 validation (`spike/v1_result.md`) against `mappyfile==1.1.1`, plus proposal-0013 Amendment:
+`ConfigTree.to_mappyfile_dict()` performs 9 mandatory transforms before handing data to mappyfile. These rules come from V1 validation (`spike/v1_result.md`) against `mappyfile==1.1.1`, plus proposal-0013 Amendment and the `__type__` discovery:
 
 | # | Transform | Trigger | Why |
 |---|-----------|---------|-----|
@@ -474,6 +473,7 @@ output = mappyfile.dumps(mf)
 | 6 | Extent array guard | `key == "extent"` | must remain a 4-element list |
 | 7 | Color RGB array guard | `value_type == "color"` | must remain `[R, G, B]` |
 | 8 | **None filter** | `v is None` | Unset optional fields must not appear in Mapfile; mappyfile treats `None` as invalid |
+| 9 | **`__type__` tags** | nested dicts (`web`, `metadata`, `layers`, etc.) | mappyfile `dumps()` requires `__type__` on every nested object to expand them as proper `WEB ... END` blocks instead of Python dict strings. Root object gets `"map"`; `web`→`"web"`, `metadata`→`"metadata"`, `layers[i]`→`"layer"`, etc. |
 
 **ValidationPipeline L2 behavior**: Non-required fields with `None` values are skipped in `_check_type()` (no type error). Only `required=True` fields (e.g. `LAYER.type`) report type errors for `None`. This pairs with transform 8 to ensure unset optional fields neither fail validation nor pollute export.
 
@@ -481,6 +481,7 @@ output = mappyfile.dumps(mf)
 - mappyfile `dumps()` never throws (62/62 test cases); `validate()` is the strict gate
 - `validate()` **does NOT check** `MAP.name` or `LAYER.name` as required → must rely on L3 semantic validation
 - `validate()` rejects **any** schema-external field with `does not match any of the regexes` → L4 must filter these false positives (custom props + `object-fields.json` fields)
+- **Nested objects require `__type__`**: mappyfile `dumps()` treats plain Python dicts as strings. `WEB {'metadata': {...}}` is the failure mode. Every nested object must carry `__type__` (`"web"`, `"metadata"`, `"layer"`, etc.) for mappyfile to emit proper `WEB ... METADATA ... END END` blocks.
 - Enum values are **case-insensitive** (`postgis`/`POSTGIS` both pass)
 
 ### ConfigTree Design

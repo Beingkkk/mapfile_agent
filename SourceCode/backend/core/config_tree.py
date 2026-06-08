@@ -57,6 +57,16 @@ _ARRAY_FIELDS = {"layers", "classes", "styles", "labels"}
 # Fields whose enum representation must be stringified from bool.
 _ENUM_BOOL_FIELDS = {"status"}
 
+# Nested object key → mappyfile __type__ value (for dumps() expansion)
+_MAPPYFILE_TYPE_MAP = {
+    "web": "web",
+    "metadata": "metadata",
+    "layers": "layer",
+    "classes": "class",
+    "styles": "style",
+    "labels": "label",
+}
+
 
 class ConfigTree:
     """Wrap a mappyfile-compatible dict with a frontend-friendly tree model."""
@@ -447,7 +457,8 @@ class ConfigTree:
     def to_mappyfile_dict(self) -> dict:
         """Return a dict ready for mappyfile.dumps()."""
         first_pass = self._filter_and_expand(self.params)
-        return self._post_transform(first_pass)
+        second_pass = self._post_transform(first_pass)
+        return self._add_type_tags(second_pass, "")
 
     def _filter_and_expand(self, obj: Any) -> Any:
         """Recursively apply transforms 1–2."""
@@ -489,6 +500,28 @@ class ConfigTree:
             return result
         if isinstance(obj, list):
             return [self._post_transform(i) for i in obj]
+        return obj
+
+    # Transform 9: add __type__ to nested objects so mappyfile.dumps()
+    # expands them as proper Mapfile blocks (WEB, METADATA, LAYER, etc.)
+    def _add_type_tags(self, obj: Any, parent_key: str) -> Any:
+        """Recursively add __type__ to nested container dicts."""
+        if isinstance(obj, dict):
+            result: dict[str, Any] = {}
+            container_type = _MAPPYFILE_TYPE_MAP.get(parent_key, "")
+            if container_type and "__type__" not in obj:
+                result["__type__"] = container_type
+            # Defensive: root object must always have __type__ for mappyfile
+            if not parent_key and "__type__" not in obj:
+                result["__type__"] = "map"
+            for k, v in obj.items():
+                if k == "__type__":
+                    result[k] = v
+                    continue
+                result[k] = self._add_type_tags(v, k)
+            return result
+        if isinstance(obj, list):
+            return [self._add_type_tags(i, parent_key) for i in obj]
         return obj
 
     # ─────────────────────────────────────────────────────────────────────────
