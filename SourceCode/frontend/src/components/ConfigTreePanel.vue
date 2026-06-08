@@ -5,6 +5,40 @@
         🌲 配置树
         <span class="panel-header-sub">MapServer 8.4</span>
       </div>
+      <div class="service-type-bar">
+        <label class="svc-checkbox">
+          <input
+            type="checkbox"
+            :checked="sessionStore.service_types.includes('wms')"
+            @change="toggleService('wms', ($event.target as HTMLInputElement).checked)"
+          />
+          <span>WMS</span>
+        </label>
+        <label class="svc-checkbox">
+          <input
+            type="checkbox"
+            :checked="sessionStore.service_types.includes('wfs')"
+            @change="toggleService('wfs', ($event.target as HTMLInputElement).checked)"
+          />
+          <span>WFS</span>
+        </label>
+        <label class="svc-checkbox">
+          <input
+            type="checkbox"
+            :checked="sessionStore.service_types.includes('wcs')"
+            @change="toggleService('wcs', ($event.target as HTMLInputElement).checked)"
+          />
+          <span>WCS</span>
+        </label>
+        <label class="svc-checkbox mapcache">
+          <input
+            type="checkbox"
+            :checked="sessionStore.mapcache_enabled"
+            @change="toggleMapcache(($event.target as HTMLInputElement).checked)"
+          />
+          <span>MapCache</span>
+        </label>
+      </div>
       <div class="toolbar">
         <button class="tool-btn" :class="{ active: uiStore.showMode === 'all' }" @click="uiStore.setShowMode('all')">全部</button>
         <button class="tool-btn" :class="{ active: uiStore.showMode === 'required' }" @click="uiStore.setShowMode('required')">仅必填</button>
@@ -42,6 +76,35 @@ function validate() {
 
 function exportMapfile() {
   ws.send({ type: 'export' })
+}
+
+function toggleService(service: string, enabled: boolean) {
+  const current = new Set(sessionStore.service_types)
+  if (enabled) {
+    current.add(service)
+  } else {
+    current.delete(service)
+  }
+  // At least one service must be selected
+  if (current.size === 0) {
+    current.add('wms')
+  }
+  const services = Array.from(current)
+  sessionStore.setServiceTypes(services, sessionStore.mapcache_enabled)
+  ws.send({
+    type: 'set_service_types',
+    services,
+    mapcache_enabled: sessionStore.mapcache_enabled,
+  })
+}
+
+function toggleMapcache(enabled: boolean) {
+  sessionStore.setServiceTypes(sessionStore.service_types, enabled)
+  ws.send({
+    type: 'set_service_types',
+    services: sessionStore.service_types,
+    mapcache_enabled: enabled,
+  })
 }
 </script>
 
@@ -91,6 +154,27 @@ function exportMapfile() {
 .tool-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+.service-type-bar {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.svc-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #374151;
+  cursor: pointer;
+}
+.svc-checkbox input {
+  cursor: pointer;
+}
+.svc-checkbox.mapcache span {
+  color: #9333ea;
+  font-weight: 600;
 }
 .legend {
   padding: 8px 18px;

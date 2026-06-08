@@ -101,8 +101,22 @@ export class WebSocketService {
         break
       case 'export_result':
         if (msg.success) {
-          // TODO: trigger file download via Electron
-          console.log('[WS] Export success:', msg.files)
+          const files = msg.files as Array<{ name: string; content_base64: string }>
+          if (window.electronAPI) {
+            // Electron environment: open save dialog
+            window.electronAPI.saveExportFiles(files).then((result) => {
+              if (result.success) {
+                console.log('[WS] Files saved:', result.saved, 'to', result.directory)
+              } else if (result.error) {
+                console.error('[WS] Save cancelled or failed:', result.error)
+              } else if (result.errors && result.errors.length > 0) {
+                console.error('[WS] Some files failed to save:', result.errors)
+              }
+            })
+          } else {
+            // Browser environment: log only
+            console.log('[WS] Export success (browser mode):', files.map((f: any) => f.name))
+          }
         } else {
           console.error('[WS] Export failed:', msg.error)
         }
