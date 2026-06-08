@@ -27,6 +27,15 @@ export const useSessionStore = defineStore('session', {
       this.validation_state = payload.validation_state ?? this.validation_state
       this.validation_errors = payload.validation_errors ?? []
       this.can_export = payload.can_export ?? false
+      if (payload.focus_param !== undefined) {
+        this.focus_param = payload.focus_param
+      }
+      if (payload.service_types !== undefined) {
+        this.service_types = payload.service_types
+      }
+      if (payload.mapcache_enabled !== undefined) {
+        this.mapcache_enabled = payload.mapcache_enabled
+      }
     },
     setFocus(path: string | null) {
       this.focus_param = path

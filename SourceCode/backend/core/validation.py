@@ -149,6 +149,9 @@ class ValidationPipeline:
 
     def _try_resolve_alias(self, leaf: TreeLeaf) -> Any:
         """Silently resolve alias via TemplateMapper; mutates leaf.value."""
+        # Aliases are string-to-string mappings only
+        if not isinstance(leaf.value, str):
+            return leaf.value
         # Determine object_type from leaf.path
         object_type = self._infer_object_type(leaf.path)
         resolved = self.mapper.resolve_alias(
