@@ -34,18 +34,18 @@ SourceCode/
 │   └── init_session_intent.json # 默认会话意图
 ├── config/
 │   └── config.json.template     # LLM API 配置模板
-├── backend/                     # Python FastAPI 后端（尚未搭建）
+├── backend/                     # Python FastAPI 后端
 │   ├── main.py                  # FastAPI 入口 + WebSocket endpoint
 │   ├── core/                    # ConfigSession, ConfigTree, TemplateMapper, ValidationPipeline
 │   ├── llm/                     # PromptBuilder, LLMClient, LLMOutput, UpdateResolver
 │   └── mapcache/                # MapCacheGenerator, MapCacheValidator
-├── frontend/                    # Vue 3 + Vite 前端（尚未搭建）
+├── frontend/                    # Vue 3 + Vite 前端
 │   └── src/
 │       ├── components/          # ConfigTree, QAPanel, ObjectCard, FieldEditor
 │       ├── stores/              # Pinia 状态管理
-│       └── api/                 # WebSocket 客户端
-├── electron/                    # Electron 主进程（尚未搭建）
-└── tests/                       # 单元测试 + 集成测试（尚未搭建）
+│       └── services/            # WebSocket 客户端
+├── electron/                    # Electron 主进程
+└── tests/                       # 单元测试 + 集成测试
 
 Document/
 ├── 需求输入.md                  # 需求规格：MVP 范围、UX 布局、交互场景

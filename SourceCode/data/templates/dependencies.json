@@ -130,6 +130,13 @@
       "relation": "forbids_when",
       "condition": "value",
       "description": "已设置 ows_title 时，wcs_title 非必需（MapServer 会自动回退）"
+    },
+    {
+      "source": "MAP.size",
+      "target": "MAP.size",
+      "relation": "validates",
+      "condition": "len(value) == 2 and value[0] > 0 and value[1] > 0",
+      "description": "MAP SIZE 必须是两个正整数 [width, height]"
     }
   ]
 }

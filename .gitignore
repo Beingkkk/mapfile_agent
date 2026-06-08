@@ -21,3 +21,6 @@ package-lock.json
 # Python 缓存
 __pycache__/
 *.pyc
+
+# test_map 目录（测试相关文件，不纳入版本控制）
+test_map/

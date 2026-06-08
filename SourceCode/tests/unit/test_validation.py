@@ -253,6 +253,27 @@ class TestL3SemanticCheck:
         errs = pipeline._check_semantic(tree, None, ["wfs"])
         assert not any("gml_include_items" in e["message"] for e in errs)
 
+    def test_validates_size_positive(self, pipeline, mapper):
+        """MAP SIZE with positive integers passes validates edge."""
+        tree = ConfigTree({"__type__": "map", "size": [800, 600]}, mapper)
+        errs = pipeline._check_semantic(tree, None, ["wms"])
+        assert not any("SIZE" in e["message"] for e in errs)
+
+    def test_validates_size_negative_fails(self, pipeline, mapper):
+        """MAP SIZE with negative values fails validates edge."""
+        tree = ConfigTree({"__type__": "map", "size": [-1, -1]}, mapper)
+        errs = pipeline._check_semantic(tree, None, ["wms"])
+        assert any("SIZE" in e["message"] and "正整数" in e["message"] for e in errs)
+
+    def test_default_size_is_valid(self, pipeline, mapper):
+        """Default MAP.size override must be valid positive dimensions."""
+        tree = ConfigTree({"__type__": "map"}, mapper)
+        leaf = tree.get_node("size")
+        assert isinstance(leaf, TreeLeaf)
+        assert leaf.value == [800, 600]
+        errs = pipeline._check_semantic(tree, None, ["wms"])
+        assert not any("SIZE" in e["message"] for e in errs)
+
 
 # ---------------------------------------------------------------------------
 # DC-016: L4 Mappyfile Syntax

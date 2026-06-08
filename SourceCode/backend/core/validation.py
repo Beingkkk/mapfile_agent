@@ -297,6 +297,13 @@ class ValidationPipeline:
                         tree, nodes_by_type, source, target, condition, service_types
                     )
                 )
+            elif relation == "validates":
+                description = edge.get("description", "")
+                errors.extend(
+                    self._eval_validates_on_nodes(
+                        tree, nodes_by_type, source, target, condition, description, service_types
+                    )
+                )
             # "derives" and "invalidates" are informational, not errors
 
         return errors
@@ -396,6 +403,37 @@ class ValidationPipeline:
                         "message": f"'{tgt_field}' should not be set when {source}={src_leaf.value}",
                         "level": "error",
                     })
+
+        return errors
+
+    def _eval_validates_on_nodes(
+        self,
+        tree: ConfigTree,
+        nodes_by_type: dict[str, list[TreeNode]],
+        source: str,
+        target: str,
+        condition: str,
+        description: str,
+        service_types: list[str],
+    ) -> list[dict]:
+        """Evaluate validates edges: when condition fails, report an error on target."""
+        errors: list[dict] = []
+        src_type, src_field = self._parse_edge_path(source)
+        tgt_type, tgt_field = self._parse_edge_path(target)
+
+        for node in nodes_by_type.get(src_type, []):
+            src_leaf = self._find_leaf_in_node(node, src_field, tree)
+            if src_leaf is None or src_leaf.value is None:
+                continue
+
+            if not self._eval_condition(condition, src_leaf.value, service_types):
+                # Target field may differ from source; default to source field path
+                field_to_report = tgt_field or src_field
+                errors.append({
+                    "path": node.path + "." + field_to_report if node.path else field_to_report,
+                    "message": description or f"'{src_field}' has invalid value {src_leaf.value!r}",
+                    "level": "error",
+                })
 
         return errors
 
@@ -554,6 +592,31 @@ class ValidationPipeline:
                     return all(values)
                 if isinstance(node.op, ast.Or):
                     return any(values)
+            if isinstance(node, ast.Subscript):
+                container = _eval_node(node.value)
+                slice_node = node.slice
+                if isinstance(slice_node, ast.Index):  # Python < 3.9
+                    idx = _eval_node(slice_node.value)
+                elif isinstance(slice_node, ast.Constant):  # Python 3.9+
+                    idx = slice_node.value
+                else:
+                    idx = _eval_node(slice_node)
+                return container[idx]
+            if isinstance(node, ast.Call):
+                if isinstance(node.func, ast.Name):
+                    allowed_funcs = {
+                        "len": len,
+                        "min": min,
+                        "max": max,
+                        "all": all,
+                        "any": any,
+                        "isinstance": isinstance,
+                    }
+                    if node.func.id not in allowed_funcs:
+                        raise ValueError(f"Function {node.func.id} not allowed")
+                    args = [_eval_node(a) for a in node.args]
+                    return allowed_funcs[node.func.id](*args)
+                raise ValueError("Only simple function calls are supported")
             raise ValueError(f"Unsupported AST node {type(node).__name__}")
 
         return bool(_eval_node(tree))

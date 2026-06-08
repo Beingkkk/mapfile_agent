@@ -5,6 +5,7 @@ DC-036  plan-platform §3.5
 
 from __future__ import annotations
 
+import base64
 import json
 import os
 from pathlib import Path
@@ -362,7 +363,7 @@ async def _handle_export(
             "type": "export_result",
             "success": True,
             "files": [
-                {"name": name, "content_base64": content.decode("utf-8")}
+                {"name": name, "content_base64": base64.b64encode(content).decode("utf-8")}
                 for name, content in files.items()
             ],
         })

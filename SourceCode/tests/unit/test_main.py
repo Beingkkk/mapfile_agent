@@ -19,6 +19,7 @@ import pytest
 
 # Import main after adding backend to path
 import main as main_module
+from config_tree import ConfigTree
 
 RULES_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "mapguide_rules.json"
 
@@ -170,6 +171,53 @@ class TestHandleMessage:
         export_results = [m for m in ws.sent_messages if m.get("type") == "export_result"]
         assert len(export_results) >= 1
         assert export_results[0].get("success") is False
+
+    @pytest.mark.anyio
+    async def test_export_returns_base64_encoded_content(self):
+        """Regression: content_base64 must be base64-encoded bytes, not plain text."""
+        import base64
+
+        ws = MockWebSocket()
+        await main_module.handle_message(ws, {"type": "init_session"}, "session-export-b64")
+
+        session = main_module.sessions["session-export-b64"]
+        # Build a valid map that passes export conditions
+        session.params.update(
+            {
+                "name": "test_map",
+                "status": "ON",
+                "extent": [-180, -90, 180, 90],
+                "projection": ["init=epsg:4326"],
+                "layers": [
+                    {
+                        "__type__": "layer",
+                        "name": "layer1",
+                        "status": "ON",
+                        "type": "polygon",
+                    }
+                ],
+            }
+        )
+        # Rebuild tree so changes are reflected
+        session.tree = ConfigTree(session.params, session.mapper, session.service_types)
+        session.validation_state = "pass"
+        session.validation_errors = []
+
+        await main_module.handle_message(ws, {"type": "export"}, "session-export-b64")
+
+        export_results = [m for m in ws.sent_messages if m.get("type") == "export_result"]
+        assert len(export_results) >= 1
+        result = export_results[0]
+        assert result.get("success") is True
+        files = result.get("files", [])
+        mapfile_entry = next((f for f in files if f["name"] == "mapfile.map"), None)
+        assert mapfile_entry is not None
+
+        # Must be valid base64; plain text would raise binascii.Error
+        decoded = base64.b64decode(mapfile_entry["content_base64"])
+        text = decoded.decode("utf-8")
+        assert "NAME \"test_map\"" in text
+        assert "LAYER" in text
 
     @pytest.mark.anyio
     async def test_import_mapfile(self):

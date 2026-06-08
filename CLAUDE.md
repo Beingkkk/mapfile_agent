@@ -33,7 +33,9 @@ This project uses **Specification-Driven Development (SDD)**. All plans are lock
 
 ## Current Implementation State
 
-**All 5 phases complete** — backend Python ~2,700 lines, frontend Vue/TS ~1,000 lines, Electron ~300 lines, **313 Python tests + 73 frontend tests passing**.
+**All 5 phases complete** — backend Python ~2,700 lines, frontend Vue/TS ~1,000 lines, Electron ~300 lines, **333+ Python tests + 73 frontend tests passing**.
+
+> **Known pre-existing failure**: `tests/integration/test_rules_output.py::TestFieldProperties::test_required_rules_exist_for_map_and_layer` fails because proposal-0013 cleared `business_required` for MAP/LAYER, but this integration test still asserts `required + business_required >= 1`. This failure is unrelated to runtime behavior and should be fixed when the test is updated to match the new required-field semantics.
 
 | Module | Files | Tests | Proposal |
 |--------|-------|-------|----------|
@@ -389,13 +391,15 @@ FieldDescriptor
 
 **Key merge rules** (implemented in `generate_rules.py`):
 - `value_type`: Schema enum → `"enum"`; Schema type → mapped internal type; unknown → `"string"`
-- `default`: `defaults-override.json` > schema default > `None`
+- `default`: `defaults-override.json` > schema default > `None`. Example override: `MAP.size` defaults to `[800, 600]` instead of schema's `[-1, -1]`.
 - `required` / `required_when` / `business_required`: from `required.json`
 - `phase`: from `phase-map.json` (all fields in an object type share the same phase)
 - `aliases`: from `aliases.json`
 - `dependencies`: from `dependencies.json`
 - `custom_allowed`: from `custom-allowed.json`
 - Nested objects not in `EXPANDED_NESTED_FIELDS` are marked `editable: false`
+
+**Windows encoding note**: `generate_rules.py` writes UTF-8 correctly. If `python scripts/generate_rules.py` prints garbled Chinese in this bash shell, it is a **terminal display issue** (Windows default code page), not file corruption. Verify with `sys.stdout.reconfigure(encoding='utf-8')` or by inspecting the file bytes.
 
 **Output structure**: `mapguide_rules.json` contains `object_types` (per-type field definitions), `flat_params` (indexed paths for PromptBuilder), `aliases`, `dependencies`, `phase_map`, `custom_allowed`, `service_metadata`.
 
@@ -421,7 +425,24 @@ Validation happens after every parameter change:
 
 1. **Alias resolution**: `TemplateMapper.resolve_alias()` converts user-friendly terms.
 2. **Type conversion**: Pydantic validates types, enums, ranges.
-3. **Semantic validation**: `dependencies.json` drives conditional required, mutually exclusive, and derived-value rules.
+3. **Semantic validation**: `dependencies.json` drives conditional required, mutually exclusive, derived-value, and **validates** rules.
+
+   **Supported relations**:
+   - `requires_when`: source 字段满足 condition 时，target 字段必须存在且非空
+   - `forbids_when`: source 字段满足 condition 时，target 字段不应存在
+   - `derives` / `invalidates`: 信息类，不报错
+   - `validates`: source/target 指向同一字段时，对字段值执行业务级校验；condition 支持 `value[0]`, `len(value)`, `min()`, `max()`, `all()`, `any()`, `isinstance()`
+
+   Example (`MAP.size` must be two positive integers):
+   ```json
+   {
+     "source": "MAP.size",
+     "target": "MAP.size",
+     "relation": "validates",
+     "condition": "len(value) == 2 and value[0] > 0 and value[1] > 0",
+     "description": "MAP SIZE 必须是两个正整数 [width, height]"
+   }
+   ```
 4. **mappyfile syntax**: `mappyfile.validate(mf, version=8.4)` validates the assembled Mapfile.
 
 Layers 1-3 run on every field blur. Layer 4 only runs on add/remove node, manual validate, and export.

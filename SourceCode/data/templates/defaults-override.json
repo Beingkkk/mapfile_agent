@@ -2,7 +2,8 @@
   "_description": "默认值覆盖/补充。优先级：defaults-override.json > schema default > 无默认值。",
   "MAP": {
     "imagetype": "png",
-    "status": "on"
+    "status": "on",
+    "size": [800, 600]
   },
   "LAYER": {
     "projection": ["init=epsg:3857"],
