@@ -16,8 +16,9 @@ from fastapi import FastAPI, WebSocket
 _HERE = Path(__file__).resolve().parent
 _CORE = _HERE / "core"
 _LLM = _HERE / "llm"
+_MAPCACHE = _HERE / "mapcache"
 _sys = __import__("sys")
-for p in (str(_HERE), str(_CORE), str(_LLM)):
+for p in (str(_HERE), str(_CORE), str(_LLM), str(_MAPCACHE)):
     if p not in _sys.path:
         _sys.path.insert(0, p)
 
@@ -32,6 +33,8 @@ from validation import ValidationPipeline
 
 from prompt_builder import PromptBuilder
 from llm_client import LLMClient
+
+_MAPCACHE_TEMPLATES = _HERE / "mapcache" / "templates"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Globals
@@ -71,7 +74,10 @@ def _get_pipeline() -> ValidationPipeline:
 def _get_export_service() -> ExportService:
     global _export_svc
     if _export_svc is None:
-        _export_svc = ExportService()
+        from mapcache.generator import MapCacheGenerator
+
+        gen = MapCacheGenerator(str(_MAPCACHE_TEMPLATES))
+        _export_svc = ExportService(mapcache_generator=gen)
     return _export_svc
 
 

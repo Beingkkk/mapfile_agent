@@ -1,6 +1,6 @@
 """Tests for ExportService.
 
-DC-032  plan-platform §5.1
+DC-032 / DC-040  plan-platform §5.1
 """
 
 from __future__ import annotations
@@ -12,14 +12,22 @@ _BACKEND_CORE = Path(__file__).resolve().parent.parent.parent / "backend" / "cor
 if str(_BACKEND_CORE) not in sys.path:
     sys.path.insert(0, str(_BACKEND_CORE))
 
+_MAPCACHE = Path(__file__).resolve().parent.parent.parent / "backend" / "mapcache"
+if str(_MAPCACHE) not in sys.path:
+    sys.path.insert(0, str(_MAPCACHE))
+
 import pytest
 
 from config_tree import ConfigTree
 from export_service import ExportService
+from generator import MapCacheGenerator
 from session import ConfigSession
 from template_mapper import TemplateMapper
 
 RULES_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "mapguide_rules.json"
+TEMPLATES_DIR = (
+    Path(__file__).resolve().parent.parent.parent / "backend" / "mapcache" / "templates"
+)
 
 
 @pytest.fixture
@@ -100,6 +108,45 @@ class TestExportService:
     def test_export_no_mapcache_when_disabled(self, valid_session):
         valid_session.mapcache_enabled = False
         svc = ExportService()
+        files = svc.export(valid_session)
+
+        assert "mapcache.xml" not in files
+
+    def test_export_with_mapcache_enabled_returns_xml(self, valid_session):
+        valid_session.mapcache_enabled = True
+        valid_session.params["cache"] = {
+            "type": "disk",
+            "base": "/tmp/mapcache",
+        }
+        valid_session.params["layers"] = [
+            {"__type__": "layer", "name": "layer1"},
+        ]
+        gen = MapCacheGenerator(str(TEMPLATES_DIR))
+        svc = ExportService(mapcache_generator=gen)
+        files = svc.export(valid_session)
+
+        assert "mapcache.xml" in files
+        xml = files["mapcache.xml"].decode("utf-8")
+        assert "<mapcache>" in xml
+
+    def test_export_with_mapcache_no_generator_skips_xml(self, valid_session):
+        valid_session.mapcache_enabled = True
+        valid_session.params["cache"] = {
+            "type": "disk",
+            "base": "/tmp/mapcache",
+        }
+        svc = ExportService()  # No generator
+        files = svc.export(valid_session)
+
+        assert "mapcache.xml" not in files
+
+    def test_export_with_mapcache_no_cache_node_skips_xml(self, valid_session):
+        valid_session.mapcache_enabled = True
+        # No cache node in params
+        if "cache" in valid_session.params:
+            del valid_session.params["cache"]
+        gen = MapCacheGenerator(str(TEMPLATES_DIR))
+        svc = ExportService(mapcache_generator=gen)
         files = svc.export(valid_session)
 
         assert "mapcache.xml" not in files

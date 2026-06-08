@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mapcache>
+  <source name="{{ source_name }}" type="wms">
+    <http>
+      <url>{{ wms_url }}</url>
+    </http>
+    <getmap>
+      <params>
+        <map>{{ mapfile_path }}</map>
+        <layers>{{ layers }}</layers>
+      </params>
+    </getmap>
+  </source>
+  <cache name="{{ cache_name }}" type="{{ cache_type }}">
+    <base>{{ cache_base }}</base>
+  </cache>
+  <tileset name="{{ tileset_name }}">
+    <source>{{ source_name }}</source>
+    <cache>{{ cache_name }}</cache>
+    <grid>{{ grid }}</grid>
+    <format>{{ format }}</format>
+    <metatile>{{ metatile }}</metatile>
+    <expires>{{ expires }}</expires>
+  </tileset>
+{% if wmts_enabled %}
+  <service type="wmts" enabled="true" />
+{% endif %}
+{% if tms_enabled %}
+  <service type="tms" enabled="true" />
+{% endif %}
+</mapcache>

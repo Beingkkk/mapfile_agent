@@ -1,6 +1,6 @@
 """ExportService — generate Mapfile (.map) and optional MapCache XML.
 
-DC-032  plan-platform §3.2
+DC-032 / DC-040  plan-platform §3.2
 """
 
 from __future__ import annotations
@@ -13,6 +13,9 @@ if TYPE_CHECKING:
 
 class ExportService:
     """Export session state to Mapfile and MapCache XML."""
+
+    def __init__(self, mapcache_generator=None) -> None:
+        self.mapcache_generator = mapcache_generator
 
     def export(self, session: "ConfigSession") -> dict[str, bytes]:
         """Export session to downloadable files.
@@ -41,9 +44,9 @@ class ExportService:
             "mapfile.map": mapfile_text.encode("utf-8"),
         }
 
-        # TODO: MapCache XML generation (Phase 4)
-        # if session.mapcache_enabled:
-        #     xml = self._generate_mapcache(session)
-        #     result["mapcache.xml"] = xml.encode("utf-8")
+        if session.mapcache_enabled and self.mapcache_generator is not None:
+            xml = self.mapcache_generator.generate(session)
+            if xml is not None:
+                result["mapcache.xml"] = xml.encode("utf-8")
 
         return result

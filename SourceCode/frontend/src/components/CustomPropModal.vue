@@ -15,6 +15,8 @@
           <option value="color">color</option>
           <option value="array">array</option>
         </select>
+        <label>默认值</label>
+        <input v-model="defaultValue" placeholder="属性默认值" />
         <label>描述</label>
         <textarea v-model="desc" placeholder="用途说明（可选）" />
       </div>
@@ -40,13 +42,15 @@ const emit = defineEmits(['confirm', 'cancel'])
 const key = ref('')
 const propType = ref('string')
 const desc = ref('')
+const defaultValue = ref('')
 
 function confirm() {
   if (!key.value.trim()) return
-  emit('confirm', key.value, propType.value, desc.value)
+  emit('confirm', key.value, propType.value, defaultValue.value, desc.value)
   key.value = ''
   propType.value = 'string'
   desc.value = ''
+  defaultValue.value = ''
 }
 
 function cancel() {
