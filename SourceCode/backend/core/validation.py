@@ -561,10 +561,15 @@ class ValidationPipeline:
             return []
 
         mf_dict = tree.to_mappyfile_dict()
-        errors = mappyfile.validate(mf_dict, version=8.4)
+        raw = mappyfile.validate(mf_dict, version=8.4)
+
+        # Defensive: mappyfile.validate may return a non-list in edge cases
+        errors: list[Any] = raw if isinstance(raw, list) else []
 
         filtered: list[dict] = []
         for err in errors:
+            if not isinstance(err, dict):
+                continue
             if self._is_false_positive(err, tree):
                 continue
             filtered.append(self._format_mappyfile_error(err))

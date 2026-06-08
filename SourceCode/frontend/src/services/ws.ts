@@ -83,9 +83,15 @@ export class WebSocketService {
       case 'focus_state':
         sessionStore.setFocus(msg.focus_param)
         uiStore.qaFocusParam = msg.focus_param
+        // Insert visual divider only when there was an actual QA exchange
+        uiStore.resetHistoryContext()
         break
       case 'qa_result':
-        uiStore.addQAMessage({ role: 'bot', text: msg.bot_message })
+        uiStore.addQAMessage({
+          role: 'bot',
+          text: msg.bot_message,
+          focus_param: msg.focus_param ?? null,
+        })
         if (msg.params_update && msg.params_update.length > 0) {
           sessionStore.applyTreeState({
             params_snapshot: msg.params_snapshot,
@@ -98,6 +104,15 @@ export class WebSocketService {
         sessionStore.validation_state = msg.validation_state
         sessionStore.validation_errors = msg.validation_errors
         sessionStore.can_export = msg.can_export
+        // Auto-show error summary in QA panel when validation fails
+        if (msg.validation_state === 'fail' && msg.validation_errors?.length > 0) {
+          const errors = msg.validation_errors as Array<{ path: string; message: string }>
+          const errorLines = errors.map((e) => `• \`${e.path}\`: ${e.message}`).join('\n')
+          uiStore.addQAMessage({
+            role: 'system',
+            text: `📋 校验发现 ${errors.length} 处错误：\n${errorLines}\n\n💡 可点击错误字段旁的 ? 按钮向 LLM 求助，或直接在输入框提问。`,
+          })
+        }
         break
       case 'export_result':
         if (msg.success) {
@@ -128,6 +143,7 @@ export class WebSocketService {
         break
       case 'error':
         console.error('[WS] Server error:', msg.message)
+        uiStore.addQAMessage({ role: 'system', text: `服务错误: ${msg.message}` })
         break
     }
   }

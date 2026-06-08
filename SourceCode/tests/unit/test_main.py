@@ -195,3 +195,42 @@ class TestHandleMessage:
 
         errors = [m for m in ws.sent_messages if m.get("type") == "error"]
         assert len(errors) >= 1
+
+    @pytest.mark.anyio
+    async def test_tree_state_format_matches_frontend_contract(self):
+        """params_snapshot must be TreeNode structure, not raw mappyfile dict.
+
+        Regression: backend used to send session.params ({"__type__": "map"})
+        which lacks children/expanded/object_type that ObjectCard expects.
+        """
+        ws = MockWebSocket()
+        await main_module.handle_message(ws, {"type": "init_session"}, "session-contract")
+
+        tree_states = [m for m in ws.sent_messages if m.get("type") == "tree_state"]
+        assert len(tree_states) >= 1
+        snapshot = tree_states[0]["params_snapshot"]
+
+        # Must be TreeNode structure, not raw mappyfile dict
+        assert "__type__" not in snapshot, "snapshot must not be raw mappyfile dict"
+        assert snapshot["object_type"] == "MAP"
+        assert snapshot["path"] == "map"
+        assert "id" in snapshot
+        assert "expanded" in snapshot
+        assert isinstance(snapshot["children"], list)
+
+        # Each child must be TreeNode or TreeLeaf
+        for child in snapshot["children"]:
+            assert "id" in child
+            assert "path" in child
+            if "children" in child:
+                # TreeNode
+                assert "object_type" in child
+                assert isinstance(child["children"], list)
+            else:
+                # TreeLeaf
+                assert "key" in child
+                assert "value" in child
+                assert "value_type" in child
+                assert "phase" in child
+                assert "required" in child
+                assert "custom" in child

@@ -44,6 +44,30 @@ app = FastAPI(title="MapGuide Backend")
 
 RULES_PATH = _HERE.parent / "data" / "mapguide_rules.json"
 TEMPLATES_DIR = _HERE / "llm" / "templates"
+CONFIG_PATH = _HERE.parent / "config" / "config.json"
+
+
+def _load_llm_config() -> dict[str, str]:
+    """Load LLM config from config.json (fallback to env vars)."""
+    cfg: dict[str, str] = {"api_key": "", "base_url": "", "model": ""}
+    # 1. Try config.json
+    if CONFIG_PATH.exists():
+        try:
+            data = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+            llm_cfg = data.get("llm", {})
+            cfg["api_key"] = llm_cfg.get("auth_key", "")
+            cfg["base_url"] = llm_cfg.get("base_url", "")
+            cfg["model"] = llm_cfg.get("model_name", "")
+        except (json.JSONDecodeError, OSError):
+            pass
+    # 2. Env vars override config.json
+    env_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    if env_key:
+        cfg["api_key"] = env_key
+    env_url = os.environ.get("ANTHROPIC_BASE_URL", "")
+    if env_url:
+        cfg["base_url"] = env_url
+    return cfg
 
 # Lazy-initialized singletons
 _mapper: TemplateMapper | None = None
@@ -98,9 +122,17 @@ def _get_prompt_builder() -> PromptBuilder:
 def _get_qa_service(client: LLMClient | None = None) -> QAService:
     global _qa_svc
     if _qa_svc is None:
-        api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+        cfg = _load_llm_config()
+        api_key = cfg["api_key"]
+        base_url = cfg["base_url"] or None
+        model = cfg["model"] or None
         if client is None:
-            client = LLMClient(api_key=api_key) if api_key else LLMClient(api_key="dummy")
+            kwargs: dict[str, Any] = {"api_key": api_key}
+            if base_url:
+                kwargs["base_url"] = base_url
+            if model:
+                kwargs["model"] = model
+            client = LLMClient(**kwargs) if api_key else LLMClient(api_key="dummy")
         _qa_svc = QAService(
             session=None,  # set per-request
             pipeline=_get_pipeline(),
@@ -180,6 +212,8 @@ async def handle_message(
         "set_service_types": _handle_set_service_types,
         "reset_session": _handle_reset_session,
         "import_mapfile": _handle_import_mapfile,
+        "clear_history": _handle_clear_history,
+        "ping": _handle_ping,
     }
 
     handler = handlers.get(msg_type)
@@ -289,6 +323,9 @@ async def _handle_question(
     finally:
         qa.session = original_session
 
+    # Capture the focus_param that was active when this answer was generated
+    answer_focus = session.focus_param
+
     await websocket.send_json({
         "type": "qa_result",
         "bot_message": result["answer"],
@@ -296,7 +333,7 @@ async def _handle_question(
         "validation_state": result["validation_state"],
         "validation_errors": result["errors"],
         "can_export": result["validation_state"] == "pass" and not result["errors"],
-        "focus_param": session.focus_param,
+        "focus_param": answer_focus,
     })
 
     # If updates were applied, send tree_state as well
@@ -343,6 +380,13 @@ async def _handle_set_service_types(
     mapcache = msg.get("mapcache_enabled", False)
     session.service_types = services
     session.mapcache_enabled = mapcache
+
+    # Ensure CACHE node exists when MapCache is enabled, remove when disabled
+    if mapcache and "cache" not in session.params:
+        session.params["cache"] = {"__type__": "cache"}
+    elif not mapcache and "cache" in session.params:
+        del session.params["cache"]
+
     # Rebuild tree with new service type filtering
     session.tree = ConfigTree(
         session.params, session.mapper, session.service_types
@@ -391,6 +435,19 @@ async def _handle_import_mapfile(
         })
 
 
+async def _handle_clear_history(
+    websocket: WebSocket, _msg: dict[str, Any], session: ConfigSession
+) -> None:
+    session.history.clear()
+    await websocket.send_json({"type": "history_cleared"})
+
+
+async def _handle_ping(
+    websocket: WebSocket, _msg: dict[str, Any], _session: ConfigSession
+) -> None:
+    await websocket.send_json({"type": "pong"})
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Response helpers
 # ─────────────────────────────────────────────────────────────────────────────
@@ -399,9 +456,11 @@ async def _send_tree_state(websocket: WebSocket, session: ConfigSession) -> None
     can_export = (
         session.validation_state == "pass" and not session.validation_errors
     )
+    # Serialize ConfigTree to frontend-friendly TreeNode structure
+    tree_data = session.tree.serialize() if session.tree else {}
     await websocket.send_json({
         "type": "tree_state",
-        "params_snapshot": session.params,
+        "params_snapshot": tree_data,
         "validation_state": session.validation_state,
         "validation_errors": session.validation_errors,
         "can_export": can_export,

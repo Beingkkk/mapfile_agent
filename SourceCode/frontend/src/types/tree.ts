@@ -34,7 +34,8 @@ export interface ValidationError {
 }
 
 export interface QAMessage {
-  role: 'user' | 'bot' | 'system';
+  role: 'user' | 'bot' | 'system' | 'divider';
   text: string;
   time?: string;
+  focus_param?: string | null;
 }

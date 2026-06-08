@@ -92,19 +92,23 @@ class ConfigTree:
             # Nested objects render as TreeNode via _build_children, not TreeLeaf
             if field in self._NESTED_KEYS:
                 continue
+            desc = self.mapper.get_field_descriptor(object_type, field)
+            if desc is None:
+                desc = FieldDescriptor(key=field, value_type="string")
+            # Always render schema fields so the user sees what can be edited.
+            # Value = actual if set, otherwise default from rules, else None.
             if field in obj:
                 value = obj[field]
-                desc = self.mapper.get_field_descriptor(object_type, field)
-                if desc is None:
-                    desc = FieldDescriptor(key=field, value_type="string")
-                leaf = TreeLeaf(
-                    id=self._make_id(f"{path}.{field}"),
-                    path=f"{path}.{field}",
-                    key=field,
-                    descriptor=desc,
-                    value=value,
-                )
-                node.children.append(leaf)
+            else:
+                value = desc.default if desc.default is not None else None
+            leaf = TreeLeaf(
+                id=self._make_id(f"{path}.{field}"),
+                path=f"{path}.{field}",
+                key=field,
+                descriptor=desc,
+                value=value,
+            )
+            node.children.append(leaf)
 
         # 2. Custom properties (expanded from _custom)
         for field, meta in obj.get("_custom", {}).items():
@@ -208,6 +212,46 @@ class ConfigTree:
 
     def _make_id(self, path: str) -> str:
         return path.replace(".", "_").replace("[", "").replace("]", "")
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Serialization for frontend
+    # ─────────────────────────────────────────────────────────────────────────
+
+    def serialize(self) -> dict:
+        """Serialize the tree root to a JSON-friendly dict for the frontend."""
+        return self._serialize_node(self.root)
+
+    def _serialize_node(self, node: TreeNode) -> dict:
+        """Recursively serialize a TreeNode."""
+        return {
+            "id": node.id,
+            "path": node.path,
+            "object_type": node.object_type,
+            "expanded": node.expanded,
+            "children": [self._serialize_child(c) for c in node.children],
+        }
+
+    def _serialize_child(self, child: TreeNode | TreeLeaf) -> dict:
+        if isinstance(child, TreeNode):
+            return self._serialize_node(child)
+        # TreeLeaf
+        desc = child.descriptor
+        return {
+            "id": child.id,
+            "path": child.path,
+            "key": child.key,
+            "value": child.value,
+            "value_type": desc.value_type,
+            "phase": desc.phase,
+            "required": desc.required,
+            "derived": desc.derived,
+            "default": desc.default,
+            "enum": desc.enum,
+            "custom": desc.custom,
+            "custom_desc": desc.custom_desc,
+            "user_modified": child.user_modified,
+            "errors": child.errors,
+        }
 
     # ─────────────────────────────────────────────────────────────────────────
     # Data access

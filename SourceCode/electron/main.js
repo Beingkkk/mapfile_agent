@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, Menu } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 const fs = require('fs');
@@ -28,12 +28,19 @@ let isQuitting = false;
 // ─────────────────────────────────────────────────────────────────────────────
 
 function createWindow() {
+  const iconPath = path.join(__dirname, 'icon.png');
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
     minWidth: 800,
     minHeight: 600,
     title: 'MapGuide',
+    icon: fs.existsSync(iconPath) ? iconPath : undefined,
+    // Frameless window: custom title bar via HTML/CSS
+    frame: false,
+    titleBarStyle: 'hidden',
+    // Transparent background until content loads (prevents white flash)
+    backgroundColor: '#1a1a2e',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -42,9 +49,12 @@ function createWindow() {
     },
   });
 
+  // Remove native application menu (File, Edit, etc.)
+  Menu.setApplicationMenu(null);
+
   // Load URL or file depending on environment
   if (IS_DEV) {
-    mainWindow.loadURL('http://localhost:5173');
+    mainWindow.loadURL('http://127.0.0.1:18001');
     mainWindow.webContents.openDevTools();
   } else {
     const indexPath = path.join(__dirname, '..', 'frontend', 'dist', 'index.html');
@@ -233,6 +243,29 @@ function setupIPC() {
     } catch (err) {
       return { success: false, error: err.message };
     }
+  });
+
+  // ── Window controls (frameless) ──
+  ipcMain.handle('window:minimize', () => {
+    if (mainWindow) mainWindow.minimize();
+  });
+
+  ipcMain.handle('window:maximize', () => {
+    if (mainWindow) {
+      if (mainWindow.isMaximized()) {
+        mainWindow.unmaximize();
+      } else {
+        mainWindow.maximize();
+      }
+    }
+  });
+
+  ipcMain.handle('window:close', () => {
+    if (mainWindow) mainWindow.close();
+  });
+
+  ipcMain.handle('window:isMaximized', () => {
+    return mainWindow ? mainWindow.isMaximized() : false;
   });
 }
 

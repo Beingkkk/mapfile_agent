@@ -1,7 +1,7 @@
 # Proposal-0009: Electron 打包配置 + 导出文件保存 + 服务类型切换 UI
 
 > **类型**: Type-B（设计变更 — 新增配置与交互）
-> **状态**: ACTIVE
+> **状态**: IMPLEMENTED
 > **日期**: 2026-06-08
 > **对应 Plan**: `plan-platform` Phase 5
 > **影响范围**:

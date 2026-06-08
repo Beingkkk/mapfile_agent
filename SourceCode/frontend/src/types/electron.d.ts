@@ -16,6 +16,11 @@ export interface ElectronAPI {
   saveDirectory: () => Promise<{ canceled: boolean; filePaths: string[] }>;
   writeFile: (filePath: string, content: string) => Promise<{ success: boolean; error?: string }>;
   saveExportFiles: (files: ElectronFile[]) => Promise<SaveExportResult>;
+  // Window controls (frameless)
+  minimizeWindow: () => Promise<void>;
+  maximizeWindow: () => Promise<void>;
+  closeWindow: () => Promise<void>;
+  isMaximized: () => Promise<boolean>;
   platform: string;
 }
 

@@ -106,8 +106,12 @@ class DialogueHistory:
     # Focus change handling
     # ─────────────────────────────────────────────────────────────────────────
 
-    def reset_on_focus_change(self) -> None:
-        """Reset round counter when focus changes; preserve initial intent."""
+    def clear(self) -> None:
+        """Clear all QA messages but preserve system/intent messages.
+
+        Used when user explicitly resets history context.
+        Unlike reset_on_focus_change, this does NOT touch focus.
+        """
         self._round_count = 0
         if self._initial_intent:
             self.messages = [
@@ -116,4 +120,11 @@ class DialogueHistory:
             ]
         else:
             self.messages.clear()
+
+    def reset_on_focus_change(self) -> None:
+        """Reset round counter when focus changes; preserve initial intent."""
+        self._round_count = 0
+        has_qa = any(m.get("role") in ("user", "bot") for m in self.messages)
+        if has_qa:
+            self.clear()
         self._current_focus = None

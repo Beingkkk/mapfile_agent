@@ -33,7 +33,7 @@ This project uses **Specification-Driven Development (SDD)**. All plans are lock
 
 ## Current Implementation State
 
-**All 5 phases complete** — backend Python ~2,700 lines, frontend Vue/TS ~800 lines, Electron ~300 lines, **329 Python tests passing**.
+**All 5 phases complete** — backend Python ~2,700 lines, frontend Vue/TS ~900 lines, Electron ~300 lines, **330 Python tests + 43 frontend tests passing**.
 
 | Module | Files | Tests | Proposal |
 |--------|-------|-------|----------|
@@ -44,7 +44,7 @@ This project uses **Specification-Driven Development (SDD)**. All plans are lock
 | `LLMClient` + `LLMOutput` + `UpdateResolver` | `backend/llm/llm_client.py`, `llm_output.py`, `update_resolver.py` | `tests/unit/test_llm_client.py` (6), `test_llm_output.py` (17), `test_update_resolver.py` (5) | #0006 |
 | `PromptBuilder` + `QAService` + `ImportService` + `ExportService` | `backend/llm/prompt_builder.py`, `core/qa_service.py`, `core/import_service.py`, `core/export_service.py` | `tests/unit/test_prompt_builder.py` (5), `test_qa_service.py` (9), `test_import_service.py` (7), `test_export_service.py` (8) | #0007 |
 | `MapCacheGenerator` + `MapCacheValidator` | `backend/mapcache/generator.py`, `mapcache/validator.py` | `tests/unit/test_mapcache_generator.py` (8), `test_mapcache_validator.py` (8) | #0008 |
-| `CustomPropModal` + Electron config | `frontend/src/components/CustomPropModal.vue`, `electron/main.js`, `electron/preload.js`, `SourceCode/package.json` | — (manual) | #0009 |
+| `CustomPropModal` + Electron config | `frontend/src/components/CustomPropModal.vue`, `electron/main.js`, `electron/preload.js`, `SourceCode/package.json` | `tests/unit/*` (FieldEditor 19, ws 13, ui 7, session 1, ObjectCard 4) | #0009 |
 | WebSocket routing | `backend/main.py` | `tests/unit/test_main.py` (11) | #0004, #0007 |
 
 **Spikes** (pre-development validation, not production code):
@@ -142,7 +142,8 @@ qa_result WS message → frontend
 - **Export condition chain** (cannot skip): `validation_state == "pass"` ∧ `no validation errors`.
 - **No persistence**: `ConfigSession` is in-memory only. "Reset" destroys and recreates the session.
 - **Flat path addressing**: LLM updates use stable paths (e.g. `layers.0.connectiontype`), not line numbers. No line_map or rebuild_line_map needed.
-- **Focus change clears QA**: Switching focus parameter resets the QA message history (but preserves initial intent). Round counter shown in UI resets to 0.
+- **Focus can be parameter or node**: Clicking a `FieldEditor` leaf sets focus to the parameter path (e.g. `layers.0.name`); clicking an `ObjectCard` header sets focus to the node path (e.g. `layers.0`). Both are injected into the LLM prompt via `focus_param`.
+- **Focus change inserts divider**: Switching focus resets the backend DialogueHistory (preserves intent), and the frontend inserts a visual divider line in the QA panel. Dividers only appear when there was actual user/bot exchange since the last divider; empty history or repeated focus switches without QA do not produce dividers.
 
 ---
 
@@ -219,9 +220,20 @@ cd SourceCode/frontend
 # Dev server
 npm run dev
 
+# Tests (vitest + jsdom)
+npm test               # interactive watch mode
+npm test -- --run      # single run (CI mode)
+
+# Single test file
+npm test -- --run src/components/FieldEditor.spec.ts
+npm test -- --run src/services/ws.spec.ts
+
 # Production build
 npm run build
+# Note: vue-tsc has Node v24 compatibility issues; use `npx vite build` as fallback
 ```
+
+**Path aliases**: Both `vite.config.ts` and `vitest.config.ts` must define `resolve.alias: { '@': path.resolve(__dirname, 'src') }` for `@/` imports to work in dev and test.
 
 ### Electron
 
@@ -500,6 +512,7 @@ The UI design is specified in `Document/技术细节.md` §4/§11/§12 and visua
 - **`data/schemas/` removed**: the root-level `mapfile-schema-8-4.json` and `schemas/` directory were cleaned up; the canonical schema now lives in `data/templates/mapfile-schema-8-4.json`.
 - **Color format**: RGB arrays `[0, 0, 255]` everywhere. No hex conversion.
 - **Testing approach**: TDD. Unit tests for backend/core/ and backend/llm/. Integration tests for generate_rules.py output + LLM mock end-to-end.
+- **QA panel divider behavior**: Visual dividers in the QA panel mark context resets (focus change or manual clear). They use `role: 'divider'` (not `system`) with a minimal 1px gray line. Dividers are only inserted when (a) there is actual user/bot message history, and (b) there has been new QA exchange since the last divider. No double icons: `roleIcon('system')` already shows `⚠️`, so system message text must not include a second `⚠️`.
 - **Commit format**: `type(scope): proposal-NNNN description`
 
 **Constraints**: `version` must be `float` (`8.4`), not `str`. `PROJECTION` must be an array `["init=epsg:3857"]`, not a string.
