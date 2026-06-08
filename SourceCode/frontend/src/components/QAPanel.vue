@@ -17,7 +17,7 @@
     </div>
 
     <!-- Chat area -->
-    <div class="chat-area">
+    <div ref="chatAreaRef" class="chat-area">
       <div v-if="messages.length === 0" class="chat-empty">
         <div class="chat-empty-icon">💬</div>
         <div class="chat-empty-title">问答助手</div>
@@ -33,6 +33,17 @@
         >
           <template v-if="msg.role === 'divider'">
             <div class="divider-line" />
+          </template>
+          <template v-else-if="msg.role === 'loading'">
+            <div class="msg-role">{{ roleIcon(msg.role) }}</div>
+            <div class="msg-content">
+              <div class="msg-text loading-bubble">
+                <span class="loading-text">思考中</span>
+                <span class="loading-dot" />
+                <span class="loading-dot" />
+                <span class="loading-dot" />
+              </div>
+            </div>
           </template>
           <template v-else>
             <div class="msg-role">{{ roleIcon(msg.role) }}</div>
@@ -84,7 +95,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { marked } from 'marked'
 import { useSessionStore } from '@/stores/session'
 import { useUIStore } from '@/stores/ui'
@@ -94,8 +105,25 @@ const sessionStore = useSessionStore()
 const uiStore = useUIStore()
 const inputText = ref('')
 const isSending = ref(false)
+const chatAreaRef = ref<HTMLDivElement | null>(null)
 
 const messages = computed(() => uiStore.qaMessages)
+
+/** Auto-scroll chat area to bottom whenever messages change. */
+function scrollToBottom() {
+  nextTick(() => {
+    const el = chatAreaRef.value
+    if (el) {
+      el.scrollTop = el.scrollHeight
+    }
+  })
+}
+
+watch(
+  () => uiStore.qaMessages.length,
+  () => scrollToBottom(),
+  { immediate: true },
+)
 const focusParam = computed(() => sessionStore.focus_param)
 
 /**
@@ -176,6 +204,7 @@ function roleIcon(role: string): string {
     case 'user': return '👤'
     case 'bot': return '🤖'
     case 'system': return '⚠️'
+    case 'loading': return '⏳'
     default: return '•'
   }
 }
@@ -201,7 +230,14 @@ function doSend(text: string) {
   ws.send({ type: 'question', text })
   inputText.value = ''
   // Reset sending state after timeout (in case response never arrives)
-  setTimeout(() => { isSending.value = false }, 30000)
+  setTimeout(() => {
+    if (isSending.value) {
+      isSending.value = false
+      uiStore.finishQALoading({
+        error: '响应超时，请稍后重试或重新提问。',
+      })
+    }
+  }, 30000)
 }
 
 function clearFocus() {
@@ -210,6 +246,7 @@ function clearFocus() {
 
 function clearHistory() {
   ws.send({ type: 'clear_history' })
+  uiStore.finishQALoading()
 }
 
 // Listen for qa_result to reset sending state
@@ -545,6 +582,32 @@ ws.on('history_cleared', () => {
   background: #f0f4f8;
   border-color: #829ab1;
   color: #1f2937;
+}
+
+/* Loading bubble */
+.msg.loading .msg-text {
+  background: #fff;
+  color: #6b7280;
+  border: 1px solid #e5e7eb;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.loading-text {
+  font-size: 14px;
+}
+.loading-dot {
+  width: 6px;
+  height: 6px;
+  background: #9ca3af;
+  border-radius: 50%;
+  animation: loading-bounce 1.4s infinite ease-in-out both;
+}
+.loading-dot:nth-child(1) { animation-delay: -0.32s; }
+.loading-dot:nth-child(2) { animation-delay: -0.16s; }
+@keyframes loading-bounce {
+  0%, 80%, 100% { transform: scale(0); }
+  40% { transform: scale(1); }
 }
 
 /* Input area */

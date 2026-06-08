@@ -50,6 +50,7 @@ const mockSessionStore = {
 
 const mockUIStore = {
   addQAMessage: vi.fn(),
+  finishQALoading: vi.fn(),
   qaFocusParam: null,
 }
 
@@ -147,7 +148,7 @@ describe('WebSocketService', () => {
     expect(mockSessionStore.can_export).toBe(false)
   })
 
-  it('routes qa_result messages to UI store', () => {
+  it('routes qa_result messages to UI store and clears loading', () => {
     const payload = {
       type: 'qa_result',
       bot_message: 'Here is the answer',
@@ -155,6 +156,7 @@ describe('WebSocketService', () => {
     }
     // @ts-ignore
     ws._routeToStores(payload)
+    expect(mockUIStore.finishQALoading).toHaveBeenCalled()
     expect(mockUIStore.addQAMessage).toHaveBeenCalledWith({
       role: 'bot',
       text: 'Here is the answer',
@@ -175,11 +177,16 @@ describe('WebSocketService', () => {
     consoleLog.mockRestore()
   })
 
-  it('handles error messages', () => {
+  it('handles error messages and clears loading', () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
     // @ts-ignore
     ws._routeToStores({ type: 'error', message: 'Something went wrong' })
     expect(consoleError).toHaveBeenCalledWith('[WS] Server error:', 'Something went wrong')
+    expect(mockUIStore.finishQALoading).toHaveBeenCalled()
+    expect(mockUIStore.addQAMessage).toHaveBeenCalledWith({
+      role: 'system',
+      text: '服务错误: Something went wrong',
+    })
     consoleError.mockRestore()
   })
 

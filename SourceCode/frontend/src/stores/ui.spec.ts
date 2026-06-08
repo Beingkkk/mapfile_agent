@@ -75,4 +75,48 @@ describe('UIStore', () => {
     expect(store.qaMessages).toEqual([])
     expect(store.qaRoundCount).toBe(0)
   })
+
+  describe('QA loading placeholder', () => {
+    it('adds loading message on startQALoading', () => {
+      const store = useUIStore()
+      store.addQAMessage({ role: 'user', text: 'Q' })
+      store.startQALoading()
+      expect(store.qaMessages).toHaveLength(2)
+      expect(store.qaMessages[1].role).toBe('loading')
+      expect(store.qaMessages[1].text).toBe('思考中…')
+    })
+
+    it('removes loading message on finishQALoading', () => {
+      const store = useUIStore()
+      store.addQAMessage({ role: 'user', text: 'Q' })
+      store.startQALoading()
+      store.finishQALoading()
+      expect(store.qaMessages).toHaveLength(1)
+      expect(store.qaMessages.some((m) => m.role === 'loading')).toBe(false)
+    })
+
+    it('replaces stale loading message when startQALoading called twice', () => {
+      const store = useUIStore()
+      store.startQALoading()
+      store.startQALoading()
+      expect(store.qaMessages.filter((m) => m.role === 'loading')).toHaveLength(1)
+    })
+
+    it('adds system error when finishQALoading receives error', () => {
+      const store = useUIStore()
+      store.startQALoading()
+      store.finishQALoading({ error: 'Timeout' })
+      expect(store.qaMessages.some((m) => m.role === 'loading')).toBe(false)
+      expect(store.qaMessages.some((m) => m.role === 'system' && m.text === 'Timeout')).toBe(true)
+    })
+
+    it('excludes loading messages from round count', () => {
+      const store = useUIStore()
+      store.addQAMessage({ role: 'user', text: 'Q' })
+      store.startQALoading()
+      store.finishQALoading()
+      store.addQAMessage({ role: 'bot', text: 'A' })
+      expect(store.qaRoundCount).toBe(1)
+    })
+  })
 })

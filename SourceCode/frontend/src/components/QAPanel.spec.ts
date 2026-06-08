@@ -27,6 +27,12 @@ describe('QAPanel', () => {
     setActivePinia(createPinia())
     vi.mocked(ws.send).mockClear()
     vi.mocked(ws.on).mockClear()
+    // Simulate ws.ts send() behavior: start loading for question messages
+    vi.mocked(ws.send).mockImplementation((msg: any) => {
+      if (msg?.type === 'question') {
+        useUIStore().startQALoading()
+      }
+    })
   })
 
   it('renders empty state when no messages and no focus', () => {
@@ -207,6 +213,91 @@ describe('QAPanel', () => {
       const focusBar = wrapper.find('.qa-focus-bar')
       expect(focusBar.classes()).toContain('hint')
       expect(focusBar.text()).toContain('点击左侧树节点或参数')
+    })
+  })
+
+  describe('loading placeholder (proposal-0012)', () => {
+    it('shows loading bubble after sending question', async () => {
+      const pinia = createPinia()
+      setActivePinia(pinia)
+      const wrapper = mount(QAPanel, {
+        global: { plugins: [pinia] }
+      })
+
+      const input = wrapper.find('.input-area input')
+      await input.setValue('hello')
+      await input.trigger('keydown.enter')
+      await flushPromises()
+
+      expect(wrapper.find('.loading-bubble').exists()).toBe(true)
+      expect(wrapper.text()).toContain('思考中')
+      expect(wrapper.text()).toContain('⏳')
+    })
+
+    it('removes loading bubble when qa_result arrives', async () => {
+      const pinia = createPinia()
+      setActivePinia(pinia)
+      const uiStore = useUIStore()
+      const wrapper = mount(QAPanel, {
+        global: { plugins: [pinia] }
+      })
+
+      await wrapper.find('.input-area input').setValue('q')
+      await wrapper.find('.input-area input').trigger('keydown.enter')
+      await flushPromises()
+      expect(wrapper.find('.loading-bubble').exists()).toBe(true)
+
+      // Simulate what ws.ts does when qa_result arrives
+      uiStore.finishQALoading()
+      uiStore.addQAMessage({ role: 'bot', text: 'answer' })
+      await flushPromises()
+
+      expect(wrapper.find('.loading-bubble').exists()).toBe(false)
+      expect(wrapper.text()).toContain('answer')
+    })
+
+    it('shows system error on 30s timeout', async () => {
+      vi.useFakeTimers()
+      const pinia = createPinia()
+      setActivePinia(pinia)
+      const wrapper = mount(QAPanel, {
+        global: { plugins: [pinia] }
+      })
+
+      await wrapper.find('.input-area input').setValue('q')
+      await wrapper.find('.input-area input').trigger('keydown.enter')
+      await flushPromises()
+      expect(wrapper.find('.loading-bubble').exists()).toBe(true)
+
+      vi.advanceTimersByTime(30000)
+      await flushPromises()
+
+      expect(wrapper.find('.loading-bubble').exists()).toBe(false)
+      expect(wrapper.text()).toContain('响应超时')
+      vi.useRealTimers()
+    })
+
+    it('prevents sending while already in loading state', async () => {
+      const pinia = createPinia()
+      setActivePinia(pinia)
+      const wrapper = mount(QAPanel, {
+        global: { plugins: [pinia] }
+      })
+
+      const input = wrapper.find('.input-area input')
+      await input.setValue('first')
+      await input.trigger('keydown.enter')
+      await flushPromises()
+
+      // Try sending a second message while loading
+      await input.setValue('second')
+      await input.trigger('keydown.enter')
+      await flushPromises()
+
+      // Only one user message and one loading bubble should exist
+      const uiStore = useUIStore()
+      expect(uiStore.qaMessages.filter((m) => m.role === 'user').length).toBe(1)
+      expect(uiStore.qaMessages.filter((m) => m.role === 'loading').length).toBe(1)
     })
   })
 })

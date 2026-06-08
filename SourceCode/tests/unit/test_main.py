@@ -126,6 +126,13 @@ class TestHandleMessage:
         assert len(val_results) >= 1
         assert "validation_state" in val_results[0]
 
+        # Manual validate should also push tree_state so leaf-level errors are rendered.
+        tree_states = [m for m in ws.sent_messages if m.get("type") == "tree_state"]
+        assert len(tree_states) >= 2  # init + validate
+        last_tree = tree_states[-1]
+        assert "params_snapshot" in last_tree
+        assert last_tree.get("validation_state") == val_results[0].get("validation_state")
+
     @pytest.mark.anyio
     async def test_set_service_types(self):
         ws = MockWebSocket()

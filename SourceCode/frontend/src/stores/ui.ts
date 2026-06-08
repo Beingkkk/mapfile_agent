@@ -36,6 +36,28 @@ export const useUIStore = defineStore('ui', {
       )
       this.qaRoundCount = Math.floor(qaOnly.length / 2)
     },
+    startQALoading() {
+      // Remove any stale loading bubble first (defensive against double-send)
+      this.qaMessages = this.qaMessages.filter((m) => m.role !== 'loading')
+      this.qaMessages.push({
+        role: 'loading',
+        text: '思考中…',
+      })
+    },
+    finishQALoading(options?: { error?: string }) {
+      this.qaMessages = this.qaMessages.filter((m) => m.role !== 'loading')
+      if (options?.error) {
+        this.qaMessages.push({
+          role: 'system',
+          text: options.error,
+        })
+        // Recompute round count (system messages do not affect it)
+        const qaOnly = this.qaMessages.filter(
+          (m) => m.role === 'user' || m.role === 'bot',
+        )
+        this.qaRoundCount = Math.floor(qaOnly.length / 2)
+      }
+    },
     clearQA() {
       this.qaMessages = []
       this.qaRoundCount = 0

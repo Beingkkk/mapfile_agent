@@ -349,6 +349,8 @@ async def _handle_validate(
     session.validation_state = result.state
     session.validation_errors = result.errors
     await _send_validation_result(websocket, session)
+    # Push updated tree so leaf-level errors are rendered in the ConfigTree.
+    await _send_tree_state(websocket, session)
 
 
 async def _handle_export(

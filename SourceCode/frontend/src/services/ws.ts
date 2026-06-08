@@ -55,6 +55,12 @@ export class WebSocketService {
   send(message: any) {
     if (this.isConnected) {
       this.ws!.send(JSON.stringify(message))
+      // Auto-start loading placeholder for all question messages
+      // (covers QAPanel input, FieldEditor ? button, quick questions, etc.)
+      if (message.type === 'question') {
+        const uiStore = useUIStore()
+        uiStore.startQALoading()
+      }
     } else {
       console.warn('[WS] Not connected, message dropped:', message)
     }
@@ -87,6 +93,7 @@ export class WebSocketService {
         uiStore.resetHistoryContext()
         break
       case 'qa_result':
+        uiStore.finishQALoading()
         uiStore.addQAMessage({
           role: 'bot',
           text: msg.bot_message,
@@ -143,6 +150,7 @@ export class WebSocketService {
         break
       case 'error':
         console.error('[WS] Server error:', msg.message)
+        uiStore.finishQALoading()
         uiStore.addQAMessage({ role: 'system', text: `服务错误: ${msg.message}` })
         break
     }
