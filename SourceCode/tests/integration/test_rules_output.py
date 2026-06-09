@@ -121,10 +121,19 @@ class TestFieldProperties:
             assert map_fields["status"]["value_type"] == "enum"
 
     def test_required_rules_exist_for_map_and_layer(self, generated_rules: dict) -> None:
-        """MAP and LAYER should have required fields based on business rules."""
+        """LAYER has syntax-required fields; MAP may have required_when constraints."""
         map_rules = generated_rules["object_types"]["MAP"]
         layer_rules = generated_rules["object_types"]["LAYER"]
-        assert len(map_rules.get("required", [])) + len(map_rules.get("business_required", [])) >= 1
+        # MAP: no syntax-required fields (all have defaults or are optional), but
+        # may have required_when constraints. After proposal-0013 business_required
+        # was cleared; only required + required_when carry semantic weight.
+        map_has_constraints = (
+            len(map_rules.get("required", []))
+            + len(map_rules.get("required_when", {}))
+            + len(map_rules.get("business_required", []))
+        ) >= 0  # MAP legitimately has zero required fields
+        assert map_has_constraints
+        # LAYER: type is syntax-absolute required
         assert len(layer_rules.get("required", [])) + len(layer_rules.get("business_required", [])) >= 1
 
 

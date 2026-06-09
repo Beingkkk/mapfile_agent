@@ -73,7 +73,12 @@
           "key": "extent",
           "value_type": "array",
           "enum": null,
-          "default": null,
+          "default": [
+            -180,
+            -90,
+            180,
+            90
+          ],
           "description": "",
           "min": null,
           "max": null,
@@ -4783,7 +4788,12 @@
       "key": "extent",
       "value_type": "array",
       "enum": null,
-      "default": null,
+      "default": [
+        -180,
+        -90,
+        180,
+        90
+      ],
       "description": "",
       "min": null,
       "max": null,

@@ -3,7 +3,8 @@
   "MAP": {
     "imagetype": "png",
     "status": "on",
-    "size": [800, 600]
+    "size": [800, 600],
+    "extent": [-180, -90, 180, 90]
   },
   "LAYER": {
     "projection": ["init=epsg:3857"],
