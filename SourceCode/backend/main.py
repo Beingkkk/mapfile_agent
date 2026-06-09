@@ -8,20 +8,31 @@ from __future__ import annotations
 import base64
 import json
 import os
+import sys
 from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, WebSocket
 
-# Ensure backend/core and backend/llm are importable
+# ─── Path resolution (dev vs PyInstaller) ──────────────────────────────────
+# PyInstaller single-file exe unpacks to a temp dir; __file__ points there.
+# data/ is bundled into the exe (read-only rule files).
+# config/ is external (electron-builder extraResources) so users can edit
+# config.json (API keys). Electron passes MAPGUIDE_RESOURCES env var.
+if hasattr(sys, '_MEIPASS'):
+    _BASE_DIR = Path(sys._MEIPASS)  # bundled data/ lives here
+    _RESOURCE_DIR = Path(os.environ.get('MAPGUIDE_RESOURCES', sys._MEIPASS))
+else:
+    _BASE_DIR = Path(__file__).resolve().parent.parent
+    _RESOURCE_DIR = _BASE_DIR
+
 _HERE = Path(__file__).resolve().parent
 _CORE = _HERE / "core"
 _LLM = _HERE / "llm"
 _MAPCACHE = _HERE / "mapcache"
-_sys = __import__("sys")
 for p in (str(_HERE), str(_CORE), str(_LLM), str(_MAPCACHE)):
-    if p not in _sys.path:
-        _sys.path.insert(0, p)
+    if p not in sys.path:
+        sys.path.insert(0, p)
 
 from config_tree import ConfigTree
 from export_service import ExportService
@@ -43,9 +54,9 @@ _MAPCACHE_TEMPLATES = _HERE / "mapcache" / "templates"
 
 app = FastAPI(title="MapGuide Backend")
 
-RULES_PATH = _HERE.parent / "data" / "mapguide_rules.json"
+RULES_PATH = _BASE_DIR / "data" / "mapguide_rules.json"
 TEMPLATES_DIR = _HERE / "llm" / "templates"
-CONFIG_PATH = _HERE.parent / "config" / "config.json"
+CONFIG_PATH = _RESOURCE_DIR / "config" / "config.json"
 
 
 def _load_llm_config() -> dict[str, str]:
@@ -493,3 +504,16 @@ async def _send_error(websocket: WebSocket, message: str) -> None:
         "type": "error",
         "message": message,
     })
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Entry point (PyInstaller production build)
+# ─────────────────────────────────────────────────────────────────────────────
+# In dev mode Electron starts uvicorn via `python -m uvicorn backend.main:app`,
+# so this block is never reached (__name__ == 'backend.main').
+# In the PyInstaller exe, __name__ == '__main__', so we start uvicorn here.
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host=BACKEND_HOST, port=BACKEND_PORT)

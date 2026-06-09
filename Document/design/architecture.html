@@ -442,7 +442,7 @@
     </div>
   </div>
 
-  <div class="arrow-bidirect">⇅ WebSocket (ws://localhost:8765/ws)</div>
+  <div class="arrow-bidirect">⇅ WebSocket (ws://localhost:18080/ws)</div>
 
   <!-- Vue Renderer -->
   <div class="runtime-layer renderer">
@@ -454,13 +454,14 @@
           <li>ObjectCard: MAP/LAYER/CLASS 卡片</li>
           <li>FieldEditor: 8 种原子编辑器</li>
           <li>StatusIcon: 校验状态</li>
+          <li>SearchBox: 字段搜索（结果跳转+高亮）</li>
           <li>底部：导入 / 校验 / 导出 / 重置</li>
         </ul>
       </div>
       <div class="layer-box" style="flex:1;">
         <h4>💬 QAPanel（右栏 45%）</h4>
         <ul>
-          <li>对话历史列表</li>
+          <li>对话历史列表（user / bot / system / loading / divider）</li>
           <li>消息输入框</li>
           <li>关注点指示器</li>
           <li>代码块渲染 + 复制</li>
@@ -591,7 +592,7 @@
       <ul>
         <li>key, value_type, default, enum, min, max</li>
         <li>phase (datasource/style/service/cache)</li>
-        <li>required, derived, custom, custom_desc</li>
+        <li>required, required_when, derived, custom, custom_desc</li>
       </ul>
     </div>
     <div class="class-card core">
@@ -771,7 +772,7 @@
 <div class="section">
   <div class="section-title">
     <span class="dot" style="background:var(--llm)"></span>
-    4. WebSocket 数据流（七大交互场景）
+    4. WebSocket 数据流（八大交互场景）
   </div>
 
   <div class="flow-wrap">
@@ -917,7 +918,7 @@
         <ul>
           <li>components/ → 依赖: services/ws.ts</li>
           <li>components/ → 依赖: stores/ (Pinia)</li>
-          <li>services/ws.ts → 外部: ws://localhost:8765/ws</li>
+          <li>services/ws.ts → 外部: ws://localhost:18080/ws</li>
           <li>无直接依赖后端 Python 代码</li>
         </ul>
       </div>
@@ -989,7 +990,7 @@
     <tbody style="color:var(--text-sec);">
       <tr style="border-bottom:1px solid var(--border);">
         <td style="padding:8px 12px;color:var(--text)"><strong>前后端通信</strong></td>
-        <td style="padding:8px 12px;">统一 WebSocket（ws://localhost:8765/ws），禁止 HTTP/WS 混合；后端 → LLM 走 HTTP API</td>
+        <td style="padding:8px 12px;">统一 WebSocket（ws://localhost:18080/ws），禁止 HTTP/WS 混合；后端 → LLM 走 HTTP API</td>
         <td style="padding:8px 12px;">技术细节 §12</td>
       </tr>
       <tr style="border-bottom:1px solid var(--border);">
@@ -1019,12 +1020,12 @@
       </tr>
       <tr style="border-bottom:1px solid var(--border);">
         <td style="padding:8px 12px;color:var(--text)"><strong>属性状态标记</strong></td>
-        <td style="padding:8px 12px;">`*` 必填 / `D` 默认值 / `○` 可选 / `→` 推导 / `✎` 自定义；顶部显示图例说明栏</td>
+        <td style="padding:8px 12px;">`*` 必填 / `◆` 条件必填 / `D` 默认值 / `○` 可选 / `→` 推导 / `✎` 自定义；顶部显示图例说明栏</td>
         <td style="padding:8px 12px;">需求输入 §2.1</td>
       </tr>
       <tr style="border-bottom:1px solid var(--border);">
-        <td style="padding:8px 12px;color:var(--text)"><strong>显示模式"仅必填"</strong></td>
-        <td style="padding:8px 12px;">隐藏 `○` 可选和已填默认值的 `D` 字段（除非用户手动修改过）；有错误的始终显示</td>
+        <td style="padding:8px 12px;color:var(--text)"><strong>显示模式三档</strong></td>
+        <td style="padding:8px 12px;">三档：`all` 全部 / `required` 建议填（* 必填 + ◆ 条件必填）/ `strict` 仅必填（仅 *）。隐藏 `○` 可选和已填默认值的 `D` 字段（除非用户手动修改过）；有错误的始终显示</td>
         <td style="padding:8px 12px;">需求输入 §2.1</td>
       </tr>
       <tr style="border-bottom:1px solid var(--border);">
@@ -1049,7 +1050,7 @@
       </tr>
       <tr style="border-bottom:1px solid var(--border);">
         <td style="padding:8px 12px;color:var(--text)"><strong>导入已有 Mapfile</strong></td>
-        <td style="padding:8px 12px;">Electron dialog.showOpenDialog 选文件 → 主进程读取 → IPC → WS 发送内容 → 后端 mappyfile.loads() → 失败拒绝/成功重建 session → 自动四层校验 → 返回 tree_state</td>
+        <td style="padding:8px 12px;">Electron dialog.showOpenDialog 选文件 → 主进程读取 → IPC → WS 发送内容 → 后端 mappyfile.loads() → 失败拒绝/成功重建 session（import_mode=True 抑制默认值回填）→ 自动四层校验 → 返回 tree_state</td>
         <td style="padding:8px 12px;">需求输入 §3.5 / 技术细节 §11.6</td>
       </tr>
       <tr style="border-bottom:1px solid var(--border);">
@@ -1063,8 +1064,18 @@
         <td style="padding:8px 12px;">技术细节 §11.6</td>
       </tr>
       <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:8px 12px;color:var(--text)"><strong>字段搜索</strong></td>
+        <td style="padding:8px 12px;">顶部搜索框过滤当前树叶子，点击结果展开祖先节点、设置焦点、滚动到字段并触发高亮脉冲</td>
+        <td style="padding:8px 12px;">Type-C</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:8px 12px;color:var(--text)"><strong>导入默认值抑制</strong></td>
+        <td style="padding:8px 12px;">import_mode=True 时缺失字段不回填默认值，保留原始字段的往返一致性；新节点 add_object() 仍预填默认值</td>
+        <td style="padding:8px 12px;">Type-C</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
         <td style="padding:8px 12px;color:var(--text)"><strong>焦点切换 → 历史</strong></td>
-        <td style="padding:8px 12px;">切换关注点自动清空 QA messages（保留初始意图）；界面显示当前轮数，切换后归零</td>
+        <td style="padding:8px 12px;">切换关注点自动清空 QA messages（保留初始意图）；界面显示当前轮数，切换后归零；插入 divider 分隔线</td>
         <td style="padding:8px 12px;">技术细节 §5.2 / 需求输入 §2.2</td>
       </tr>
       <tr style="border-bottom:1px solid var(--border);">
@@ -1074,7 +1085,7 @@
       </tr>
       <tr style="border-bottom:1px solid var(--border);">
         <td style="padding:8px 12px;color:var(--text)"><strong>LLM 输出</strong></td>
-        <td style="padding:8px 12px;">JSON 解析失败降级为纯文本；路径不存在静默忽略；错误提示封装语气</td>
+        <td style="padding:8px 12px;">JSON 解析失败降级为纯文本；路径不存在静默忽略；错误提示封装语气；发送问题时显示 loading 占位气泡</td>
         <td style="padding:8px 12px;">需求输入 §4.4 / 技术细节 §15.2</td>
       </tr>
       <tr style="border-bottom:1px solid var(--border);">
@@ -1107,7 +1118,7 @@
 </div>
 
 <div style="text-align:center;color:var(--text-sec);font-size:12px;margin-top:30px;">
-  MapGuide Architecture Diagram · Generated 2026-06-05
+  MapGuide Architecture Diagram · Updated 2026-06-09 · All 14 proposals implemented
 </div>
 
 </body>

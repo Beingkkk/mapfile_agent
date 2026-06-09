@@ -300,7 +300,7 @@
 </head>
 <body>
 
-<h1>🔄 MapGuide 7 大交互场景数据流图</h1>
+<h1>🔄 MapGuide 8 大交互场景数据流图</h1>
 <p class="subtitle">对应文档：需求输入.md §3 / 技术细节.md §11–§12</p>
 
 <!-- Legend -->
@@ -355,7 +355,7 @@
       <div class="step-avatar backend">🌲</div>
       <div class="step-body backend">
         <div class="step-label backend">Python 后端</div>
-        <div class="step-text"><span class="highlight">ConfigTree._build_tree(params, service_types)</span> — 按新的 service_types 过滤 METADATA/LAYER 字段可见性
+        <div class="step-text"><span class="highlight">ConfigTree._build_tree(params, service_types, import_mode=False)</span> — 按新的 service_types 过滤 METADATA/LAYER 字段可见性
           <br>├─ 取消勾选 WFS → <code>gml_*</code> / <code>wfs_*</code> 字段隐藏（值保留在 params 中）
           <br>├─ 取消勾选 WMS → <code>wms_*</code> 字段隐藏
           <br>└─ <code>ows_*</code> 始终可见
@@ -426,7 +426,7 @@
       <div class="step-avatar backend">🔍</div>
       <div class="step-body backend">
         <div class="step-label backend">Python 后端</div>
-        <div class="step-text"><span class="highlight">ValidationPipeline.validate_field(path, service_types, full=false)</span>
+        <div class="step-text"><span class="highlight">ValidationPipeline.validate_field(tree, path, service_types, full=False)</span>
           <br>├─ L1 别名解析（如 "红色" → [255,0,0]）
           <br>├─ L2 类型校验（Pydantic）
           <br>└─ L3 语义校验（dependencies.json，含 service_types 条件）
@@ -593,7 +593,7 @@
       <div class="step-avatar backend">🔍</div>
       <div class="step-body backend">
         <div class="step-label backend">Python 后端</div>
-        <div class="step-text"><span class="highlight">ValidationPipeline.validate_tree(service_types)</span> — 四层完整校验</div>
+        <div class="step-text"><span class="highlight">ValidationPipeline.validate_tree(tree, service_types)</span> — 四层完整校验</div>
       </div>
     </div>
 
@@ -660,7 +660,7 @@
       <div class="step-avatar backend">🔍</div>
       <div class="step-body backend">
         <div class="step-label backend">Python 后端</div>
-        <div class="step-text"><span class="highlight">ValidationPipeline.validate_tree(service_types)</span>
+        <div class="step-text"><span class="highlight">ValidationPipeline.validate_tree(tree, service_types)</span>
           <br>├─ 遍历所有叶子字段：L1 别名 + L2 类型 + L3 语义（含 service_types 条件）
           <br>└─ L4: <code>mappyfile.validate(mf_dict, version=8.4)</code>
         </div>
@@ -840,7 +840,7 @@
       <div class="step-avatar backend">🌲</div>
       <div class="step-body backend">
         <div class="step-label backend">Python 后端</div>
-        <div class="step-text"><span class="highlight">ConfigTree._build_tree(parsed_dict, service_types)</span>
+        <div class="step-text"><span class="highlight">ConfigTree._build_tree(parsed_dict, service_types, import_mode=True)</span>
           <br>├─ Schema 已定义字段 → 正常 TreeLeaf（按 service_types 过滤可见性）
           <br>└─ 未知字段 → 统一标记 <code>custom=True</code>（显示 ✎ 图标）
         </div>
@@ -851,7 +851,7 @@
       <div class="step-avatar backend">🔍</div>
       <div class="step-body backend">
         <div class="step-label backend">Python 后端</div>
-        <div class="step-text"><span class="highlight">ValidationPipeline.validate_tree(service_types)</span> — 四层完整校验（L1-L4）
+        <div class="step-text"><span class="highlight">ValidationPipeline.validate_tree(tree, service_types)</span> — 四层完整校验（L1-L4）
           <br>├─ 校验通过 → state="pass"，导出按钮可用
           <br>└─ 校验失败 → state="fail"，错误标红，用户可在应用内修复
         </div>
@@ -891,7 +891,7 @@
 </div>
 
 <div style="text-align:center;color:var(--text-sec);font-size:12px;margin-top:30px;padding-bottom:20px;">
-  MapGuide Dataflow Diagram · 7 Scenes · Generated 2026-06-06
+  MapGuide Dataflow Diagram · 8 Scenes · Updated 2026-06-09
 </div>
 
 </body>

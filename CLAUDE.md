@@ -301,8 +301,11 @@ npm run electron:build
 
 **Electron backend path behavior** (`electron/main.js`):
 - **Development**: Uses `C:\Users\PC\.conda\envs\gis-agent\python.exe` (overridable via `PYTHON_PATH` env var) to run `uvicorn backend.main:app --port 18080`. Waits for port 18080 to be ready before loading the window.
-- **Production**: Uses `resources\backend\MapGuideBackend.exe` (PyInstaller output). The exe is included via `build.extraResources` in `SourceCode/package.json`.
-- **Process cleanup**: `window-all-closed` / `before-quit` sends SIGTERM, force-kills with SIGKILL after 3s if still running.
+- **Production**: Uses `resources\backend\MapGuideBackend.exe` (PyInstaller single-file output from `_entrypoint.py`). The exe is included via `build.extraResources` in `SourceCode/package.json`.
+  - **IS_DEV detection**: `!!process.defaultApp` (NOT `app.isPackaged`, which returns `false` in `win-unpacked` mode).
+  - **Resources path**: Electron passes `MAPGUIDE_RESOURCES = process.resourcesPath` env var so the backend knows where external `config/` lives.
+  - **Entry point**: PyInstaller uses `backend/_entrypoint.py` (not `main.py`) as the entry script. `_entrypoint.py` sets up `sys.path` and calls `uvicorn.run(app)`.
+- **Process cleanup**: On Windows, `SIGTERM` does not work on PyInstaller exe. Use `taskkill /pid ${pid} /f /t` (kill process tree, including uvicorn workers). Force-kill after 2s if still running.
 - **IPC channels**:
   - `dialog:openFile` — file picker with filter support (used for import)
   - `file:read` — reads file content as UTF-8 string (used for import)
@@ -310,18 +313,30 @@ npm run electron:build
 
 ### Production Packaging
 
+**推荐方式**：一键 PowerShell 脚本（含全部 5 步：前置检查 → Vite 构建 → PyInstaller → electron-builder → README）
+
+```powershell
+cd scripts
+.\build-electron.ps1
+```
+
+输出到项目根目录 `dist/`，包含 NSIS 安装包和便携版 `win-unpacked/`。
+
+**手动步骤**（调试/排查时使用）：
+
 ```bash
 # Step 1: Python backend → standalone exe
-cd SourceCode/backend
-"/c/Users/PC/.conda/envs/gis-agent/python" -m PyInstaller build/pyinstaller.spec
+cd SourceCode/electron/build
+"/c/Users/PC/.conda/envs/gis-agent/python" -m PyInstaller pyinstaller.spec --clean --noconfirm --distpath ../../backend/dist --workpath ../../backend/build
 
 # Step 2: Vue frontend → static bundle
 cd SourceCode/frontend
 npm run build
+# ⚠️ 检查 dist/index.html 中 script src 是否为 "./assets/" 开头
 
 # Step 3: Electron → Windows installer
 cd SourceCode
-npm run electron:build
+npx electron-builder
 ```
 
 ---
@@ -558,6 +573,39 @@ The UI design is specified in `Document/技术细节.md` §4/§11/§12 and visua
 - **No history persistence**: in-memory only
 - **Import button**: "📂 导入" pill button in ConfigTreePanel header, left of validate/export. Opens Electron file dialog (`.map` filter), reads file via `readFile` IPC, sends `import_mapfile` WS message.
 - **Responsive breakpoints**: ≤900px collapses QAPanel; ≤600px uses bottom input bar
+
+### Electron Production Packaging
+
+The production build bundles the Python backend into a standalone exe via PyInstaller, packages the Vue frontend via Vite, and wraps both in an Electron installer via electron-builder. The packaging flow is: **PyInstaller** (Python → exe) → **Vite build** (Vue → static) → **electron-builder** (exe + static → installer/portable).
+
+**Critical: 7 pitfalls and their solutions** (all discovered and fixed during the initial packaging of this project):
+
+| # | Pitfall | Symptom | Solution |
+|---|---------|---------|----------|
+| 1 | `app.isPackaged` unreliable | `win-unpacked` exe falsely reports dev mode → "Backend Startup Failed" | Use `const IS_DEV = !!process.defaultApp` in `electron/main.js` |
+| 2 | Vite absolute paths | Blank page after launch, JS/CSS 404 under `file://` | `base: './'` in `vite.config.ts`; verify `dist/index.html` uses `./assets/` |
+| 3 | PyInstaller path misalignment | "Templates directory not found: `_MEIxxx\llm\templates`" | PyInstaller places entry script at `sys._MEIPASS` root. `datas` target path must NOT include `backend/` prefix (e.g. `('.../llm/templates', 'llm/templates')` NOT `('.../llm/templates', 'backend/llm/templates')`) |
+| 4 | Third-party package resources missing | "map.json does not exist" (mappyfile schemas) | PyInstaller does NOT auto-bundle `.json`/`.j2` files from installed packages. Explicitly add them: `(str(site_packages / 'mappyfile' / 'schemas'), 'mappyfile/schemas')` in `datas` |
+| 5 | No uvicorn entry point | PyInstaller exe exits immediately, backend health check times out | Create `backend/_entrypoint.py` with `sys.path` setup + `uvicorn.run(app)`. PyInstaller entry must be `_entrypoint.py`, not `main.py` |
+| 6 | Windows signal handling broken | Python process survives after closing Electron window | On Windows, `SIGTERM` is ignored by PyInstaller exe. Use `taskkill /pid ${pid} /f /t` in `electron/main.js` `stopPythonBackend()` |
+| 7 | Config trapped in asar | Users cannot edit `config.json` after installation | `config/` → `extraResources` (asar-external); `data/` → `datas` (bundled inside exe). Electron passes `MAPGUIDE_RESOURCES=process.resourcesPath` env var so backend finds external config |
+
+**Backend path resolution** (`backend/main.py`) handles both dev and PyInstaller modes:
+
+```python
+if hasattr(sys, '_MEIPASS'):
+    _BASE_DIR = Path(sys._MEIPASS)           # bundled data/ lives here
+    _RESOURCE_DIR = Path(os.environ.get('MAPGUIDE_RESOURCES', sys._MEIPASS))
+else:
+    _BASE_DIR = Path(__file__).resolve().parent.parent
+    _RESOURCE_DIR = _BASE_DIR
+
+RULES_PATH = _BASE_DIR / "data" / "mapguide_rules.json"     # read-only, bundled
+CONFIG_PATH = _RESOURCE_DIR / "config" / "config.json"      # user-editable, external
+TEMPLATES_DIR = Path(__file__).resolve().parent / "llm" / "templates"
+```
+
+**Vite config check** (`frontend/vite.config.ts`): Always verify `base: './'` is present. After `npm run build`, inspect `dist/index.html` — `<script src="./assets/...">` must use `./` prefix. If it shows `src="/assets/..."`, Electron's `file://` protocol resolves `/` to disk root (`C:/assets/...`), causing a blank page.
 
 ---
 

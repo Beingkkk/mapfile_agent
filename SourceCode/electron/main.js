@@ -1,6 +1,6 @@
 const { app, BrowserWindow, ipcMain, dialog, Menu } = require('electron');
 const path = require('path');
-const { spawn } = require('child_process');
+const { spawn, exec } = require('child_process');
 const fs = require('fs');
 const net = require('net');
 
@@ -10,7 +10,10 @@ const net = require('net');
 
 const BACKEND_PORT = 18080;
 const BACKEND_HOST = '127.0.0.1';
-const IS_DEV = !app.isPackaged;
+// process.defaultApp is true when running from 'electron .' (dev),
+// undefined when running from a packaged app (win-unpacked / asar).
+// app.isPackaged alone is unreliable in win-unpacked mode.
+const IS_DEV = !!process.defaultApp;
 
 // Development: use gis-agent conda environment Python
 const DEFAULT_PYTHON_PATH = 'C:\\Users\\PC\\.conda\\envs\\gis-agent\\python.exe';
@@ -108,9 +111,16 @@ function startPythonBackend() {
 
   console.log(`[Electron] Starting backend: ${pythonPath} ${args.join(' ')}`);
 
+  // Production: tell the backend where external resources (config/) live.
+  // electron-builder extraResources copies config/ to resources/config/.
+  const env = { ...process.env, PYTHONIOENCODING: 'utf-8' };
+  if (!IS_DEV) {
+    env.MAPGUIDE_RESOURCES = process.resourcesPath;
+  }
+
   pythonProcess = spawn(pythonPath, args, {
     cwd,
-    env: { ...process.env, PYTHONIOENCODING: 'utf-8' },
+    env,
   });
 
   pythonProcess.stdout.on('data', (data) => {
@@ -135,18 +145,39 @@ function startPythonBackend() {
 }
 
 function stopPythonBackend() {
-  if (pythonProcess) {
-    isQuitting = true;
-    console.log('[Electron] Stopping backend...');
-    // SIGTERM on Windows sends to the process group
-    pythonProcess.kill('SIGTERM');
-    // Force kill after 3s if still running
-    setTimeout(() => {
-      if (pythonProcess && !pythonProcess.killed) {
-        pythonProcess.kill('SIGKILL');
+  if (!pythonProcess) return;
+
+  isQuitting = true;
+  console.log('[Electron] Stopping backend...');
+  const pid = pythonProcess.pid;
+
+  if (process.platform === 'win32') {
+    // Windows: taskkill /f /t kills the entire process tree (includes uvicorn workers)
+    exec(`taskkill /pid ${pid} /f /t`, (err) => {
+      if (err) {
+        console.error('[Electron] taskkill failed:', err.message);
       }
-    }, 3000);
+    });
+  } else {
+    pythonProcess.kill('SIGTERM');
   }
+
+  // Ensure cleanup even if exit event never fires
+  setTimeout(() => {
+    if (pythonProcess) {
+      console.log('[Electron] Force killing backend...');
+      if (process.platform === 'win32') {
+        exec(`taskkill /pid ${pid} /f /t`, () => {});
+      } else {
+        try {
+          pythonProcess.kill('SIGKILL');
+        } catch (_) {
+          /* ignore */
+        }
+      }
+      pythonProcess = null;
+    }
+  }, 2000);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -9,7 +9,7 @@ description: WebSocket 通信约束、消息类型定义、前后端数据交换
 
 **前后端统一使用 WebSocket 通信，禁止 HTTP 与 WebSocket 混合交互。**
 
-- 前端 ↔ 后端：仅通过一条 WebSocket 长连接（`ws://localhost:8765/ws`）进行所有数据交换
+- 前端 ↔ 后端：仅通过一条 WebSocket 长连接（`ws://localhost:18080/ws`）进行所有数据交换
 - 后端 → LLM 厂商：通过 HTTP API（Anthropic Claude）
 - 前端获取静态资源（如 Vue 打包后的 JS/CSS）：通过 Electron 本地文件协议（`file://`），不走网络请求
 - 后端 FastAPI 仅暴露 WebSocket 路由 `/ws` 给前端，不暴露任何 HTTP REST API 供前端调用

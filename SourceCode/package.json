@@ -22,7 +22,7 @@
     "appId": "com.mapguide.app",
     "productName": "MapGuide",
     "directories": {
-      "output": "dist",
+      "output": "../dist",
       "buildResources": "build"
     },
     "files": [
@@ -34,9 +34,12 @@
       {
         "from": "backend/dist",
         "to": "backend",
-        "filter": [
-          "**/*"
-        ]
+        "filter": ["**/*"]
+      },
+      {
+        "from": "config",
+        "to": "config",
+        "filter": ["**/*"]
       }
     ],
     "win": {

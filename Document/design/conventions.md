@@ -161,7 +161,7 @@ SourceCode/
 
 # 运行后端
 cd SourceCode/backend
-"/c/Users/PC/.conda/envs/gis-agent/python" -m uvicorn main:app --port 8765 --reload
+"/c/Users/PC/.conda/envs/gis-agent/python" -m uvicorn main:app --port 18080 --reload
 
 # 运行测试
 cd SourceCode
@@ -177,7 +177,7 @@ cd SourceCode
 | 任务 | 命令 |
 |------|------|
 | 安装后端依赖 | `"/c/Users/PC/.conda/envs/gis-agent/python" -m pip install -r SourceCode/backend/requirements.txt` |
-| 启动后端开发服务器 | `cd SourceCode/backend && "/c/Users/PC/.conda/envs/gis-agent/python" -m uvicorn main:app --port 8765 --reload` |
+| 启动后端开发服务器 | `cd SourceCode/backend && "/c/Users/PC/.conda/envs/gis-agent/python" -m uvicorn main:app --port 18080 --reload` |
 | 启动前端开发服务器 | `cd SourceCode/frontend && npm run dev` |
 | 启动 Electron 开发 | `cd SourceCode && npm run electron:dev`（需先启动前后端） |
 | 运行单元测试 | `cd SourceCode && "/c/Users/PC/.conda/envs/gis-agent/python" -m pytest tests/unit/ -v` |
@@ -266,7 +266,7 @@ cd SourceCode
 | `pytest tests/unit/` 找不到文件 | 没有从 `SourceCode/` 目录运行 | `cd SourceCode` 后再运行 |
 | `mappyfile.validate()` 报错 `version` 类型 | 传了字符串 `"8.4"` | 改为浮点数 `8.4` |
 | PROJECTION 序列化失败 | 传了字符串而不是数组 | 用 `["init=epsg:3857"]` |
-| 前端收不到 WebSocket 消息 | 后端端口/路由不对 | 检查 `ws://localhost:8765/ws` |
+| 前端收不到 WebSocket 消息 | 后端端口/路由不对 | 检查 `ws://localhost:18080/ws` |
 | LLM 返回 JSON 解析失败 | 温度太高或 prompt 不清晰 | 检查 prompt 中的 JSON 示例 |
 
 ### 16.2 日志级别
