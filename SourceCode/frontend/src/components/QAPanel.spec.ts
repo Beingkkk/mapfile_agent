@@ -124,7 +124,7 @@ describe('QAPanel', () => {
       })
       await flushPromises()
 
-      const input = wrapper.find('.input-area input')
+      const input = wrapper.find('.input-area textarea')
       expect(input.attributes('placeholder')).toContain('LAYER #1')
     })
   })
@@ -177,7 +177,7 @@ describe('QAPanel', () => {
       })
       await flushPromises()
 
-      const input = wrapper.find('.input-area input')
+      const input = wrapper.find('.input-area textarea')
       expect(input.attributes('placeholder')).toContain('layers.0.name')
     })
   })
@@ -224,7 +224,7 @@ describe('QAPanel', () => {
         global: { plugins: [pinia] }
       })
 
-      const input = wrapper.find('.input-area input')
+      const input = wrapper.find('.input-area textarea')
       await input.setValue('hello')
       await input.trigger('keydown.enter')
       await flushPromises()
@@ -242,8 +242,8 @@ describe('QAPanel', () => {
         global: { plugins: [pinia] }
       })
 
-      await wrapper.find('.input-area input').setValue('q')
-      await wrapper.find('.input-area input').trigger('keydown.enter')
+      await wrapper.find('.input-area textarea').setValue('q')
+      await wrapper.find('.input-area textarea').trigger('keydown.enter')
       await flushPromises()
       expect(wrapper.find('.loading-bubble').exists()).toBe(true)
 
@@ -264,8 +264,8 @@ describe('QAPanel', () => {
         global: { plugins: [pinia] }
       })
 
-      await wrapper.find('.input-area input').setValue('q')
-      await wrapper.find('.input-area input').trigger('keydown.enter')
+      await wrapper.find('.input-area textarea').setValue('q')
+      await wrapper.find('.input-area textarea').trigger('keydown.enter')
       await flushPromises()
       expect(wrapper.find('.loading-bubble').exists()).toBe(true)
 
@@ -284,7 +284,7 @@ describe('QAPanel', () => {
         global: { plugins: [pinia] }
       })
 
-      const input = wrapper.find('.input-area input')
+      const input = wrapper.find('.input-area textarea')
       await input.setValue('first')
       await input.trigger('keydown.enter')
       await flushPromises()

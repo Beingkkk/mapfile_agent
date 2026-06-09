@@ -80,11 +80,12 @@
       </div>
 
       <div class="input-area">
-        <input
+        <textarea
           v-model="inputText"
           :disabled="isSending"
           :placeholder="inputPlaceholder"
-          @keydown.enter="send"
+          rows="2"
+          @keydown.enter.exact.prevent="send"
         />
         <button :disabled="isSending || !inputText.trim()" @click="send">
           {{ isSending ? '⏳' : '发送' }}
@@ -618,19 +619,22 @@ ws.on('history_cleared', () => {
   gap: 8px;
   flex-shrink: 0;
 }
-.input-area input {
+.input-area textarea {
   flex: 1;
   padding: 8px 12px;
   border: 1px solid #d1d5db;
   border-radius: 6px;
   font-size: 14px;
+  line-height: 1.5;
   outline: none;
   transition: border-color 0.15s;
+  resize: none;
+  font-family: inherit;
 }
-.input-area input:focus {
+.input-area textarea:focus {
   border-color: #2563eb;
 }
-.input-area input:disabled {
+.input-area textarea:disabled {
   background: #f3f4f6;
   color: #9aa5b1;
 }

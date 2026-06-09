@@ -20,6 +20,31 @@
         width: 100%;
         height: 100%;
       }
+
+      /* Custom scrollbar — thin, minimal, hover-reactive */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: rgba(156, 163, 175, 0.5);
+        border-radius: 3px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: rgba(107, 114, 128, 0.7);
+      }
+      ::-webkit-scrollbar-corner {
+        background: transparent;
+      }
+
+      /* Firefox */
+      * {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+      }
     </style>
   </head>
   <body>

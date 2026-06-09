@@ -159,7 +159,7 @@ export class WebSocketService {
   private reconnect() {
     this.reconnectTimer = setTimeout(() => {
       console.log('[WS] Reconnecting...')
-      this.connect('ws://localhost:8765/ws', this._sessionId)
+      this.connect('ws://localhost:18080/ws', this._sessionId)
     }, 3000)
   }
 
