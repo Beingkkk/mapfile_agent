@@ -30,6 +30,7 @@ class ConfigSession:
     focus_param: str | None = None
     service_types: list[str] = field(default_factory=lambda: ["wms"])
     mapcache_enabled: bool = False
+    import_mode: bool = False
 
     def __post_init__(self) -> None:
         if not self.params:
@@ -37,7 +38,8 @@ class ConfigSession:
             self.params = {"__type__": "map"}
         if self.tree is None:
             self.tree = ConfigTree(
-                self.params, self.mapper, self.service_types
+                self.params, self.mapper, self.service_types,
+                import_mode=self.import_mode,
             )
 
     # ─────────────────────────────────────────────────────────────────────────
@@ -63,5 +65,6 @@ class ConfigSession:
                 self.tree.update_value(path, value, user_modified=False)
         # Rebuild tree so new nodes are reflected
         self.tree = ConfigTree(
-            self.params, self.mapper, self.service_types
+            self.params, self.mapper, self.service_types,
+            import_mode=self.import_mode,
         )

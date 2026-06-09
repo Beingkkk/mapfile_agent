@@ -76,10 +76,13 @@ class ConfigTree:
         params: dict[str, Any],
         mapper: TemplateMapper,
         service_types: list[str] | None = None,
+        *,
+        import_mode: bool = False,
     ) -> None:
         self.params = params
         self.mapper = mapper
         self.service_types = service_types if service_types is not None else ["wms"]
+        self.import_mode = import_mode
         self.root = self._build_tree(params, path="map", object_type="MAP")
 
     # ─────────────────────────────────────────────────────────────────────────
@@ -113,7 +116,7 @@ class ConfigTree:
                     obj[field] = desc.default
                 value = obj[field]
             else:
-                if desc.default is not None:
+                if not self.import_mode and desc.default is not None:
                     obj[field] = desc.default
                 value = desc.default if desc.default is not None else None
             leaf = TreeLeaf(
@@ -352,6 +355,13 @@ class ConfigTree:
             new_item: dict[str, Any] = {"__type__": object_type_lower}
             if object_type == "STYLE":
                 new_item["color"] = [128, 128, 128]
+            # When import_mode is active, _build_tree won't backfill defaults
+            # for missing fields — pre-fill them here so new nodes are usable.
+            if self.import_mode:
+                fields = self.mapper.get_fields(object_type)
+                for f_name, f_desc in fields.items():
+                    if f_desc.default is not None and f_name not in new_item:
+                        new_item[f_name] = f_desc.default
             parent[list_key].append(new_item)
         else:
             raise ValueError(f"Unsupported object type: {object_type}")

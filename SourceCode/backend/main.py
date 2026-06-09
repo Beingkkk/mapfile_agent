@@ -392,7 +392,8 @@ async def _handle_set_service_types(
 
     # Rebuild tree with new service type filtering
     session.tree = ConfigTree(
-        session.params, session.mapper, session.service_types
+        session.params, session.mapper, session.service_types,
+        import_mode=session.import_mode,
     )
     await _send_tree_state(websocket, session)
 

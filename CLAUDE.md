@@ -33,7 +33,7 @@ This project uses **Specification-Driven Development (SDD)**. All plans are lock
 
 ## Current Implementation State
 
-**All 5 phases complete** — backend Python ~2,700 lines, frontend Vue/TS ~1,000 lines, Electron ~300 lines, **333+ Python tests + 73 frontend tests passing**.
+**All 5 phases complete** — backend Python ~2,700 lines, frontend Vue/TS ~1,000 lines, Electron ~300 lines, **334 Python tests + 73 frontend tests passing**.
 
 > **Known pre-existing failure**: `tests/integration/test_rules_output.py::TestFieldProperties::test_required_rules_exist_for_map_and_layer` fails because proposal-0013 cleared `business_required` for MAP/LAYER, but this integration test still asserts `required + business_required >= 1`. This failure is unrelated to runtime behavior and should be fixed when the test is updated to match the new required-field semantics.
 
@@ -52,6 +52,8 @@ This project uses **Specification-Driven Development (SDD)**. All plans are lock
 | 块提问 UX 修复 | `frontend/src/components/ObjectCard.vue`, `QAPanel.vue` | QAPanel 11 | #0011 |
 | QA loading 占位气泡 | `frontend/src/types/tree.ts`, `stores/ui.ts`, `services/ws.ts`, `components/QAPanel.vue` | ui 4, QAPanel 4, ws 4 | #0012 |
 | 必填项语义分层 + UI 三档筛选 | `data/templates/required.json`, `generate_rules.py`, `template_mapper.py`, `config_tree.py`, `ObjectCard.vue`, `FieldEditor.vue`, `ConfigTreePanel.vue` | backend 56 + frontend 11 | #0013 |
+| 导入按钮 + IPC readFile | `frontend/src/components/ConfigTreePanel.vue`, `electron/main.js`, `electron/preload.js` | — | Type-C |
+| 导入默认值抑制 (import_mode) | `backend/core/config_tree.py`, `backend/core/session.py`, `backend/core/import_service.py` | — | Type-C |
 
 **Spikes** (pre-development validation, not production code):
 
@@ -146,6 +148,23 @@ validation_result WS message → frontend (QA error summary)
 tree_state WS message → frontend (leaf-level error indicators updated)
 ```
 
+**User imports a mapfile:**
+```
+import_mapfile WS message { content: "MAP..." }
+    │
+    ▼
+ImportService.import_mapfile() → mappyfile.loads(content)
+    │
+    ▼
+ConfigSession(import_mode=True)  # suppresses default backfill
+    │
+    ▼
+ValidationPipeline.validate_tree()  # full L1-L4
+    │
+    ▼
+import_result + tree_state WS messages → frontend
+```
+
 **User edits a field (auto-validate):**
 ```
 tree_update WS message { updates: [{path, value}] }
@@ -237,8 +256,8 @@ cd SourceCode
 ```bash
 cd SourceCode/backend
 
-# Start dev server
-"/c/Users/PC/.conda/envs/gis-agent/python" -m uvicorn main:app --port 8765 --reload
+# Start dev server (Electron uses port 18080; standalone dev can use any port)
+"/c/Users/PC/.conda/envs/gis-agent/python" -m uvicorn main:app --port 18080 --reload
 
 # Install dependencies
 "/c/Users/PC/.conda/envs/gis-agent/python" -m pip install -r requirements.txt
@@ -281,10 +300,13 @@ npm run electron:build
 ```
 
 **Electron backend path behavior** (`electron/main.js`):
-- **Development**: Uses `C:\Users\PC\.conda\envs\gis-agent\python.exe` (overridable via `PYTHON_PATH` env var) to run `uvicorn backend.main:app --port 8765`. Waits for port 8765 to be ready before loading the window.
+- **Development**: Uses `C:\Users\PC\.conda\envs\gis-agent\python.exe` (overridable via `PYTHON_PATH` env var) to run `uvicorn backend.main:app --port 18080`. Waits for port 18080 to be ready before loading the window.
 - **Production**: Uses `resources\backend\MapGuideBackend.exe` (PyInstaller output). The exe is included via `build.extraResources` in `SourceCode/package.json`.
 - **Process cleanup**: `window-all-closed` / `before-quit` sends SIGTERM, force-kills with SIGKILL after 3s if still running.
-- **IPC**: `save:exportFiles` opens a directory dialog and writes exported files (`.map`, `.xml`) to disk.
+- **IPC channels**:
+  - `dialog:openFile` — file picker with filter support (used for import)
+  - `file:read` — reads file content as UTF-8 string (used for import)
+  - `save:exportFiles` — opens directory dialog and writes exported files (`.map`, `.xml`) to disk
 
 ### Production Packaging
 
@@ -493,6 +515,8 @@ output = mappyfile.dumps(mf_dict)
 
 **Default value backfill**: `ConfigTree._build_tree()` writes `desc.default` back into `params` when a field is absent or explicitly `None`. This ensures fields marked with `D` in the UI actually hold their default value and pass validation.
 
+**Import mode (`import_mode=True`)**: When importing an existing `.map` file, `ConfigTree` is constructed with `import_mode=True`. In this mode, missing fields are **not** backfilled with defaults — only fields actually present in the original mapfile are retained. This preserves round-trip fidelity (import → export produces a file structurally identical to the original, minus comments which mappyfile does not preserve). New nodes added via `add_object()` during an import session are pre-filled with defaults so they remain usable.
+
 **Required field semantics (3 layers)**:
 - `required` (red `*`): Syntax-absolute required — `mappyfile.loadXXX()` fails if missing. Only `LAYER.type` and `CACHE.type` qualify.
 - `required_when` (orange `◆`): Conditionally required based on runtime context (parent field values, service types). E.g. `LAYER.connection` when `connectiontype in ['postgis','ogr','wms']`.
@@ -530,6 +554,7 @@ The UI design is specified in `Document/技术细节.md` §4/§11/§12 and visua
 - **QA round counter**: displayed in QAPanel header; resets to 0 on focus change
 - **Reset / New Task** button: confirm dialog, then full session reset
 - **No history persistence**: in-memory only
+- **Import button**: "📂 导入" pill button in ConfigTreePanel header, left of validate/export. Opens Electron file dialog (`.map` filter), reads file via `readFile` IPC, sends `import_mapfile` WS message.
 - **Responsive breakpoints**: ≤900px collapses QAPanel; ≤600px uses bottom input bar
 
 ---
@@ -583,5 +608,7 @@ The UI design is specified in `Document/技术细节.md` §4/§11/§12 and visua
 - **QA panel divider behavior**: Visual dividers in the QA panel mark context resets (focus change or manual clear). They use `role: 'divider'` (not `system`) with a minimal 1px gray line. Dividers are only inserted when (a) there is actual user/bot message history, and (b) there has been new QA exchange since the last divider. No double icons: `roleIcon('system')` already shows `⚠️`, so system message text must not include a second `⚠️`.
 - **Manual validate sends dual messages**: `_handle_validate` sends both `validation_result` (for QA panel error summary) **and** `tree_state` (for leaf-level error indicators on the ConfigTree). Auto-validate via `tree_update` only sends `tree_state`.
 - **Commit format**: `type(scope): proposal-NNNN description`
+- **Import round-trip**: `import_mode=True` preserves original fields only; defaults are not backfilled. New nodes added during import session are pre-filled with defaults via `add_object()`.
+- **mappyfile comment loss**: `mappyfile.loads()` does not preserve comments. Import → export will lose all `#` comments; this is an inherent limitation, not a bug.
 
 **Constraints**: `version` must be `float` (`8.4`), not `str`. `PROJECTION` must be an array `["init=epsg:3857"]`, not a string.

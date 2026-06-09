@@ -49,6 +49,7 @@ class ImportService:
             session_id=session_id,
             mapper=self.mapper,
             params=parsed,
+            import_mode=True,
         )
 
         # Run full validation

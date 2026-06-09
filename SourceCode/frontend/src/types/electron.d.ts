@@ -14,6 +14,7 @@ export interface SaveExportResult {
 export interface ElectronAPI {
   openFile: (options?: { filters?: Array<{ name: string; extensions: string[] }> }) => Promise<{ canceled: boolean; filePaths: string[] }>;
   saveDirectory: () => Promise<{ canceled: boolean; filePaths: string[] }>;
+  readFile: (filePath: string) => Promise<{ success: boolean; content?: string; error?: string }>;
   writeFile: (filePath: string, content: string) => Promise<{ success: boolean; error?: string }>;
   saveExportFiles: (files: ElectronFile[]) => Promise<SaveExportResult>;
   // Window controls (frameless)

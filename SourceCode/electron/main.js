@@ -235,6 +235,16 @@ function setupIPC() {
     };
   });
 
+  // Read a single file (used for importing .map files)
+  ipcMain.handle('file:read', async (_event, filePath) => {
+    try {
+      const content = fs.readFileSync(filePath, 'utf-8');
+      return { success: true, content };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  });
+
   // Write a single file (used by legacy IPC)
   ipcMain.handle('file:write', async (_event, filePath, content) => {
     try {

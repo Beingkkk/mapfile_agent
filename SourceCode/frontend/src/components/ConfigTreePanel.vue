@@ -7,6 +7,11 @@
         <span class="panel-header-sub">MapServer 8.4</span>
       </div>
       <div class="panel-header-actions">
+        <button class="btn-pill import" title="导入" @click="importMapfile">
+          <span class="btn-pill-icon">📂</span>
+          <span class="btn-pill-text">导入</span>
+        </button>
+        <span class="action-divider" />
         <button class="btn-pill validate" title="校验" @click="validate">
           <span class="btn-pill-icon">✅</span>
           <span class="btn-pill-text">校验</span>
@@ -142,6 +147,26 @@ function exportMapfile() {
   ws.send({ type: 'export' })
 }
 
+async function importMapfile() {
+  if (!window.electronAPI) {
+    console.warn('[Import] Browser mode not supported for import')
+    return
+  }
+  const result = await window.electronAPI.openFile({
+    filters: [{ name: 'Mapfile', extensions: ['map'] }],
+  })
+  if (result.canceled || result.filePaths.length === 0) return
+
+  const filePath = result.filePaths[0]
+  const readResult = await window.electronAPI.readFile(filePath)
+  if (!readResult.success || readResult.content === undefined) {
+    console.error('[Import] Failed to read file:', readResult.error)
+    return
+  }
+
+  ws.send({ type: 'import_mapfile', content: readResult.content })
+}
+
 function toggleService(service: string, enabled: boolean) {
   const current = new Set(sessionStore.service_types)
   if (enabled) {
@@ -231,8 +256,16 @@ function toggleMapcache(enabled: boolean) {
   border-color: #9aa5b1;
   color: #1f2937;
 }
+.btn-pill.import:hover { color: #9333ea; border-color: #9333ea; }
 .btn-pill.validate:hover { color: #2563eb; border-color: #2563eb; }
 .btn-pill.export:hover { color: #16a34a; border-color: #16a34a; }
+
+.action-divider {
+  width: 1px;
+  height: 18px;
+  background: #d1d5db;
+  margin: 0 2px;
+}
 .btn-pill:disabled {
   opacity: 0.45;
   cursor: not-allowed;
