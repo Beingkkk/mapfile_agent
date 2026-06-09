@@ -28,6 +28,9 @@ export const useUIStore = defineStore('ui', {
         this.expandedNodes.add(id)
       }
     },
+    expandPaths(paths: string[]) {
+      paths.forEach((p) => this.expandedNodes.add(p))
+    },
     addQAMessage(msg: QAMessage) {
       this.qaMessages.push(msg)
       // Only count user/bot pairs for round count

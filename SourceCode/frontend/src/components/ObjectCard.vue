@@ -1,5 +1,5 @@
 <template>
-  <div class="tree-obj">
+  <div class="tree-obj" :data-path="node.path">
     <!-- Object Header -->
     <div class="tree-obj-header" :class="{ selected: isSelected }" @click="setFocus">
       <span class="tree-toggle" :class="{ collapsed: !expanded }" @click.stop="toggleExpanded">{{ '▼' }}</span>
@@ -68,7 +68,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import type { TreeNode, TreeLeaf } from '@/types/tree'
 import { useUIStore } from '@/stores/ui'
 import { useSessionStore } from '@/stores/session'
@@ -86,6 +86,13 @@ const uiStore = useUIStore()
 const sessionStore = useSessionStore()
 const expanded = ref(props.node.expanded ?? true)
 const showModal = ref(false)
+
+// Respond to external expand commands (e.g. from search)
+watch(() => uiStore.expandedNodes.has(props.node.path), (shouldExpand) => {
+  if (shouldExpand) {
+    expanded.value = true
+  }
+})
 
 const nodeType = computed(() => props.node.object_type || 'UNKNOWN')
 const nodeIndex = computed(() => {

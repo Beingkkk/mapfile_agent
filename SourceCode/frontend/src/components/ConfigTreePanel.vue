@@ -68,6 +68,51 @@
       </div>
     </div>
 
+    <!-- Search Bar -->
+    <div class="search-bar">
+      <span class="search-icon">🔍</span>
+      <input
+        ref="searchInputRef"
+        v-model="searchQuery"
+        class="search-input"
+        placeholder="搜索字段..."
+        @focus="isSearchFocused = true"
+        @keydown.esc="clearSearch"
+      />
+      <button
+        v-if="searchQuery"
+        class="search-clear"
+        title="清除"
+        @click="clearSearch"
+      >
+        ×
+      </button>
+      <!-- Search Results Dropdown -->
+      <div
+        v-if="searchResults.length > 0 && isSearchFocused"
+        class="search-dropdown"
+      >
+        <div
+          v-for="result in searchResults"
+          :key="result.path"
+          class="search-result-item"
+          @mousedown.prevent="onResultClick(result)"
+        >
+          <span class="search-result-key">{{ result.key }}</span>
+          <span class="search-result-meta">
+            <span class="search-result-type">[{{ result.value_type }}]</span>
+            <span class="search-result-path">{{ result.parentPath }}</span>
+          </span>
+        </div>
+      </div>
+      <div
+        v-else-if="searchQuery && isSearchFocused && searchResults.length === 0"
+        class="search-dropdown empty"
+      >
+        <span class="search-empty">无匹配字段</span>
+      </div>
+    </div>
+
     <!-- Legend Bar: showmode toggle + legend text + status -->
     <div class="legend-bar">
       <div class="showmode-toggle">
@@ -122,7 +167,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, nextTick } from 'vue'
+import type { TreeNode, TreeLeaf } from '@/types/tree'
 import { useSessionStore } from '@/stores/session'
 import { useUIStore } from '@/stores/ui'
 import ObjectCard from './ObjectCard.vue'
@@ -131,6 +177,95 @@ import { ws } from '@/services/ws'
 const sessionStore = useSessionStore()
 const uiStore = useUIStore()
 const tree = computed(() => sessionStore.params)
+
+// ── Search ──
+const searchQuery = ref('')
+const isSearchFocused = ref(false)
+const searchInputRef = ref<HTMLInputElement | null>(null)
+
+interface SearchResult {
+  key: string
+  path: string
+  value_type: string
+  parentPath: string
+}
+
+const searchResults = computed(() => {
+  const q = searchQuery.value.trim().toLowerCase()
+  if (!q) return []
+
+  const results: SearchResult[] = []
+
+  function traverse(node: TreeNode) {
+    for (const child of node.children || []) {
+      if ('children' in child) {
+        traverse(child)
+      } else {
+        const leaf = child as TreeLeaf
+        if (
+          leaf.key.toLowerCase().includes(q) ||
+          leaf.path.toLowerCase().includes(q)
+        ) {
+          const parts = leaf.path.split('.')
+          parts.pop()
+          const parentPath = parts.join('.') || 'map'
+          results.push({
+            key: leaf.key,
+            path: leaf.path,
+            value_type: leaf.value_type,
+            parentPath,
+          })
+        }
+      }
+    }
+  }
+
+  const root = tree.value as unknown as TreeNode
+  if (root?.children) {
+    traverse(root)
+  }
+
+  return results.slice(0, 10)
+})
+
+function clearSearch() {
+  searchQuery.value = ''
+  isSearchFocused.value = false
+  searchInputRef.value?.blur()
+}
+
+function getAncestorPaths(path: string): string[] {
+  const parts = path.split('.')
+  const ancestors: string[] = []
+  let current = ''
+  for (let i = 0; i < parts.length; i++) {
+    current = current ? `${current}.${parts[i]}` : parts[i]
+    ancestors.push(current)
+  }
+  return ancestors
+}
+
+function onResultClick(result: SearchResult) {
+  searchQuery.value = ''
+  isSearchFocused.value = false
+
+  // Expand all ancestor nodes
+  const ancestors = getAncestorPaths(result.parentPath)
+  uiStore.expandPaths(ancestors)
+
+  // Also set focus to the field
+  ws.send({ type: 'focus_change', path: result.path })
+
+  // Scroll to element after DOM update
+  nextTick(() => {
+    const el = document.querySelector(`[data-path="${result.path}"]`)
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      el.classList.add('search-highlight')
+      setTimeout(() => el.classList.remove('search-highlight'), 2000)
+    }
+  })
+}
 
 /** Tree is ready when params has a valid object_type (from backend tree_state).
  *  Note: children may be empty for a freshly-created MAP node. */
@@ -328,6 +463,135 @@ function toggleMapcache(enabled: boolean) {
   height: 16px;
   background: #d1d5db;
   margin: 0 2px;
+}
+
+/* ── Search Bar ── */
+.search-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  background: #fff;
+  border-bottom: 1px solid #e4e7eb;
+  flex-shrink: 0;
+}
+.search-icon {
+  font-size: 13px;
+  color: #9aa5b1;
+  flex-shrink: 0;
+}
+.search-input {
+  flex: 1;
+  padding: 5px 9px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #374151;
+  background: #fff;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.search-input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+.search-input::placeholder {
+  color: #9aa5b1;
+}
+.search-clear {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: #9aa5b1;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.search-clear:hover {
+  background: #f0f2f5;
+  color: #52606d;
+}
+
+/* Search dropdown */
+.search-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 18px;
+  right: 18px;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 4px;
+}
+.search-dropdown.empty {
+  padding: 12px;
+  text-align: center;
+}
+.search-empty {
+  font-size: 13px;
+  color: #9aa5b1;
+}
+.search-result-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.search-result-item:hover {
+  background: #f0f4f8;
+}
+.search-result-key {
+  font-family: monospace;
+  font-size: 13px;
+  color: #374151;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.search-result-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+}
+.search-result-type {
+  font-size: 11px;
+  color: #7b8794;
+  background: #f0f2f5;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-family: monospace;
+  flex-shrink: 0;
+}
+.search-result-path {
+  font-size: 12px;
+  color: #9aa5b1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Search highlight on target element */
+:deep(.search-highlight) {
+  animation: search-highlight-pulse 2s ease-out;
+}
+@keyframes search-highlight-pulse {
+  0% { background-color: #fef3c7; }
+  100% { background-color: transparent; }
 }
 
 /* ── Legend Bar ── */

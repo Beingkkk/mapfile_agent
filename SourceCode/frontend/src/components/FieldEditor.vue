@@ -1,5 +1,10 @@
 <template>
-  <div class="tree-prop" :class="{ 'has-error': leaf.errors.length > 0, focused: isFocused }" @click="handleClick">
+  <div
+    class="tree-prop"
+    :data-path="leaf.path"
+    :class="{ 'has-error': leaf.errors.length > 0, focused: isFocused }"
+    @click="handleClick"
+  >
     <span class="req-indicator" :class="indicatorClass" :title="indicatorTitle">{{ indicator }}</span>
     <span class="tree-prop-key" :title="leaf.path">{{ leaf.key }}:</span>
     <span class="tree-prop-value">
