@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Design constraints**: single-person project, minimal scope, no over-engineering. The MVP targets one flow: **PostGIS/Shapefile → WMS/WFS/WCS → optional MapCache disk cache (WMTS/TMS)**, locked to **MapServer 8.4**.
 
-**⚠️ README.md vs CLAUDE.md 分工**: README.md 面向快速上手（技术栈、启动命令、项目结构）；CLAUDE.md 面向开发决策（架构约束、关键规则、实现细节）。两者互补，但架构决策以本文档和 `Document/技术细节.md` 为准。
+**⚠️ CLAUDE.md 定位**: 本文档面向开发决策（架构约束、关键规则、实现细节）。架构决策以本文档和 `Document/技术细节.md` 为准。项目根目录暂无 README.md；快速上手指南在 `Document/design/conventions.md` §2。
 
 ---
 
@@ -33,9 +33,7 @@ This project uses **Specification-Driven Development (SDD)**. All plans are lock
 
 ## Current Implementation State
 
-**All 5 phases complete** — backend Python ~2,700 lines, frontend Vue/TS ~1,000 lines, Electron ~300 lines, **334 Python tests + 73 frontend tests passing**.
-
-> **Known pre-existing failure**: `tests/integration/test_rules_output.py::TestFieldProperties::test_required_rules_exist_for_map_and_layer` fails because proposal-0013 cleared `business_required` for MAP/LAYER, but this integration test still asserts `required + business_required >= 1`. This failure is unrelated to runtime behavior and should be fixed when the test is updated to match the new required-field semantics.
+**All 5 phases complete + 14 proposals implemented** — backend Python ~2,700 lines, frontend Vue/TS ~1,100 lines, Electron ~300 lines, **334 Python tests + 79 frontend tests passing**.
 
 | Module | Files | Tests | Proposal |
 |--------|-------|-------|----------|
@@ -52,8 +50,10 @@ This project uses **Specification-Driven Development (SDD)**. All plans are lock
 | 块提问 UX 修复 | `frontend/src/components/ObjectCard.vue`, `QAPanel.vue` | QAPanel 11 | #0011 |
 | QA loading 占位气泡 | `frontend/src/types/tree.ts`, `stores/ui.ts`, `services/ws.ts`, `components/QAPanel.vue` | ui 4, QAPanel 4, ws 4 | #0012 |
 | 必填项语义分层 + UI 三档筛选 | `data/templates/required.json`, `generate_rules.py`, `template_mapper.py`, `config_tree.py`, `ObjectCard.vue`, `FieldEditor.vue`, `ConfigTreePanel.vue` | backend 56 + frontend 11 | #0013 |
+| **扩展 required_when 覆盖服务发布基本参数** | `data/templates/required.json` | — | **#0014** |
 | 导入按钮 + IPC readFile | `frontend/src/components/ConfigTreePanel.vue`, `electron/main.js`, `electron/preload.js` | — | Type-C |
 | 导入默认值抑制 (import_mode) | `backend/core/config_tree.py`, `backend/core/session.py`, `backend/core/import_service.py` | — | Type-C |
+| 字段搜索（结果列表跳转） | `frontend/src/components/ConfigTreePanel.vue`, `ObjectCard.vue`, `FieldEditor.vue` | ConfigTreePanel 6 | Type-C |
 
 **Spikes** (pre-development validation, not production code):
 
@@ -519,8 +519,10 @@ output = mappyfile.dumps(mf_dict)
 
 **Required field semantics (3 layers)**:
 - `required` (red `*`): Syntax-absolute required — `mappyfile.loadXXX()` fails if missing. Only `LAYER.type` and `CACHE.type` qualify.
-- `required_when` (orange `◆`): Conditionally required based on runtime context (parent field values, service types). E.g. `LAYER.connection` when `connectiontype in ['postgis','ogr','wms']`.
-- `business_required`: Cleared — all previously listed fields had defaults and are now handled by automatic backfill.
+- `required_when` (orange `◆`): Conditionally required / conditionally important based on runtime context. Two sub-categories:
+  - **Functional dependency**: parent field values drive requirement, e.g. `LAYER.connection` when `connectiontype in ['postgis','ogr','wms']`
+  - **Business importance**: fields that have defaults but are critical for service publishing, e.g. `MAP.extent` (defaults to global `[-180,-90,180,90]`), `MAP.projection`, `LAYER.extent` — marked when `len(session.service_types) > 0`
+- `business_required`: Cleared. Rationale: all previously listed fields now have defaults handled by automatic backfill. **Note**: having a default does NOT remove business importance — see `required_when` business-importance category above.
 
 **Service type filtering in ConfigTree**: ConfigTree receives `service_types: list[str]` at construction time. METADATA field visibility follows prefix rules:
 - `ows_*` — always visible (general prefix shared by all OGC services)
@@ -602,6 +604,7 @@ The UI design is specified in `Document/技术细节.md` §4/§11/§12 and visua
 - **`config.json` is gitignored**: It contains LLM API credentials. Use `config.json.template` as the reference structure.
 - **`mapguide_rules.json` is generated**: Run `scripts/generate_rules.py` after modifying `data/templates/`. The script also loads `service-metadata.json` for multi-service parameter mapping.
 - **Multi-service Mapfile**: One `.map` file supports WMS + WFS + WCS simultaneously. Service-specific METADATA params (wms_*, wfs_*, wcs_*) are filtered by UI; `ows_*` general-prefix params are always visible. WMTS/TMS are provided via MapCache (`mapcache.xml`), not Mapfile.
+- **Default values are technical fallbacks, not business exemptions**: A field having a default (e.g. `MAP.extent = [-180,-90,180,90]`) does not mean it requires no user attention. Proposal-0014 established that service-critical fields with defaults should still be marked `required_when` under service mode to prompt user review.
 - **`data/schemas/` removed**: the root-level `mapfile-schema-8-4.json` and `schemas/` directory were cleaned up; the canonical schema now lives in `data/templates/mapfile-schema-8-4.json`.
 - **Color format**: RGB arrays `[0, 0, 255]` everywhere. No hex conversion.
 - **Testing approach**: TDD. Unit tests for backend/core/ and backend/llm/. Integration tests for generate_rules.py output + LLM mock end-to-end.
@@ -609,6 +612,7 @@ The UI design is specified in `Document/技术细节.md` §4/§11/§12 and visua
 - **Manual validate sends dual messages**: `_handle_validate` sends both `validation_result` (for QA panel error summary) **and** `tree_state` (for leaf-level error indicators on the ConfigTree). Auto-validate via `tree_update` only sends `tree_state`.
 - **Commit format**: `type(scope): proposal-NNNN description`
 - **Import round-trip**: `import_mode=True` preserves original fields only; defaults are not backfilled. New nodes added during import session are pre-filled with defaults via `add_object()`.
+- **Field search**: ConfigTreePanel has a search box that filters current tree leaves by key/path. Clicking a result expands ancestor nodes, sets focus, and scrolls to the field with a highlight pulse.
 - **mappyfile comment loss**: `mappyfile.loads()` does not preserve comments. Import → export will lose all `#` comments; this is an inherent limitation, not a bug.
 
 **Constraints**: `version` must be `float` (`8.4`), not `str`. `PROJECTION` must be an array `["init=epsg:3857"]`, not a string.

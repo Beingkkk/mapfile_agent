@@ -88,7 +88,7 @@
           "derived": false,
           "editable": true,
           "required": false,
-          "required_when": null
+          "required_when": "len(session.service_types) > 0"
         },
         "fontset": {
           "key": "fontset",
@@ -216,7 +216,7 @@
           "derived": false,
           "editable": true,
           "required": false,
-          "required_when": null
+          "required_when": "len(session.service_types) > 0"
         },
         "outputformats": {
           "key": "outputformats",
@@ -248,7 +248,7 @@
           "derived": false,
           "editable": true,
           "required": false,
-          "required_when": null
+          "required_when": "len(session.service_types) > 0"
         },
         "querymap": {
           "key": "querymap",
@@ -459,7 +459,11 @@
       },
       "required": [],
       "business_required": [],
-      "required_when": {}
+      "required_when": {
+        "extent": "len(session.service_types) > 0",
+        "name": "len(session.service_types) > 0",
+        "projection": "len(session.service_types) > 0"
+      }
     },
     "LAYER": {
       "fields": {
@@ -670,7 +674,7 @@
           "derived": false,
           "editable": true,
           "required": false,
-          "required_when": null
+          "required_when": "len(session.service_types) > 0"
         },
         "features": {
           "key": "features",
@@ -1139,7 +1143,7 @@
           "derived": false,
           "editable": true,
           "required": false,
-          "required_when": null
+          "required_when": "len(session.service_types) > 0"
         },
         "requires": {
           "key": "requires",
@@ -1486,6 +1490,8 @@
       ],
       "business_required": [],
       "required_when": {
+        "extent": "len(session.service_types) > 0",
+        "projection": "len(session.service_types) > 0",
         "connection": "connectiontype in ['postgis', 'ogr', 'wms']",
         "data": "connectiontype == 'local'",
         "name": "len(session.service_types) > 0"
@@ -3160,7 +3166,7 @@
           "derived": false,
           "editable": true,
           "required": false,
-          "required_when": null
+          "required_when": "len(session.service_types) > 0 and not map.get('projection')"
         },
         "ows_fees": {
           "key": "ows_fees",
@@ -4544,6 +4550,7 @@
       "required_when": {
         "ows_title": "len(session.service_types) > 0",
         "ows_onlineresource": "len(session.service_types) > 0",
+        "ows_srs": "len(session.service_types) > 0 and not map.get('projection')",
         "wms_title": "'wms' in session.service_types and not map.web.metadata.get('ows_title')",
         "wfs_title": "'wfs' in session.service_types and not map.web.metadata.get('ows_title')",
         "wcs_title": "'wcs' in session.service_types and not map.web.metadata.get('ows_title')",
@@ -4803,7 +4810,7 @@
       "derived": false,
       "editable": true,
       "required": false,
-      "required_when": null,
+      "required_when": "len(session.service_types) > 0",
       "path": "map.extent"
     },
     "map.fontset": {
@@ -4939,7 +4946,7 @@
       "derived": false,
       "editable": true,
       "required": false,
-      "required_when": null,
+      "required_when": "len(session.service_types) > 0",
       "path": "map.name"
     },
     "map.outputformats": {
@@ -4973,7 +4980,7 @@
       "derived": false,
       "editable": true,
       "required": false,
-      "required_when": null,
+      "required_when": "len(session.service_types) > 0",
       "path": "map.projection"
     },
     "map.querymap": {
@@ -5412,7 +5419,7 @@
       "derived": false,
       "editable": true,
       "required": false,
-      "required_when": null,
+      "required_when": "len(session.service_types) > 0",
       "path": "layers.N.extent"
     },
     "layers.N.features": {
@@ -5910,7 +5917,7 @@
       "derived": false,
       "editable": true,
       "required": false,
-      "required_when": null,
+      "required_when": "len(session.service_types) > 0",
       "path": "layers.N.projection"
     },
     "layers.N.requires": {
@@ -8138,7 +8145,7 @@
       "derived": false,
       "editable": true,
       "required": false,
-      "required_when": null,
+      "required_when": "len(session.service_types) > 0 and not map.get('projection')",
       "path": "map.web.metadata.ows_srs"
     },
     "layers.N.metadata.ows_srs": {
@@ -8155,7 +8162,7 @@
       "derived": false,
       "editable": true,
       "required": false,
-      "required_when": null,
+      "required_when": "len(session.service_types) > 0 and not map.get('projection')",
       "path": "layers.N.metadata.ows_srs"
     },
     "layers.N.classes.M.metadata.ows_srs": {
@@ -8172,7 +8179,7 @@
       "derived": false,
       "editable": true,
       "required": false,
-      "required_when": null,
+      "required_when": "len(session.service_types) > 0 and not map.get('projection')",
       "path": "layers.N.classes.M.metadata.ows_srs"
     },
     "map.web.metadata.ows_fees": {
