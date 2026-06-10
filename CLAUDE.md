@@ -33,35 +33,21 @@ This project uses **Specification-Driven Development (SDD)**. All plans are lock
 
 ## Current Implementation State
 
-**All 5 phases complete + 14 proposals implemented** — backend Python ~2,700 lines, frontend Vue/TS ~1,100 lines, Electron ~300 lines, **334 Python tests + 79 frontend tests passing**.
+**All 5 phases complete + 15 proposals implemented** — backend Python ~2,800 lines, frontend Vue/TS ~1,100 lines, Electron ~300 lines, **333 Python tests + 79 frontend tests passing**.
 
-| Module | Files | Tests | Proposal |
-|--------|-------|-------|----------|
-| `generate_rules.py` | `scripts/generate_rules.py` | `tests/unit/test_generate_rules.py` (53), `tests/integration/test_rules_output.py` (17) | #0002 |
-| `TemplateMapper` + `FieldDescriptor` | `backend/core/template_mapper.py` | `tests/unit/test_template_mapper.py` (33) | #0003 |
-| `ConfigSession` + `ConfigTree` | `backend/core/session.py`, `backend/core/config_tree.py`, `backend/core/history.py` | `tests/unit/test_session.py` (12), `tests/unit/test_config_tree.py` (52) | #0004 |
-| `ValidationPipeline` (L1-L4) | `backend/core/validation.py` | `tests/unit/test_validation.py` (45) | #0005 |
-| `LLMClient` + `LLMOutput` + `UpdateResolver` | `backend/llm/llm_client.py`, `llm_output.py`, `update_resolver.py` | `tests/unit/test_llm_client.py` (6), `test_llm_output.py` (17), `test_update_resolver.py` (5) | #0006 |
-| `PromptBuilder` + `QAService` + `ImportService` + `ExportService` | `backend/llm/prompt_builder.py`, `core/qa_service.py`, `core/import_service.py`, `core/export_service.py` | `tests/unit/test_prompt_builder.py` (5), `test_qa_service.py` (9), `test_import_service.py` (7), `test_export_service.py` (8) | #0007 |
-| `MapCacheGenerator` + `MapCacheValidator` | `backend/mapcache/generator.py`, `mapcache/validator.py` | `tests/unit/test_mapcache_generator.py` (8), `test_mapcache_validator.py` (8) | #0008 |
-| `CustomPropModal` + Electron config | `frontend/src/components/CustomPropModal.vue`, `electron/main.js`, `electron/preload.js`, `SourceCode/package.json` | `tests/unit/*` (FieldEditor 25, ws 13, ui 11, session 1, ObjectCard 4) | #0009 |
-| WebSocket routing | `backend/main.py` | `tests/unit/test_main.py` (12) | #0004, #0007 |
-| UI 差距修复 | `frontend/src/components/ConfigTreePanel.vue`, `ObjectCard.vue`, `FieldEditor.vue` | — | #0010 |
-| 块提问 UX 修复 | `frontend/src/components/ObjectCard.vue`, `QAPanel.vue` | QAPanel 11 | #0011 |
-| QA loading 占位气泡 | `frontend/src/types/tree.ts`, `stores/ui.ts`, `services/ws.ts`, `components/QAPanel.vue` | ui 4, QAPanel 4, ws 4 | #0012 |
-| 必填项语义分层 + UI 三档筛选 | `data/templates/required.json`, `generate_rules.py`, `template_mapper.py`, `config_tree.py`, `ObjectCard.vue`, `FieldEditor.vue`, `ConfigTreePanel.vue` | backend 56 + frontend 11 | #0013 |
-| **扩展 required_when 覆盖服务发布基本参数** | `data/templates/required.json` | — | **#0014** |
-| 导入按钮 + IPC readFile | `frontend/src/components/ConfigTreePanel.vue`, `electron/main.js`, `electron/preload.js` | — | Type-C |
-| 导入默认值抑制 (import_mode) | `backend/core/config_tree.py`, `backend/core/session.py`, `backend/core/import_service.py` | — | Type-C |
-| 字段搜索（结果列表跳转） | `frontend/src/components/ConfigTreePanel.vue`, `ObjectCard.vue`, `FieldEditor.vue` | ConfigTreePanel 6 | Type-C |
+All proposals live in `Document/changes/proposal-{NNNN}.md`. Key ones:
+
+| # | 主题 |
+|---|------|
+| #0013 | 必填项语义分层 + UI 三档筛选 (`*`/`◆`/`D`) |
+| #0014 | 扩展 `required_when` 覆盖服务发布基本参数 |
+| #0015 | 服务类型勾选联动自动配置（自动填充默认值 + 条件必填扩展） |
 
 **Spikes** (pre-development validation, not production code):
 
 - V1 (`spike/v1_mappyfile_validate.py`): mappyfile behavior, 62 cases
 - V2 (`spike/v2_llm_prompt_stability.py`): LLM JSON stability, 30 calls
 - V3 (`spike/v3-config-tree/`): ConfigTree recursive rendering, 280 nodes
-
-See `spike/v1_result.md`, `spike/v2_result.md`, `spike/v3_result.md`, `spike/feasibility_report.md`.
 
 ---
 
@@ -179,6 +165,25 @@ ValidationPipeline.validate_field(path, service_types)  # L1–L3 only
 tree_state WS message → frontend (leaf errors updated inline)
 ```
 
+### WebSocket Message Types (速查)
+
+| Type | Direction | 触发 | 响应 |
+|------|-----------|------|------|
+| `init_session` | F→B | 前端初始化 | `tree_state` |
+| `tree_update` | F→B | 字段编辑 | `tree_state` |
+| `tree_add_node` | F→B | 添加节点 | `tree_state` |
+| `tree_remove_node` | F→B | 删除节点 | `tree_state` |
+| `tree_add_custom_prop` | F→B | 添加自定义属性 | `tree_state` |
+| `focus_change` | F→B | 点击节点/字段 | `focus_state` |
+| `question` | F→B | 发送问题 | `qa_result` (+ `tree_state` if updates) |
+| `validate` | F→B | 手动校验 | `validation_result` + `tree_state` |
+| `export` | F→B | 导出 | `export_result` |
+| `set_service_types` | F→B | 切换服务类型 | `tree_state` |
+| `import_mapfile` | F→B | 导入 .map | `import_result` + `tree_state` |
+| `reset_session` | F→B | 重置会话 | `tree_state` |
+| `clear_history` | F→B | 清空 QA 历史 | `history_cleared` |
+| `ping` | F→B | 心跳 | `pong` |
+
 ---
 
 ## Critical Rules
@@ -234,6 +239,10 @@ cd SourceCode
 "/c/Users/PC/.conda/envs/gis-agent/python" -m pytest tests/unit/test_generate_rules.py::TestInferValueType::test_enum_present_returns_enum -v
 "/c/Users/PC/.conda/envs/gis-agent/python" -m pytest tests/unit/test_config_tree.py::TestConfigTreeSerialize::test_transform_1_custom_expansion -v
 "/c/Users/PC/.conda/envs/gis-agent/python" -m pytest tests/unit/test_validation.py::TestValidationPipelineIntegration -v
+
+# Test a single recently-added feature (proposal-0015)
+"/c/Users/PC/.conda/envs/gis-agent/python" -m pytest tests/unit/test_config_tree.py::TestAutoFillServiceDefaults -v
+"/c/Users/PC/.conda/envs/gis-agent/python" -m pytest tests/unit/test_main.py::TestHandleMessage::test_set_service_types_auto_fills_defaults -v
 ```
 
 ### Rules Generation
@@ -660,6 +669,7 @@ TEMPLATES_DIR = Path(__file__).resolve().parent / "llm" / "templates"
 - **Manual validate sends dual messages**: `_handle_validate` sends both `validation_result` (for QA panel error summary) **and** `tree_state` (for leaf-level error indicators on the ConfigTree). Auto-validate via `tree_update` only sends `tree_state`.
 - **Commit format**: `type(scope): proposal-NNNN description`
 - **Import round-trip**: `import_mode=True` preserves original fields only; defaults are not backfilled. New nodes added during import session are pre-filled with defaults via `add_object()`.
+- **Service type auto-fill** (proposal-0015): 勾选服务类型时，系统自动填充该服务的关键 METADATA 默认值（如 `wms_enable_request="*"`、`wms_srs="EPSG:3857 EPSG:4326"`）。仅当字段不存在时才创建，不覆盖已有值，取消勾选不删除，导入模式不触发。实现见 `ConfigTree.auto_fill_service_defaults()` + `main.py _handle_set_service_types`。
 - **Field search**: ConfigTreePanel has a search box that filters current tree leaves by key/path. Clicking a result expands ancestor nodes, sets focus, and scrolls to the field with a highlight pulse.
 - **mappyfile comment loss**: `mappyfile.loads()` does not preserve comments. Import → export will lose all `#` comments; this is an inherent limitation, not a bug.
 

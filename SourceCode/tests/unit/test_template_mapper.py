@@ -253,3 +253,51 @@ class TestGetLlmContextSummary:
 
     def test_returns_empty_for_unknown_type(self, mapper: TemplateMapper) -> None:
         assert mapper.get_llm_context_summary("UNKNOWN") == ""
+
+
+# -----------------------------------------------------------------------------
+# TemplateMapper — get_service_metadata (proposal-0015)
+# -----------------------------------------------------------------------------
+
+
+class TestGetServiceMetadata:
+    def test_returns_service_metadata(self, mapper: TemplateMapper) -> None:
+        svc_meta = mapper.get_service_metadata()
+        assert "metadata_fields" in svc_meta
+        assert "wms" in svc_meta["metadata_fields"]
+        assert "wfs" in svc_meta["metadata_fields"]
+        assert "wcs" in svc_meta["metadata_fields"]
+
+    def test_wms_has_enable_request_default(self, mapper: TemplateMapper) -> None:
+        svc_meta = mapper.get_service_metadata()
+        wms_fields = svc_meta["metadata_fields"]["wms"]
+        assert "enable_request" in wms_fields
+        assert wms_fields["enable_request"]["default"] == "*"
+
+    def test_wms_has_srs_default(self, mapper: TemplateMapper) -> None:
+        svc_meta = mapper.get_service_metadata()
+        wms_fields = svc_meta["metadata_fields"]["wms"]
+        assert "srs" in wms_fields
+        assert wms_fields["srs"]["default"] == "EPSG:3857 EPSG:4326"
+
+
+# -----------------------------------------------------------------------------
+# TemplateMapper — proposal-0015 required_when fields
+# -----------------------------------------------------------------------------
+
+
+class TestRequiredWhenProposal0015:
+    def test_wfs_namespace_uri_has_required_when(self, mapper: TemplateMapper) -> None:
+        fd = mapper.get_field_descriptor("METADATA", "wfs_namespace_uri")
+        assert fd is not None
+        assert fd.required_when == "'wfs' in session.service_types"
+
+    def test_wfs_namespace_prefix_has_required_when(self, mapper: TemplateMapper) -> None:
+        fd = mapper.get_field_descriptor("METADATA", "wfs_namespace_prefix")
+        assert fd is not None
+        assert fd.required_when == "'wfs' in session.service_types"
+
+    def test_wcs_imagemode_has_required_when(self, mapper: TemplateMapper) -> None:
+        fd = mapper.get_field_descriptor("METADATA", "wcs_imagemode")
+        assert fd is not None
+        assert fd.required_when == "'wcs' in session.service_types"

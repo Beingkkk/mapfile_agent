@@ -98,6 +98,10 @@ class TemplateMapper:
         field_aliases = self._aliases.get(object_type, {}).get(field, {})
         return field_aliases.get(alias, alias)
 
+    def get_service_metadata(self) -> dict[str, Any]:
+        """Return the service_metadata section from rules."""
+        return self._rules.get("service_metadata", {})
+
     def get_llm_context_summary(self, object_type: str) -> str:
         """Generate a concise field summary suitable for LLM prompts."""
         obj_rules = self._object_types.get(object_type)

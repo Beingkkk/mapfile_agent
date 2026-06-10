@@ -234,6 +234,59 @@ class ConfigTree:
         direct LAYER fields at this time)."""
         return True
 
+    def auto_fill_service_defaults(self, services_added: list[str]) -> list[dict]:
+        """当新增服务类型时，自动填充该服务的关键默认值。
+
+        仅填充 service-metadata 中定义了 default 且当前 params 中不存在的字段。
+        不覆盖用户已填写的值。
+
+        Args:
+            services_added: 新勾选的服务类型列表，如 ['wms', 'wfs']。
+
+        Returns:
+            实际执行的填充操作列表，每项包含 field/value/path。
+        """
+        filled: list[dict] = []
+        svc_meta = self.mapper.get_service_metadata()
+        meta_fields = svc_meta.get("metadata_fields", {})
+
+        # Common suffixes that also have ows_* variants — skip if ows_* exists
+        _COMMON_SUFFIXES = {"title", "abstract", "onlineresource",
+                            "enable_request", "srs", "extent"}
+
+        # Ensure web.metadata exists
+        if "web" not in self.params:
+            self.params["web"] = {"__type__": "web"}
+        if "metadata" not in self.params["web"]:
+            self.params["web"]["metadata"] = {}
+        web_meta: dict[str, Any] = self.params["web"]["metadata"]
+
+        for svc in services_added:
+            svc_config = meta_fields.get(svc)
+            if svc_config is None:
+                continue
+            for field_suffix, config in svc_config.items():
+                if "default" not in config:
+                    continue
+                full_key = f"{svc}_{field_suffix}"
+                # Skip if the service-specific key already exists
+                if full_key in web_meta:
+                    continue
+                # Skip if an ows_* common variant already exists
+                if field_suffix in _COMMON_SUFFIXES:
+                    ows_key = f"ows_{field_suffix}"
+                    if ows_key in web_meta:
+                        continue
+                # Fill default
+                web_meta[full_key] = config["default"]
+                filled.append({
+                    "field": full_key,
+                    "value": config["default"],
+                    "path": f"web.metadata.{full_key}",
+                })
+
+        return filled
+
     def _make_id(self, path: str) -> str:
         return path.replace(".", "_").replace("[", "").replace("]", "")
 

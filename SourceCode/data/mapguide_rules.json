@@ -3790,7 +3790,7 @@
           "derived": false,
           "editable": true,
           "required": false,
-          "required_when": null
+          "required_when": "'wfs' in session.service_types"
         },
         "wfs_namespace_prefix": {
           "key": "wfs_namespace_prefix",
@@ -3806,7 +3806,7 @@
           "derived": false,
           "editable": true,
           "required": false,
-          "required_when": null
+          "required_when": "'wfs' in session.service_types"
         },
         "wfs_maxfeatures": {
           "key": "wfs_maxfeatures",
@@ -4174,7 +4174,7 @@
           "derived": false,
           "editable": true,
           "required": false,
-          "required_when": null
+          "required_when": "'wcs' in session.service_types"
         },
         "wcs_bandcount": {
           "key": "wcs_bandcount",
@@ -4557,7 +4557,10 @@
         "wms_srs": "'wms' in session.service_types and not map.get('projection')",
         "wfs_srs": "'wfs' in session.service_types and not map.get('projection')",
         "wcs_srs": "'wcs' in session.service_types and not map.get('projection')",
-        "wcs_extent": "'wcs' in session.service_types"
+        "wcs_extent": "'wcs' in session.service_types",
+        "wfs_namespace_uri": "'wfs' in session.service_types",
+        "wfs_namespace_prefix": "'wfs' in session.service_types",
+        "wcs_imagemode": "'wcs' in session.service_types"
       }
     },
     "CACHE": {
@@ -10134,7 +10137,7 @@
       "derived": false,
       "editable": true,
       "required": false,
-      "required_when": null,
+      "required_when": "'wfs' in session.service_types",
       "path": "map.web.metadata.wfs_namespace_uri"
     },
     "layers.N.metadata.wfs_namespace_uri": {
@@ -10151,7 +10154,7 @@
       "derived": false,
       "editable": true,
       "required": false,
-      "required_when": null,
+      "required_when": "'wfs' in session.service_types",
       "path": "layers.N.metadata.wfs_namespace_uri"
     },
     "layers.N.classes.M.metadata.wfs_namespace_uri": {
@@ -10168,7 +10171,7 @@
       "derived": false,
       "editable": true,
       "required": false,
-      "required_when": null,
+      "required_when": "'wfs' in session.service_types",
       "path": "layers.N.classes.M.metadata.wfs_namespace_uri"
     },
     "map.web.metadata.wfs_namespace_prefix": {
@@ -10185,7 +10188,7 @@
       "derived": false,
       "editable": true,
       "required": false,
-      "required_when": null,
+      "required_when": "'wfs' in session.service_types",
       "path": "map.web.metadata.wfs_namespace_prefix"
     },
     "layers.N.metadata.wfs_namespace_prefix": {
@@ -10202,7 +10205,7 @@
       "derived": false,
       "editable": true,
       "required": false,
-      "required_when": null,
+      "required_when": "'wfs' in session.service_types",
       "path": "layers.N.metadata.wfs_namespace_prefix"
     },
     "layers.N.classes.M.metadata.wfs_namespace_prefix": {
@@ -10219,7 +10222,7 @@
       "derived": false,
       "editable": true,
       "required": false,
-      "required_when": null,
+      "required_when": "'wfs' in session.service_types",
       "path": "layers.N.classes.M.metadata.wfs_namespace_prefix"
     },
     "map.web.metadata.wfs_maxfeatures": {
@@ -11358,7 +11361,7 @@
       "derived": false,
       "editable": true,
       "required": false,
-      "required_when": null,
+      "required_when": "'wcs' in session.service_types",
       "path": "map.web.metadata.wcs_imagemode"
     },
     "layers.N.metadata.wcs_imagemode": {
@@ -11375,7 +11378,7 @@
       "derived": false,
       "editable": true,
       "required": false,
-      "required_when": null,
+      "required_when": "'wcs' in session.service_types",
       "path": "layers.N.metadata.wcs_imagemode"
     },
     "layers.N.classes.M.metadata.wcs_imagemode": {
@@ -11392,7 +11395,7 @@
       "derived": false,
       "editable": true,
       "required": false,
-      "required_when": null,
+      "required_when": "'wcs' in session.service_types",
       "path": "layers.N.classes.M.metadata.wcs_imagemode"
     },
     "map.web.metadata.wcs_bandcount": {

@@ -592,3 +592,120 @@ class TestConfigTreeSerialize:
         result = tree.to_mappyfile_dict()
         assert isinstance(result["layers"], list)
         assert result["layers"][0]["name"] == "layer1"
+
+
+# ---------------------------------------------------------------------------
+# Auto-fill service defaults (proposal-0015)
+# ---------------------------------------------------------------------------
+
+
+class TestAutoFillServiceDefaults:
+    """Tests for ConfigTree.auto_fill_service_defaults()."""
+
+    def test_fill_wms_defaults(self, mapper):
+        """勾选 WMS 时自动填充 wms_enable_request 和 wms_srs 默认值."""
+        params = {"__type__": "map"}
+        tree = ConfigTree(params, mapper, service_types=[])
+
+        filled = tree.auto_fill_service_defaults(["wms"])
+
+        web_meta = params.get("web", {}).get("metadata", {})
+        assert web_meta.get("wms_enable_request") == "*"
+        assert web_meta.get("wms_srs") == "EPSG:3857 EPSG:4326"
+        assert web_meta.get("wms_include_items") == "all"
+        # Verify return value
+        assert len(filled) == 3
+        assert any(f["field"] == "wms_enable_request" for f in filled)
+
+    def test_fill_wfs_defaults(self, mapper):
+        """勾选 WFS 时自动填充 wfs_enable_request 和 wfs_srs 默认值."""
+        params = {"__type__": "map"}
+        tree = ConfigTree(params, mapper, service_types=[])
+
+        filled = tree.auto_fill_service_defaults(["wfs"])
+
+        web_meta = params.get("web", {}).get("metadata", {})
+        assert web_meta.get("wfs_enable_request") == "*"
+        assert web_meta.get("wfs_srs") == "EPSG:4326"
+
+    def test_fill_wcs_defaults(self, mapper):
+        """勾选 WCS 时自动填充 wcs_enable_request 和 wcs_srs 默认值."""
+        params = {"__type__": "map"}
+        tree = ConfigTree(params, mapper, service_types=[])
+
+        filled = tree.auto_fill_service_defaults(["wcs"])
+
+        web_meta = params.get("web", {}).get("metadata", {})
+        assert web_meta.get("wcs_enable_request") == "*"
+        assert web_meta.get("wcs_srs") == "EPSG:3857"
+
+    def test_no_override_existing_value(self, mapper):
+        """已有值时不应被覆盖."""
+        params = {
+            "__type__": "map",
+            "web": {
+                "metadata": {
+                    "wms_enable_request": "GetMap,GetCapabilities",
+                },
+            },
+        }
+        tree = ConfigTree(params, mapper, service_types=[])
+
+        filled = tree.auto_fill_service_defaults(["wms"])
+
+        web_meta = params["web"]["metadata"]
+        assert web_meta["wms_enable_request"] == "GetMap,GetCapabilities"
+        # wms_srs should still be filled since it didn't exist
+        assert web_meta.get("wms_srs") == "EPSG:3857 EPSG:4326"
+        # Only wms_srs and wms_include_items should be in filled list
+        assert len(filled) == 2
+
+    def test_skip_when_ows_variant_exists(self, mapper):
+        """如果 ows_* 通用字段已存在，跳过对应服务专用字段."""
+        params = {
+            "__type__": "map",
+            "web": {
+                "metadata": {
+                    "ows_enable_request": "*",
+                    "ows_srs": "EPSG:4326",
+                },
+            },
+        }
+        tree = ConfigTree(params, mapper, service_types=[])
+
+        filled = tree.auto_fill_service_defaults(["wms"])
+
+        web_meta = params["web"]["metadata"]
+        # wms_enable_request should NOT be filled because ows_enable_request exists
+        assert "wms_enable_request" not in web_meta
+        # wms_srs should NOT be filled because ows_srs exists
+        assert "wms_srs" not in web_meta
+        # wms_include_items is NOT a common suffix, so it SHOULD be filled
+        assert web_meta.get("wms_include_items") == "all"
+        assert len(filled) == 1
+        assert filled[0]["field"] == "wms_include_items"
+
+    def test_multiple_services_at_once(self, mapper):
+        """同时勾选多个服务时，各自填充对应默认值."""
+        params = {"__type__": "map"}
+        tree = ConfigTree(params, mapper, service_types=[])
+
+        filled = tree.auto_fill_service_defaults(["wms", "wfs"])
+
+        web_meta = params.get("web", {}).get("metadata", {})
+        assert web_meta.get("wms_enable_request") == "*"
+        assert web_meta.get("wfs_enable_request") == "*"
+        # WMS and WFS fields should not conflict
+        assert web_meta.get("wms_srs") == "EPSG:3857 EPSG:4326"
+        assert web_meta.get("wfs_srs") == "EPSG:4326"
+        assert len(filled) == 5  # 3 WMS + 2 WFS
+
+    def test_no_fill_for_unknown_service(self, mapper):
+        """未知服务类型不产生错误."""
+        params = {"__type__": "map"}
+        tree = ConfigTree(params, mapper, service_types=[])
+
+        filled = tree.auto_fill_service_defaults(["unknown_svc"])
+
+        assert filled == []
+        assert "web" not in params or params.get("web", {}).get("metadata", {}) == {}

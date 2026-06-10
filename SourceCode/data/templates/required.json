@@ -27,7 +27,10 @@
       "wms_srs": "'wms' in session.service_types and not map.get('projection')",
       "wfs_srs": "'wfs' in session.service_types and not map.get('projection')",
       "wcs_srs": "'wcs' in session.service_types and not map.get('projection')",
-      "wcs_extent": "'wcs' in session.service_types"
+      "wcs_extent": "'wcs' in session.service_types",
+      "wfs_namespace_uri": "'wfs' in session.service_types",
+      "wfs_namespace_prefix": "'wfs' in session.service_types",
+      "wcs_imagemode": "'wcs' in session.service_types"
     }
   },
   "LAYER": {

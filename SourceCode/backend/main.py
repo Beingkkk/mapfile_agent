@@ -392,6 +392,12 @@ async def _handle_set_service_types(
 ) -> None:
     services = msg.get("services", ["wms"])
     mapcache = msg.get("mapcache_enabled", False)
+
+    # Compute newly-added services for auto-fill
+    old_services = set(session.service_types)
+    new_services = set(services)
+    added = list(new_services - old_services)
+
     session.service_types = services
     session.mapcache_enabled = mapcache
 
@@ -406,6 +412,11 @@ async def _handle_set_service_types(
         session.params, session.mapper, session.service_types,
         import_mode=session.import_mode,
     )
+
+    # Auto-fill defaults for newly-added services
+    if added and not session.import_mode:
+        session.tree.auto_fill_service_defaults(added)
+
     await _send_tree_state(websocket, session)
 
 

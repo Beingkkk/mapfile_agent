@@ -290,3 +290,65 @@ class TestHandleMessage:
                 assert "phase" in child
                 assert "required" in child
                 assert "custom" in child
+
+    @pytest.mark.anyio
+    async def test_set_service_types_auto_fills_defaults(self):
+        """proposal-0015: 勾选新服务时自动填充默认值."""
+        ws = MockWebSocket()
+        await main_module.handle_message(ws, {"type": "init_session"}, "session-autofill")
+
+        # Initially only WMS is selected (default), switch from WMS to WFS
+        await main_module.handle_message(
+            ws,
+            {"type": "set_service_types", "services": ["wfs"], "mapcache_enabled": False},
+            "session-autofill",
+        )
+
+        session = main_module.sessions["session-autofill"]
+        web_meta = session.params.get("web", {}).get("metadata", {})
+        # WFS defaults should be filled
+        assert web_meta.get("wfs_enable_request") == "*"
+        assert web_meta.get("wfs_srs") == "EPSG:4326"
+        # WMS defaults should NOT be filled (WMS was removed, not added)
+        assert "wms_enable_request" not in web_meta
+
+    @pytest.mark.anyio
+    async def test_set_service_types_adds_service_auto_fills(self):
+        """proposal-0015: 在已有服务基础上新增服务时自动填充."""
+        ws = MockWebSocket()
+        await main_module.handle_message(ws, {"type": "init_session"}, "session-add")
+
+        # Default is ["wms"], now add WFS
+        await main_module.handle_message(
+            ws,
+            {"type": "set_service_types", "services": ["wms", "wfs"], "mapcache_enabled": False},
+            "session-add",
+        )
+
+        session = main_module.sessions["session-add"]
+        web_meta = session.params.get("web", {}).get("metadata", {})
+        # WMS was already selected — no auto-fill (was filled on init or default)
+        # WFS is newly added — should be filled
+        assert web_meta.get("wfs_enable_request") == "*"
+        assert web_meta.get("wfs_srs") == "EPSG:4326"
+
+    @pytest.mark.anyio
+    async def test_set_service_types_import_mode_no_auto_fill(self):
+        """proposal-0015: 导入模式下不触发自动填充."""
+        ws = MockWebSocket()
+        await main_module.handle_message(ws, {"type": "init_session"}, "session-import")
+
+        # Mark session as import_mode
+        session = main_module.sessions["session-import"]
+        session.import_mode = True
+
+        # Add WFS (which would normally trigger auto-fill)
+        await main_module.handle_message(
+            ws,
+            {"type": "set_service_types", "services": ["wms", "wfs"], "mapcache_enabled": False},
+            "session-import",
+        )
+
+        web_meta = session.params.get("web", {}).get("metadata", {})
+        # Should NOT be auto-filled in import mode
+        assert "wfs_enable_request" not in web_meta
