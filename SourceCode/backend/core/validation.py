@@ -738,10 +738,51 @@ class ValidationPipeline:
     def _extract_path_from_mappyfile_error(
         self, error_text: str, message: str
     ) -> str | None:
-        """Try to build a flat path from mappyfile error."""
-        # For now, return empty — path extraction from mappyfile errors
-        # is heuristic and not critical for MVP
-        return None
+        """Try to build a flat path from mappyfile error.
+
+        mappyfile errors have the format:
+        - error: "'key' does not match any of the regexes: ..."
+        - message: "ERROR: Invalid value in OBJ_TYPE"
+
+        Returns the best-effort flat path (e.g. "web.metadata.foo",
+        "layers", "type").  For indexed objects (LAYER/CLASS/STYLE/LABEL)
+        we cannot determine the index from the error, so we return the
+        plural key ("layers") which at least highlights the container.
+        """
+        obj_type = self._extract_object_type_from_message(message)
+        if not obj_type:
+            return None
+
+        keys = self._extract_unknown_keys(error_text)
+        key = keys[0] if keys else None
+
+        # Map mappyfile object type → flat path prefix used by ConfigTree.
+        # Indexed containers (layers/classes/styles/labels) use the plural
+        # because mappyfile does not include the index in its error.
+        TYPE_PATH_MAP: dict[str, str] = {
+            "MAP": "map",
+            "WEB": "web",
+            "LAYER": "layers",
+            "CLASS": "classes",
+            "STYLE": "styles",
+            "LABEL": "labels",
+            "METADATA": "web.metadata",
+        }
+
+        prefix = TYPE_PATH_MAP.get(obj_type)
+        if prefix is None:
+            return None
+
+        if key:
+            # Errors like "'foo' is a required property" don't have a key
+            # in the regex sense, but _extract_unknown_keys may return [].
+            # If we do have a key, append it.
+            # For required-property errors the key is sometimes in the error
+            # text as "'type' is a required property" — the regex extractor
+            # already handles quoted strings.
+            return f"{prefix}.{key}"
+
+        return prefix
 
     # ─────────────────────────────────────────────────────────────────────────
     # Helpers

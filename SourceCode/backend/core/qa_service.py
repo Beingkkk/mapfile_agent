@@ -139,6 +139,8 @@ class QAService:
                 for k, v in obj.items():
                     if k.startswith("_") or k == "__type__":
                         continue
+                    if v is None:
+                        continue
                     if isinstance(v, (dict, list)):
                         lines.append(f"{prefix}{k}:")
                         _dump(v, indent + 1)
@@ -146,8 +148,11 @@ class QAService:
                         lines.append(f"{prefix}{k}: {v}")
             elif isinstance(obj, list):
                 for i, item in enumerate(obj):
-                    lines.append(f"{prefix}[{i}]:")
-                    _dump(item, indent + 1)
+                    if isinstance(item, (dict, list)):
+                        lines.append(f"{prefix}[{i}]:")
+                        _dump(item, indent + 1)
+                    else:
+                        lines.append(f"{prefix}[{i}]: {item}")
 
         _dump(params)
         return "\n".join(lines) if lines else "(empty map)"

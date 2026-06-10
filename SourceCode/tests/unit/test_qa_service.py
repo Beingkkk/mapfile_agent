@@ -139,3 +139,72 @@ class TestQAServiceAnswer:
         call_args = builder.render.call_args[1]
         assert call_args["intent"] == "Create a WMS map"
         assert call_args["focus_param"] == "layers.0.name"
+
+
+class TestBuildMapSnapshot:
+    def _make_service(self, params: dict):
+        """Build a QAService with only params set."""
+        session = MagicMock()
+        session.params = params
+
+        pipeline = MagicMock()
+        mapper = MagicMock()
+        client = MagicMock()
+        builder = MagicMock()
+
+        return QAService(session, pipeline, mapper, client, builder)
+
+    def test_scalar_array_values_included(self):
+        """Extent / projection / size arrays must show their scalar values."""
+        service = self._make_service({
+            "__type__": "map",
+            "extent": [120, 30, 121, 31],
+            "projection": ["init=epsg:4326"],
+        })
+        snapshot = service._build_map_snapshot()
+        assert "[0]: 120" in snapshot
+        assert "[1]: 30" in snapshot
+        assert "[3]: 31" in snapshot
+        assert "[0]: init=epsg:4326" in snapshot
+
+    def test_nested_dict_in_list(self):
+        """Layers (list of dicts) must render child keys."""
+        service = self._make_service({
+            "__type__": "map",
+            "layers": [
+                {"__type__": "layer", "name": "roads", "type": "line"},
+            ],
+        })
+        snapshot = service._build_map_snapshot()
+        assert "[0]:" in snapshot
+        assert "name: roads" in snapshot
+        assert "type: line" in snapshot
+        assert "__type__" not in snapshot
+
+    def test_none_values_filtered(self):
+        """None values should not appear in snapshot to reduce noise."""
+        service = self._make_service({
+            "__type__": "map",
+            "name": "test",
+            "debug": None,
+        })
+        snapshot = service._build_map_snapshot()
+        assert "name: test" in snapshot
+        assert "debug" not in snapshot
+
+    def test_underscore_keys_skipped(self):
+        """_custom and other underscore keys must be hidden."""
+        service = self._make_service({
+            "__type__": "map",
+            "name": "test",
+            "_custom": {"foo": {"value": "bar", "type": "string"}},
+        })
+        snapshot = service._build_map_snapshot()
+        assert "name: test" in snapshot
+        assert "_custom" not in snapshot
+
+    def test_empty_params_returns_placeholder(self):
+        """Empty params (only __type__) should return placeholder."""
+        service = self._make_service({"__type__": "map"})
+        snapshot = service._build_map_snapshot()
+        assert snapshot == "(empty map)"

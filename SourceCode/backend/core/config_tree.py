@@ -147,6 +147,29 @@ class ConfigTree:
         # 3. Child objects
         node.children.extend(self._build_children(obj, path, object_type))
 
+        # 4. Unknown fields (present in params but not in schema or _custom).
+        # These are usually L4 mappyfile false-positives or bad LLM updates.
+        # Render them so the user can see and delete them.
+        schema_fields = set(self.mapper.list_all_fields(object_type))
+        custom_fields = set(obj.get("_custom", {}).keys())
+        for field, value in obj.items():
+            if field in schema_fields or field in custom_fields:
+                continue
+            if field.startswith("__") or field == "_custom":
+                continue
+            leaf = TreeLeaf(
+                id=self._make_id(f"{path}.{field}"),
+                path=f"{path}.{field}",
+                key=field,
+                descriptor=FieldDescriptor(
+                    key=field,
+                    value_type="string",
+                    editable=True,
+                ),
+                value=value,
+            )
+            node.children.append(leaf)
+
         return node
 
     def _build_children(
