@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Design constraints**: single-person project, minimal scope, no over-engineering. The MVP targets one flow: **PostGIS/Shapefile → WMS/WFS/WCS → optional MapCache disk cache (WMTS/TMS)**, locked to **MapServer 8.4**.
 
-**⚠️ CLAUDE.md 定位**: 本文档面向开发决策（架构约束、关键规则、实现细节）。架构决策以本文档和 `Document/技术细节.md` 为准。项目根目录暂无 README.md；快速上手指南在 `Document/design/conventions.md` §2。
+**⚠️ CLAUDE.md 定位**: 本文档面向开发决策（架构约束、关键规则、实现细节）。架构决策以本文档和 `Document/技术细节.md` 为准。快速上手指南同时参见项目根目录的 [README.md](README.md) 和 `Document/design/conventions.md` §2。
 
 ---
 
@@ -265,8 +265,8 @@ cd SourceCode
 ```bash
 cd SourceCode/backend
 
-# Start dev server (Electron uses port 18080; standalone dev can use any port)
-"/c/Users/PC/.conda/envs/gis-agent/python" -m uvicorn main:app --port 18080 --reload
+# Start dev server (Electron uses port 18091; standalone dev can use any port)
+"/c/Users/PC/.conda/envs/gis-agent/python" -m uvicorn main:app --port 18091 --reload
 
 # Install dependencies
 "/c/Users/PC/.conda/envs/gis-agent/python" -m pip install -r requirements.txt
@@ -277,7 +277,7 @@ cd SourceCode/backend
 ```bash
 cd SourceCode/frontend
 
-# Dev server
+# Dev server (Vite dev server runs on port 18001, `strictPort: true`)
 npm run dev
 
 # Tests (vitest + jsdom)
@@ -295,6 +295,8 @@ npm run build
 
 **Path aliases**: Both `vite.config.ts` and `vitest.config.ts` must define `resolve.alias: { '@': path.resolve(__dirname, 'src') }` for `@/` imports to work in dev and test.
 
+**Vite port**: `frontend/vite.config.ts` pins `server.port` to `18001` with `strictPort: true`. `npm run electron:dev` uses `wait-on http://127.0.0.1:18001` to wait for the dev server before launching Electron.
+
 ### Electron
 
 ```bash
@@ -309,7 +311,7 @@ npm run electron:build
 ```
 
 **Electron backend path behavior** (`electron/main.js`):
-- **Development**: Uses `C:\Users\PC\.conda\envs\gis-agent\python.exe` (overridable via `PYTHON_PATH` env var) to run `uvicorn backend.main:app --port 18080`. Waits for port 18080 to be ready before loading the window.
+- **Development**: Uses `C:\Users\PC\.conda\envs\gis-agent\python.exe` (overridable via `PYTHON_PATH` env var) to run `uvicorn backend.main:app --port 18091`. Waits for port 18091 to be ready before loading the window.
 - **Production**: Uses `resources\backend\MapGuideBackend.exe` (PyInstaller single-file output from `_entrypoint.py`). The exe is included via `build.extraResources` in `SourceCode/package.json`.
   - **IS_DEV detection**: `!!process.defaultApp` (NOT `app.isPackaged`, which returns `false` in `win-unpacked` mode).
   - **Resources path**: Electron passes `MAPGUIDE_RESOURCES = process.resourcesPath` env var so the backend knows where external `config/` lives.

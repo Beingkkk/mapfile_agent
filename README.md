@@ -57,10 +57,10 @@ Document/
 
 ## 开发启动
 
-**后端**（端口 8765）：
+**后端**（端口 18091）：
 ```bash
 cd SourceCode/backend
-"/c/Users/PC/.conda/envs/gis-agent/python" -m uvicorn main:app --port 8765 --reload
+"/c/Users/PC/.conda/envs/gis-agent/python" -m uvicorn main:app --port 18091 --reload
 ```
 
 **前端**（开发服务器）：

@@ -8,7 +8,7 @@ const net = require('net');
 // Constants
 // ─────────────────────────────────────────────────────────────────────────────
 
-const BACKEND_PORT = 18080;
+const BACKEND_PORT = 18091;
 const BACKEND_HOST = '127.0.0.1';
 // process.defaultApp is true when running from 'electron .' (dev),
 // undefined when running from a packaged app (win-unpacked / asar).
@@ -326,7 +326,7 @@ app.whenReady().then(async () => {
     dialog.showErrorBox(
       'Backend Startup Failed',
       `The Python backend did not start correctly:\n${err.message}\n\n` +
-        'Please check that port 18080 is not in use by another process.'
+        'Please check that port 18091 is not in use by another process.'
     );
     createWindow(); // Still open window so user can see error
   }

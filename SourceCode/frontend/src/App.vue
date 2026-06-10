@@ -16,7 +16,7 @@ import QAPanel from './components/QAPanel.vue'
 import { ws } from './services/ws'
 
 onMounted(() => {
-  ws.connect('ws://localhost:18080/ws')
+  ws.connect('ws://localhost:18091/ws')
 })
 
 onUnmounted(() => {

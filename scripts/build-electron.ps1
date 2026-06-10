@@ -216,14 +216,14 @@ $ReadmeContent = @"
 ------
 - 前端: Vue 3 + Naive UI + Vite
 - 后端: FastAPI + uvicorn + mappyfile（PyInstaller 打包）
-- 通信: WebSocket (ws://localhost:18080/ws)
+- 通信: WebSocket (ws://localhost:18091/ws)
 
 注意事项
 --------
 - config.json 包含 API 密钥等敏感信息，请勿泄露
 - config/ 是外置资源，安装后可直接编辑 resources/config/config.json
 - 首次启动时后端服务需要几秒钟初始化时间
-- 后端端口 18080 若被占用，程序将无法正常工作
+- 后端端口 18091 若被占用，程序将无法正常工作
 ================================================================================
 "@
 $ReadmeContent | Set-Content -Path $ReadmePath -Encoding UTF8 -NoNewline

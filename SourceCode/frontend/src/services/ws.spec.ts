@@ -76,7 +76,7 @@ describe('WebSocketService', () => {
   })
 
   it('connects to the correct URL with session_id', () => {
-    ws.connect('ws://localhost:8765/ws', 'test-session')
+    ws.connect('ws://localhost:18091/ws', 'test-session')
     // @ts-ignore
     expect(ws.ws?.url).toContain('session_id=test-session')
   })
@@ -191,13 +191,13 @@ describe('WebSocketService', () => {
   })
 
   it('disconnects cleanly', () => {
-    ws.connect('ws://localhost:8765/ws')
+    ws.connect('ws://localhost:18091/ws')
     ws.disconnect()
     expect(ws.isConnected).toBe(false)
   })
 
   it('reconnects after close', () => {
-    ws.connect('ws://localhost:8765/ws', 's1')
+    ws.connect('ws://localhost:18091/ws', 's1')
     // Fast-forward past reconnect timer
     vi.advanceTimersByTime(5000)
     // Should attempt reconnection (we just verify no throw)

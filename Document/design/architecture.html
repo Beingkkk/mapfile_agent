@@ -442,7 +442,7 @@
     </div>
   </div>
 
-  <div class="arrow-bidirect">⇅ WebSocket (ws://localhost:18080/ws)</div>
+  <div class="arrow-bidirect">⇅ WebSocket (ws://localhost:18091/ws)</div>
 
   <!-- Vue Renderer -->
   <div class="runtime-layer renderer">
@@ -918,7 +918,7 @@
         <ul>
           <li>components/ → 依赖: services/ws.ts</li>
           <li>components/ → 依赖: stores/ (Pinia)</li>
-          <li>services/ws.ts → 外部: ws://localhost:18080/ws</li>
+          <li>services/ws.ts → 外部: ws://localhost:18091/ws</li>
           <li>无直接依赖后端 Python 代码</li>
         </ul>
       </div>
@@ -990,7 +990,7 @@
     <tbody style="color:var(--text-sec);">
       <tr style="border-bottom:1px solid var(--border);">
         <td style="padding:8px 12px;color:var(--text)"><strong>前后端通信</strong></td>
-        <td style="padding:8px 12px;">统一 WebSocket（ws://localhost:18080/ws），禁止 HTTP/WS 混合；后端 → LLM 走 HTTP API</td>
+        <td style="padding:8px 12px;">统一 WebSocket（ws://localhost:18091/ws），禁止 HTTP/WS 混合；后端 → LLM 走 HTTP API</td>
         <td style="padding:8px 12px;">技术细节 §12</td>
       </tr>
       <tr style="border-bottom:1px solid var(--border);">

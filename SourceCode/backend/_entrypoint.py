@@ -22,7 +22,7 @@ import uvicorn  # noqa: E402
 from main import app  # noqa: E402
 
 # ─── Constants (mirroring main.py) ─────────────────────────────────────────
-BACKEND_PORT = 18080
+BACKEND_PORT = 18091
 BACKEND_HOST = "127.0.0.1"
 
 if __name__ == "__main__":

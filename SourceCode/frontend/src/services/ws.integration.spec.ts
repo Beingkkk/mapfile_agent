@@ -35,7 +35,7 @@ describe('WebSocket Integration — end-to-end message flow', () => {
   })
 
   it('receives tree_state and populates store with TreeNode structure', () => {
-    ws.connect('ws://localhost:8765/ws')
+    ws.connect('ws://localhost:18091/ws')
 
     // Simulate WebSocket open — set readyState BEFORE calling onopen
     // because ws.send() checks isConnected which reads readyState
@@ -108,7 +108,7 @@ describe('WebSocket Integration — end-to-end message flow', () => {
   })
 
   it('receives qa_result and adds message to UI store', () => {
-    ws.connect('ws://localhost:8765/ws')
+    ws.connect('ws://localhost:18091/ws')
     mockWsInstance.readyState = 1
     mockWsInstance.onopen?.()
 

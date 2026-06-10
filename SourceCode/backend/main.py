@@ -527,4 +527,6 @@ async def _send_error(websocket: WebSocket, message: str) -> None:
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host=BACKEND_HOST, port=BACKEND_PORT)
+    _BACKEND_HOST = os.environ.get("BACKEND_HOST", "127.0.0.1")
+    _BACKEND_PORT = int(os.environ.get("BACKEND_PORT", "18091"))
+    uvicorn.run(app, host=_BACKEND_HOST, port=_BACKEND_PORT)
